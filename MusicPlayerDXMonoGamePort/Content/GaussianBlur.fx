@@ -32,7 +32,6 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR
 			coords = float2(input.TextureCoordinates.x, input.TextureCoordinates.y + InvTexsize.y * 2 * j);
 		color += tex2D(SpriteTextureSampler, coords) * BlurWeights[i];
 	}
-	color.rgb /= 1.5f;
 
 	return color;
 }
