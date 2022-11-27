@@ -114,8 +114,7 @@ namespace MusicPlayerDXMonoGamePort
 
         public static Color SystemDefaultColor;
 
-        public static Effect gaussianBlurV;
-        public static Effect gaussianBlurH;
+        public static Effect gaussianBlur;
         public static Effect PixelBlur;
         public static Effect TitleFadeout;
         public static Effect Vignette;
@@ -196,6 +195,7 @@ namespace MusicPlayerDXMonoGamePort
         static int TempBufferLengthLog2;
         public static bool SongBufferThreadWasAborted = false;
         public static Exception LastSongBufferThreadException = new Exception();
+        public static float[] hBlurWeights, vBlurWeights;
 
         // Debug
         public static long CurrentDebugTime = 0;
@@ -208,17 +208,14 @@ namespace MusicPlayerDXMonoGamePort
             Col[0] = Color.White;
             White.SetData(Col);
 
-            gaussianBlurV = Content.Load<Effect>("GaussianBlur");
-            GaussianValues.CreateIfNotFilled(7);
-            gaussianBlurV.Parameters["BlurWeights"].SetValue(Enumerable.Range(-7, 15).Select(x => (float)GaussianValues.GetGaussian(x) / 1.5f).ToArray());
-            gaussianBlurV.Parameters["InvTexsize"].SetValue(new Vector2(1 / Values.WindowSize.X, 1 / Values.WindowSize.Y));
-            gaussianBlurV.Parameters["horz"].SetValue(false);
-
-            gaussianBlurH = Content.Load<Effect>("GaussianBlur");
-            GaussianValues.CreateIfNotFilled(5);
-            gaussianBlurH.Parameters["BlurWeights"].SetValue(Enumerable.Range(-7, 15).Select(x => (float)GaussianValues.GetGaussian(x) / 1.5f).ToArray());
-            gaussianBlurH.Parameters["InvTexsize"].SetValue(new Vector2(1 / Values.WindowSize.X, 1 / Values.WindowSize.Y));
-            gaussianBlurH.Parameters["horz"].SetValue(true);
+            gaussianBlur = Content.Load<Effect>("GaussianBlur");
+            float bloomStrength = 3;
+            GaussianValues.CreateIfNotFilled(bloomStrength);
+            vBlurWeights = Enumerable.Range(-7, 15).Select(x => (float)GaussianValues.GetGaussian(x) / (1 + bloomStrength * 0.08f)).ToArray();
+            GaussianValues.CreateIfNotFilled(bloomStrength * 2);
+            hBlurWeights = Enumerable.Range(-7, 15).Select(x => (float)GaussianValues.GetGaussian(x) / (1 + bloomStrength * 0.16f)).ToArray();
+            gaussianBlur.Parameters["BlurWeights"].SetValue(hBlurWeights);
+            gaussianBlur.Parameters["InvTexsize"].SetValue(new Vector2(1 / Values.WindowSize.X, 1 / Values.WindowSize.Y));
         }
         public static void Load(ContentManager Content, GraphicsDevice GD)
         {
