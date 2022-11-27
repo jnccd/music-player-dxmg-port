@@ -1359,7 +1359,7 @@ namespace MusicPlayerDXMonoGamePort
                 state = state.TrimStart(' ');
             }
             
-            DiscordRPCWrapper.UpdatePresence(details, state, startTime, endTime, bigimagekey, "https://github.com/niklasCarstensen/MusicPlayer", smolimagekey, smolimagetext, ElapsedTime);
+            DiscordRPCWrapper.UpdatePresence(details, state, startTime, endTime, bigimagekey, "https://github.com/jnccd/music-player-dxmg-port", smolimagekey, smolimagetext, ElapsedTime);
         }
         public void UpdateShadowRects()
         {
