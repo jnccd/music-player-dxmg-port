@@ -114,7 +114,8 @@ namespace MusicPlayerDXMonoGamePort
 
         public static Color SystemDefaultColor;
 
-        public static Effect gaussianBlur;
+        public static Effect gaussianBlurV;
+        public static Effect gaussianBlurH;
         public static Effect PixelBlur;
         public static Effect TitleFadeout;
         public static Effect Vignette;
@@ -207,11 +208,17 @@ namespace MusicPlayerDXMonoGamePort
             Col[0] = Color.White;
             White.SetData(Col);
 
-            gaussianBlur = Content.Load<Effect>("GaussianBlur");
+            gaussianBlurV = Content.Load<Effect>("GaussianBlur");
+            GaussianValues.CreateIfNotFilled(7);
+            gaussianBlurV.Parameters["BlurWeights"].SetValue(Enumerable.Range(-7, 15).Select(x => (float)GaussianValues.GetGaussian(x) / 1.5f).ToArray());
+            gaussianBlurV.Parameters["InvTexsize"].SetValue(new Vector2(1 / Values.WindowSize.X, 1 / Values.WindowSize.Y));
+            gaussianBlurV.Parameters["horz"].SetValue(false);
+
+            gaussianBlurH = Content.Load<Effect>("GaussianBlur");
             GaussianValues.CreateIfNotFilled(5);
-            gaussianBlur.Parameters["BlurWeights"].SetValue(Enumerable.Range(-7, 15).Select(x => (float)GaussianValues.GetGaussian(x)).ToArray());
-            gaussianBlur.Parameters["InvTexsize"].SetValue(new Vector2(1 / Values.WindowSize.X, 1 / Values.WindowSize.Y));
-            gaussianBlur.Parameters["horz"].SetValue(false);
+            gaussianBlurH.Parameters["BlurWeights"].SetValue(Enumerable.Range(-7, 15).Select(x => (float)GaussianValues.GetGaussian(x) / 1.5f).ToArray());
+            gaussianBlurH.Parameters["InvTexsize"].SetValue(new Vector2(1 / Values.WindowSize.X, 1 / Values.WindowSize.Y));
+            gaussianBlurH.Parameters["horz"].SetValue(true);
         }
         public static void Load(ContentManager Content, GraphicsDevice GD)
         {

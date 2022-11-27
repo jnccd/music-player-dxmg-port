@@ -70,7 +70,7 @@ namespace MusicPlayerDXMonoGamePort
 
         // Visualization
         public Visualizations VisSetting = (Visualizations)config.Default.Vis;
-        public BackGroundModes BgModes = BackGroundModes.None;
+        public BackGroundModes BgModes = (BackGroundModes)config.Default.Background;
         public Color primaryColor = Color.FromNonPremultiplied(25, 75, 255, 255);
         public Color secondaryColor = Color.Green;
         public Color backgroundColor = Color.White;
@@ -239,6 +239,8 @@ namespace MusicPlayerDXMonoGamePort
 
             BlurredTex = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
             TempBlur = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
+            Assets.gaussianBlurV.Parameters["InvTexsize"].SetValue(new Vector2(1 / (float)BlurredTex.Width, 1 / (float)BlurredTex.Height));
+            Assets.gaussianBlurH.Parameters["InvTexsize"].SetValue(new Vector2(1 / (float)BlurredTex.Width, 1 / (float)BlurredTex.Height));
             backgroundColor = config.Default.BackgroundColor.ToXNAColor();
 
             //InactiveSleepTime = new TimeSpan(0);
@@ -1914,21 +1916,17 @@ namespace MusicPlayerDXMonoGamePort
         }
         void EndBlur()
         {
-            Assets.gaussianBlur.Parameters["horz"].SetValue(false);
-            Assets.gaussianBlur.Parameters["InvTexsize"].SetValue(new Vector2(1 / (float)BlurredTex.Width, 1 / (float)BlurredTex.Height));
             GraphicsDevice.SetRenderTarget(BlurredTex);
             GraphicsDevice.Clear(Color.Transparent);
-            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlur);
+            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlurV);
             spriteBatch.Draw(TempBlur, Vector2.Zero, Color.White);
             spriteBatch.End();
-            GraphicsDevice.SetRenderTarget(null);
         }
         void DrawBlurredTex()
         {
             TempVector.X = -50;
             TempVector.Y = -50;
-            Assets.gaussianBlur.Parameters["horz"].SetValue(true);
-            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlur);
+            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlurH);
             spriteBatch.Draw(BlurredTex, TempVector, Color.White);
             spriteBatch.End();
         }
