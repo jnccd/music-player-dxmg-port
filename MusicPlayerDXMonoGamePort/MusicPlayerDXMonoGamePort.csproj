@@ -9,9 +9,12 @@
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Icon.ico</ApplicationIcon>
+    <ApplicationIcon>shell32_246.ico</ApplicationIcon>
     <StartupObject>MusicPlayerDXMonoGamePort.Program</StartupObject>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Include="shell32_246.ico" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MediaToolkit" Version="1.1.0.1" />
     <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.1.303" />
