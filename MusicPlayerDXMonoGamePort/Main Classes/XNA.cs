@@ -239,8 +239,7 @@ namespace MusicPlayerDXMonoGamePort
 
             BlurredTex = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
             TempBlur = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
-            Assets.gaussianBlurV.Parameters["InvTexsize"].SetValue(new Vector2(1 / (float)BlurredTex.Width, 1 / (float)BlurredTex.Height));
-            Assets.gaussianBlurH.Parameters["InvTexsize"].SetValue(new Vector2(1 / (float)BlurredTex.Width, 1 / (float)BlurredTex.Height));
+            Assets.gaussianBlur.Parameters["InvTexsize"].SetValue(new Vector2(1 / (float)BlurredTex.Width, 1 / (float)BlurredTex.Height));
             backgroundColor = config.Default.BackgroundColor.ToXNAColor();
 
             //InactiveSleepTime = new TimeSpan(0);
@@ -1917,8 +1916,10 @@ namespace MusicPlayerDXMonoGamePort
         void EndBlur()
         {
             GraphicsDevice.SetRenderTarget(BlurredTex);
+            Assets.gaussianBlur.Parameters["BlurWeights"].SetValue(Assets.vBlurWeights);
+            Assets.gaussianBlur.Parameters["horz"].SetValue(false);
             GraphicsDevice.Clear(Color.Transparent);
-            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlurV);
+            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlur);
             spriteBatch.Draw(TempBlur, Vector2.Zero, Color.White);
             spriteBatch.End();
         }
@@ -1926,7 +1927,9 @@ namespace MusicPlayerDXMonoGamePort
         {
             TempVector.X = -50;
             TempVector.Y = -50;
-            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlurH);
+            Assets.gaussianBlur.Parameters["BlurWeights"].SetValue(Assets.hBlurWeights);
+            Assets.gaussianBlur.Parameters["horz"].SetValue(true);
+            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlur);
             spriteBatch.Draw(BlurredTex, TempVector, Color.White);
             spriteBatch.End();
         }
