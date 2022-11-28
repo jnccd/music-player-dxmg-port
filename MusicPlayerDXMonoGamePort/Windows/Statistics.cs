@@ -248,8 +248,13 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        Process.Start("http://www.microsoft.com");
-                        Process.Start(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().GetYoutubeVideoURL());
+                        new Process
+                        {
+                            StartInfo = new ProcessStartInfo(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().GetYoutubeVideoURL())
+                            {
+                                UseShellExecute = true
+                            }
+                        }.Start();
                     }
                     catch (Exception ex) { 
                         MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
@@ -263,7 +268,13 @@ namespace MusicPlayerDXMonoGamePort
                             {
                                 int seconds = (int)(Assets.Channel32.Position / (double)Assets.Channel32.Length * Assets.Channel32.TotalTime.TotalSeconds);
                                 Uri U = new Uri(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().GetYoutubeVideoURL() + "&t=" + seconds + "s");
-                                Process.Start(U.ToString());
+                                new Process
+                                {
+                                    StartInfo = new ProcessStartInfo(U.ToString())
+                                    {
+                                        UseShellExecute = true
+                                    }
+                                }.Start();
 
                                 if (Assets.IsPlaying())
                                     Assets.PlayPause();
