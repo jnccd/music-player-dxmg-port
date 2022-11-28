@@ -341,17 +341,17 @@ namespace MusicPlayerDXMonoGamePort
                 bDiscordRPC.Enabled = false;
                 config.Default.DiscordRPCActive = !config.Default.DiscordRPCActive;
 
-                //if (config.Default.DiscordRPCActive)
-                //{
-                //    DiscordRPCWrapper.Initialize("460490126607384576");
-                //    Program.game.UpdateDiscordRPC();
-                //    bDiscordRPC.Text = "Deactivate DiscordRPC";
-                //}
-                //else
-                //{
-                //    DiscordRPCWrapper.Shutdown();
-                //    bDiscordRPC.Text = "Activate DiscordRPC";
-                //}
+                if (config.Default.DiscordRPCActive)
+                {
+                    DiscordRPCWrapper.Initialize("460490126607384576");
+                    Program.game.UpdateDiscordRPC();
+                    bDiscordRPC.Text = "Deactivate DiscordRPC";
+                }
+                else
+                {
+                    DiscordRPCWrapper.Shutdown();
+                    bDiscordRPC.Text = "Activate DiscordRPC";
+                }
 
                 Task.Factory.StartNew(() =>
                 {

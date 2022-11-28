@@ -12,7 +12,6 @@ namespace MusicPlayerDXMonoGamePort
 
         public static void Initialize(string clientId)
         {
-            return;
             handlers = new DiscordRpc.EventHandlers();
 
             handlers.readyCallback = ReadyCallback;
@@ -24,7 +23,6 @@ namespace MusicPlayerDXMonoGamePort
 
         public static void UpdatePresence(string state)
         {
-            return;
             presence.details = "";
             presence.state = state;
 
@@ -40,7 +38,6 @@ namespace MusicPlayerDXMonoGamePort
         }
         public static void UpdatePresence(string details, string state, long startTimestamp, long endTimestamp)
         {
-            return;
             presence.details = details;
             presence.state = state;
 
@@ -56,7 +53,6 @@ namespace MusicPlayerDXMonoGamePort
         }
         public static void UpdatePresence(string details, string state, long startTimestamp, long endTimestamp, string largeImageKey, string largeImageText, string smallImageKey, string smallImageText)
         {
-            return;
             presence.details = details;
             presence.state = state;
 
@@ -72,7 +68,6 @@ namespace MusicPlayerDXMonoGamePort
         }
         public static void UpdatePresence(string details, string state, DateTime startTimestamp, DateTime endTimestamp)
         {
-            return;
             presence.details = details;
             presence.state = state;
 
@@ -96,7 +91,6 @@ namespace MusicPlayerDXMonoGamePort
         }
         public static void UpdatePresence(string details, string state, DateTime startTimestamp, DateTime endTimestamp, string largeImageKey, string largeImageText, string smallImageKey, string smallImageText, bool ElapsedTime)
         {
-            return;
             presence.details = details;
             presence.state = state;
 
@@ -129,13 +123,11 @@ namespace MusicPlayerDXMonoGamePort
 
         public static void RunCallbacks()
         {
-            return;
             DiscordRpc.RunCallbacks();
         }
 
         public static void Shutdown()
         {
-            return;
             DiscordRpc.Shutdown();
         }
 

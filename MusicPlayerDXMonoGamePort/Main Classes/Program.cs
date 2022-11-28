@@ -144,8 +144,8 @@ namespace MusicPlayerDXMonoGamePort
             Program.args = args;
 
             InterceptKeys._hookID = InterceptKeys.SetHook(InterceptKeys._proc);
-            //if (config.Default.DiscordRPCActive)
-            //    DiscordRPCWrapper.Initialize("460490126607384576");
+            if (config.Default.DiscordRPCActive)
+                DiscordRPCWrapper.Initialize("460490126607384576");
 
             #region clear old browser requests
             if (config.Default.BrowserDownloadFolderPath != "" && config.Default.BrowserDownloadFolderPath != null)
