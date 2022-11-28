@@ -1208,13 +1208,13 @@ namespace MusicPlayerDXMonoGamePort
             for (int i = 0; i < ScreenBoxes.Length; i++)
                 ScreenBoxes[i] = new Rectangle(Screen.AllScreens[i].WorkingArea.X, Screen.AllScreens[i].WorkingArea.Y,
                     Screen.AllScreens[i].WorkingArea.Width, Screen.AllScreens[i].WorkingArea.Height - 56);
-            
+
             WindowPoints[0] = new Point(WindowBounds.X, WindowBounds.Y);
             WindowPoints[1] = new Point(WindowBounds.X + WindowBounds.Width, WindowBounds.Y);
             WindowPoints[2] = new Point(WindowBounds.X, WindowBounds.Y + WindowBounds.Height);
             WindowPoints[3] = new Point(WindowBounds.X + WindowBounds.Width, WindowBounds.Y + WindowBounds.Height);
 
-            Screen Main = Screen.FromRectangle(gameWindowForm.Bounds);
+            Screen Main = Screen.FromRectangle(new System.Drawing.Rectangle(WindowBounds.X, WindowBounds.Y, WindowBounds.Width, WindowBounds.Height));
             if (Main == null)
                 Main = Screen.PrimaryScreen;
 
