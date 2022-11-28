@@ -210,223 +210,232 @@ namespace MusicPlayerDXMonoGamePort
 
                 dataGridView1.Rows[e.RowIndex].Cells[0].Selected = true;
 
-                //ContextMenu m = new ContextMenu();
-                //m.MenuItems.Add(new MenuItem("Play", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        if (!Assets.PlayPlaylistSong(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3"))
-                //            MessageBox.Show("This entry isnt linked to a mp3 file!");
-                //    }
-                //    catch { }
-                //})));
-                //m.MenuItems.Add(new MenuItem("Queue", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        Assets.QueueNewSong(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString(), false);
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
-                //m.MenuItems.Add(new MenuItem("Copy Title to Clipboard", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        Clipboard.SetText(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
-                //m.MenuItems.Add(new MenuItem("Copy URL to Clipboard", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        Clipboard.SetText(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().GetYoutubeVideoURL());
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
-                //m.MenuItems.Add(new MenuItem("Open in Browser", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        Process.Start(new Uri(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().GetYoutubeVideoURL()).ToString());
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
-                //if (dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongName)))
-                //    m.MenuItems.Add(new MenuItem("Open in Browser with timestamp", ((object s, EventArgs ev) =>
-                //    {
-                //        try
-                //        {
-                //            Task.Factory.StartNew(() =>
-                //            {
-                //                int seconds = (int)(Assets.Channel32.Position / (double)Assets.Channel32.Length * Assets.Channel32.TotalTime.TotalSeconds);
-                //                Uri U = new Uri(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().GetYoutubeVideoURL() + "&t=" + seconds + "s");
-                //                Process.Start(U.ToString());
+                ContextMenuStrip m = new ContextMenuStrip();
+                m.Items.Add(new ToolStripMenuItem("Play", null, (object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        if (!Assets.PlayPlaylistSong(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3"))
+                            MessageBox.Show("This entry isnt linked to a mp3 file!");
+                    }
+                    catch { }
+                }));
+                m.Items.Add(new ToolStripMenuItem("Queue", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        Assets.QueueNewSong(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString(), false);
+                    }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                })));
+                m.Items.Add(new ToolStripMenuItem("Copy Title to Clipboard", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        Clipboard.SetText(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
+                    }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                })));
+                m.Items.Add(new ToolStripMenuItem("Copy URL to Clipboard", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        Clipboard.SetText(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().GetYoutubeVideoURL());
+                    }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                })));
+                m.Items.Add(new ToolStripMenuItem("Open in Browser", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        Process.Start("http://www.microsoft.com");
+                        Process.Start(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().GetYoutubeVideoURL());
+                    }
+                    catch (Exception ex) { 
+                        MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                })));
+                if (dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongName)))
+                    m.Items.Add(new ToolStripMenuItem("Open in Browser with timestamp", null, ((object s, EventArgs ev) =>
+                    {
+                        try
+                        {
+                            Task.Factory.StartNew(() =>
+                            {
+                                int seconds = (int)(Assets.Channel32.Position / (double)Assets.Channel32.Length * Assets.Channel32.TotalTime.TotalSeconds);
+                                Uri U = new Uri(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().GetYoutubeVideoURL() + "&t=" + seconds + "s");
+                                Process.Start(U.ToString());
 
-                //                if (Assets.IsPlaying())
-                //                    Assets.PlayPause();
-                //            });
-                //        }
-                //        catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //    })));
-                //m.MenuItems.Add(new MenuItem("Open in Explorer", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
-                //        if (!File.Exists(path))
-                //            return;
-                //        else
-                //            Process.Start("explorer.exe", "/select, \"" + path + "\"");
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
-                //m.MenuItems.Add(new MenuItem("Reset Volume Multiplier", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        int UpvotedSongNamesIndex = Assets.UpvotedSongData.FindIndex(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
-                //        if (UpvotedSongNamesIndex != -1)
-                //        {
-                //            Assets.UpvotedSongData[UpvotedSongNamesIndex].Volume = -1;
-                //            Assets.SaveUserSettings(false);
-                //            bRefresh_Click(null, EventArgs.Empty);
-                //        }
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
-                //m.MenuItems.Add(new MenuItem("Rename", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
-                //        int UpvotedSongNamesIndex = Assets.UpvotedSongData.FindIndex(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
-                //        int PlaylistIndex = Assets.Playlist.IndexOf(path);
+                                if (Assets.IsPlaying())
+                                    Assets.PlayPause();
+                            });
+                        }
+                        catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                    })));
+                m.Items.Add(new ToolStripMenuItem("Open in Explorer", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
+                        if (!File.Exists(path))
+                            return;
+                        else
+                            Process.Start("explorer.exe", "/select, \"" + path + "\"");
+                    }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                })));
+                m.Items.Add(new ToolStripMenuItem("Reset Volume Multiplier", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        int UpvotedSongNamesIndex = Assets.UpvotedSongData.FindIndex(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
+                        if (UpvotedSongNamesIndex != -1)
+                        {
+                            Assets.UpvotedSongData[UpvotedSongNamesIndex].Volume = -1;
+                            Assets.SaveUserSettings(false);
+                            bRefresh_Click(null, EventArgs.Empty);
+                        }
+                    }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                })));
+                m.Items.Add(new ToolStripMenuItem("Rename", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
+                        int UpvotedSongNamesIndex = Assets.UpvotedSongData.FindIndex(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
+                        int PlaylistIndex = Assets.Playlist.IndexOf(path);
 
-                //        if (!File.Exists(path))
-                //            return;
+                        if (!File.Exists(path))
+                            return;
 
-                //        if (dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongName)))
-                //        {
-                //            MessageBox.Show("Sorry Dave but im afraight I cant do that\n(You cant play a file and rename it at the same time!)");
-                //            return;
-                //        }
+                        if (dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongName)))
+                        {
+                            MessageBox.Show("Sorry Dave but im afraight I cant do that\n(You cant play a file and rename it at the same time!)");
+                            return;
+                        }
 
-                //        stringDialog Dia = new stringDialog("What name should it get?", dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
-                //        Dia.ShowDialog();
-                //        if (Dia.result == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString())
-                //        {
-                //            MessageBox.Show("You didn't change the name...");
-                //        }
-                //        else if (Dia.result != "")
-                //        {
-                //            try
-                //            {
-                //                string dest = path.Split('\\').Reverse().Skip(1).Reverse().Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";
-                //                File.Move(path, dest);
+                        stringDialog Dia = new stringDialog("What name should it get?", dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
+                        Dia.ShowDialog();
+                        if (Dia.result == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString())
+                        {
+                            MessageBox.Show("You didn't change the name...");
+                        }
+                        else if (Dia.result != "")
+                        {
+                            try
+                            {
+                                string dest = path.Split('\\').Reverse().Skip(1).Reverse().Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";
+                                File.Move(path, dest);
 
-                //                string historyPath = Values.CurrentExecutablePath + "\\History.txt";
-                //                if (File.Exists(historyPath))
-                //                {
-                //                    string[] historyContent = File.ReadAllLines(historyPath);
-                //                    for (int i = 0; i < historyContent.Length; i++)
-                //                    {
-                //                        string[] split = historyContent[i].Split(':');
-                //                        if (split[0] == Assets.UpvotedSongData[UpvotedSongNamesIndex].Name)
-                //                        {
-                //                            split[0] = Dia.result + ".mp3";
-                //                            historyContent[i] = split.Aggregate((y, j) => y + ":" + j);
-                //                        }
-                //                    }
-                //                    File.Delete(historyPath);
-                //                    File.WriteAllLines(historyPath, historyContent);
-                //                }
+                                string historyPath = Values.CurrentExecutablePath + "\\History.txt";
+                                if (File.Exists(historyPath))
+                                {
+                                    string[] historyContent = File.ReadAllLines(historyPath);
+                                    for (int i = 0; i < historyContent.Length; i++)
+                                    {
+                                        string[] split = historyContent[i].Split(':');
+                                        if (split[0] == Assets.UpvotedSongData[UpvotedSongNamesIndex].Name)
+                                        {
+                                            split[0] = Dia.result + ".mp3";
+                                            historyContent[i] = split.Aggregate((y, j) => y + ":" + j);
+                                        }
+                                    }
+                                    File.Delete(historyPath);
+                                    File.WriteAllLines(historyPath, historyContent);
+                                }
 
-                //                Assets.UpvotedSongData[UpvotedSongNamesIndex].Name = Dia.result + ".mp3";
-                //                Assets.SaveUserSettings(false);
+                                Assets.UpvotedSongData[UpvotedSongNamesIndex].Name = Dia.result + ".mp3";
+                                Assets.SaveUserSettings(false);
 
-                //                Assets.Playlist[PlaylistIndex] = dest;
+                                Assets.Playlist[PlaylistIndex] = dest;
 
-                //                Assets.CreateSongChoosingList();
-                //                bRefresh_Click(null, EventArgs.Empty);
-                //            }
-                //            catch (Exception ex) { MessageBox.Show(ex.ToString()); }
-                //        }
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
-                //m.MenuItems.Add(new MenuItem("Update Mp3-Metadata of Row-Selection", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        if (parent.BackgroundOperationRunning || parent.ConsoleBackgroundOperationRunning)
-                //        {
-                //            MessageBox.Show("Multiple BackgroundOperations can not run at the same time!\nWait until the other operation is finished");
-                //            return;
-                //        }
+                                Assets.CreateSongChoosingList();
+                                bRefresh_Click(null, EventArgs.Empty);
+                            }
+                            catch (Exception ex) { MessageBox.Show(ex.ToString()); }
+                        }
+                    }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                })));
+                m.Items.Add(new ToolStripMenuItem("Update Mp3-Metadata of Row-Selection", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        if (parent.BackgroundOperationRunning || parent.ConsoleBackgroundOperationRunning)
+                        {
+                            MessageBox.Show("Multiple BackgroundOperations can not run at the same time!\nWait until the other operation is finished");
+                            return;
+                        }
 
-                //        parent.BackgroundOperationRunning = true;
+                        parent.BackgroundOperationRunning = true;
 
-                //        List<string> SongPaths = new List<string>();
-                //        for (int i = 0; i < dataGridView1.Rows.Count; i++)
-                //            if (dataGridView1.Rows[i].Selected)
-                //                SongPaths.Add(Assets.GetSongPathFromSongName((string)dataGridView1.Rows[i].Cells[0].Value));
-                //        UpdateMetadata updat = new UpdateMetadata(SongPaths.ToArray());
+                        List<string> SongPaths = new List<string>();
+                        for (int i = 0; i < dataGridView1.Rows.Count; i++)
+                            if (dataGridView1.Rows[i].Selected)
+                                SongPaths.Add(Assets.GetSongPathFromSongName((string)dataGridView1.Rows[i].Cells[0].Value));
+                        UpdateMetadata updat = new UpdateMetadata(SongPaths.ToArray());
 
-                //        if (SongPaths.Count > 0)
-                //            updat.ShowDialog();
-                //        else
-                //            MessageBox.Show("You havent selected anything!\nMake sure to select entire Rows");
+                        if (SongPaths.Count > 0)
+                            updat.ShowDialog();
+                        else
+                            MessageBox.Show("You havent selected anything!\nMake sure to select entire Rows");
 
-                //        parent.BackgroundOperationRunning = false;
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
-                //m.MenuItems.Add(new MenuItem("Show Cover Picture", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
-                //        TagLib.File file = TagLib.File.Create(path);
-                //        TagLib.IPicture pic = file.Tag.Pictures[0];
-                //        MemoryStream ms = new MemoryStream(pic.Data.Data);
-                //        if (ms != null && ms.Length > 4096)
-                //        {
-                //            Image currentImage = Image.FromStream(ms);
-                //            path = Values.CurrentExecutablePath + "\\Downloads\\Thumbnail.png";
-                //            currentImage.Save(path);
-                //            Process.Start(path);
-                //        }
-                //        ms.Close();
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
-                //m.MenuItems.Add(new MenuItem("Filter for...", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        stringDialog dia = new stringDialog("What do you want to filter for?", "");
-                //        dia.ShowDialog();
-                //        if (dia.result != "" && dia.result != null)
-                //            filterFor(dia.result);
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
-                //m.MenuItems.Add(new MenuItem("Delete Entry", ((object s, EventArgs ev) =>
-                //{
-                //    try
-                //    {
-                //        int index = Assets.UpvotedSongData.FindIndex(x => x.Name == dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3");
-                //        if (index >= 0)
-                //            Assets.UpvotedSongData.RemoveAt(index);
+                        parent.BackgroundOperationRunning = false;
+                    }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                })));
+                m.Items.Add(new ToolStripMenuItem("Show Cover Picture", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
+                        TagLib.File file = TagLib.File.Create(path);
+                        TagLib.IPicture pic = file.Tag.Pictures[0];
+                        MemoryStream ms = new MemoryStream(pic.Data.Data);
+                        if (ms != null && ms.Length > 4096)
+                        {
+                            Image currentImage = Image.FromStream(ms);
+                            path = Values.CurrentExecutablePath + "\\Downloads\\Thumbnail.png";
+                            currentImage.Save(path);
+                            new Process
+                            {
+                                StartInfo = new ProcessStartInfo(path)
+                                {
+                                    UseShellExecute = true
+                                }
+                            }.Start();
+                        }
+                        ms.Close();
+                    }
+                    catch (Exception e) { 
+                        MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!\n"+ e.ToString()); }
+                })));
+                m.Items.Add(new ToolStripMenuItem("Filter for...", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        stringDialog dia = new stringDialog("What do you want to filter for?", "");
+                        dia.ShowDialog();
+                        if (dia.result != "" && dia.result != null)
+                            filterFor(dia.result);
+                    }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                })));
+                m.Items.Add(new ToolStripMenuItem("Delete Entry", null, ((object s, EventArgs ev) =>
+                {
+                    try
+                    {
+                        int index = Assets.UpvotedSongData.FindIndex(x => x.Name == dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3");
+                        if (index >= 0)
+                            Assets.UpvotedSongData.RemoveAt(index);
 
-                //        bRefresh_Click(null, EventArgs.Empty);
-                //    }
-                //    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
-                //})));
+                        bRefresh_Click(null, EventArgs.Empty);
+                    }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                })));
 
-                //currentMouseOverRow = e.RowIndex;
-                //m.Show(dataGridView1, new Point(e.X + dataGridView1.GetColumnDisplayRectangle(e.ColumnIndex, true).X, e.Y + dataGridView1.GetRowDisplayRectangle(e.RowIndex, true).Y));
+                currentMouseOverRow = e.RowIndex;
+                m.Show(dataGridView1, new Point(e.X + dataGridView1.GetColumnDisplayRectangle(e.ColumnIndex, true).X, e.Y + dataGridView1.GetRowDisplayRectangle(e.RowIndex, true).Y));
             }
 
             if (e.RowIndex >= 0 && e.ColumnIndex >= 0)

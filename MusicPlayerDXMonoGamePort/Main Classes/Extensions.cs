@@ -116,7 +116,7 @@ namespace MusicPlayerDXMonoGamePort
         public static string GetYoutubeVideoID(this string search)
         {
             string id = "";
-            $"youtube-dl \"ytsearch:{search}\" --get-id --skip-download --no-playlist".RunAsConsoleCommand(10, () => { }, (string o, string err) => {
+            $"yt-dlp \"ytsearch:{search}\" --get-id --skip-download --no-playlist".RunAsConsoleCommand(10, () => { }, (string o, string err) => {
                 id = o.Trim('\n');
             });
             return id;

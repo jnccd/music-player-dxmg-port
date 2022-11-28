@@ -230,9 +230,9 @@ namespace MusicPlayerDXMonoGamePort
 
             Console.WriteLine("Updating youtube-dl...");
             Task.Factory.StartNew(() => 
-                "youtube-dl -U".RunAsConsoleCommand(360, () => { }, (string o, string err) => 
+                "yt-dlp -U".RunAsConsoleCommand(360, () => { }, (string o, string err) => 
                 { 
-                    //Console.Write(o + err); 
+                    Console.Write(o + err); 
                 }));
 
             Assets.Load(Content, GraphicsDevice);
@@ -391,9 +391,9 @@ namespace MusicPlayerDXMonoGamePort
                                     Path = "";
                                     originY = Console.CursorTop + 1;
                                 }
-                                else if (Path.StartsWith("youtube-dl -U"))
+                                else if (Path.StartsWith("yt-dlp -U"))
                                 {
-                                    "youtube-dl -U".RunAsConsoleCommand(360, () => { }, (string o, string err) => { Console.Write(o + e); });
+                                    "yt-dlp -U".RunAsConsoleCommand(360, () => { }, (string o, string err) => { Console.Write(o + e); });
                                 }
                                 else if (Path == "/showinweb" || Path == "/showinnet" || Path == "/net" || Path == "/web")
                                 {
@@ -541,7 +541,7 @@ namespace MusicPlayerDXMonoGamePort
 
                 // Download Video File
                 Process P = new Process();
-                P.StartInfo = new ProcessStartInfo("youtube-dl.exe", download + $" -x --audio-format mp3 -o \"{downloadTargetFolder}%(title)s.%(ext)s\" --add-metadata --embed-thumbnail");
+                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", download + $" -x --audio-format mp3 -o \"{downloadTargetFolder}%(title)s.%(ext)s\" --add-metadata --embed-thumbnail");
                 P.StartInfo.UseShellExecute = false;
                 P.Start();
                 P.WaitForExit();
@@ -626,7 +626,7 @@ namespace MusicPlayerDXMonoGamePort
                 Console.ForegroundColor = ConsoleColor.Yellow;
 
                 Process P = new Process();
-                P.StartInfo = new ProcessStartInfo("youtube-dl.exe", $"-f mp4 -o \"{config.Default.BrowserDownloadFolderPath}\\%(title)s.%(ext)s\" {url}");
+                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", $"-f mp4 -o \"{config.Default.BrowserDownloadFolderPath}\\%(title)s.%(ext)s\" {url}");
                 P.StartInfo.UseShellExecute = false;
 
                 P.Start();
