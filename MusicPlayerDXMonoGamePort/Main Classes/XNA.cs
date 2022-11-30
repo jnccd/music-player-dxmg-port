@@ -517,7 +517,7 @@ namespace MusicPlayerDXMonoGamePort
                 }
             });
         }
-        public bool Download(string download)
+        public bool Download(string downloadInput)
         {
             if (BackgroundOperationRunning || ConsoleBackgroundOperationRunning)
             {
@@ -534,21 +534,27 @@ namespace MusicPlayerDXMonoGamePort
                 PlaybackState PlayState = Assets.output.PlaybackState;
                 
                 string downloadTargetFolder = Values.CurrentExecutablePath + "\\Downloads\\";
+                string download = downloadInput;
                 if (!download.StartsWith("https://"))
-                    download = $"\"ytsearch: {download}\"";
+                    download = $"\"ytsearch: {downloadInput}\"";
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
 
+                string output = $"\"{downloadTargetFolder}%(title)s.%(ext)s\"";
+                if ((download.Contains("ytsearch") || download.Contains("https://www.youtube.com")) 
+                        && !downloadInput.GetYoutubeVideoTitle().Contains(" - "))
+                    output = $"\"{downloadTargetFolder}%(uploader)s - %(title)s.%(ext)s\"";
+
                 // Download Video File
                 Process P = new Process();
-                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", download + $" -x --audio-format mp3 -o \"{downloadTargetFolder}%(title)s.%(ext)s\" --add-metadata --embed-thumbnail");
+                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", download + $" -x --audio-format mp3 -o {output} --add-metadata --embed-thumbnail");
                 P.StartInfo.UseShellExecute = false;
                 P.Start();
                 P.WaitForExit();
 
                 // move file to lib
                 string musicFile = Path.GetFileName(Directory.GetFiles(downloadTargetFolder).Where(x => x.EndsWith(".mp3")).First());
-                string targetPath = config.Default.MusicPath + "\\" + musicFile;
+                string targetPath = config.Default.MusicPath + "\\" + musicFile.Replace(" - Topic", "");
                 if (File.Exists(targetPath))
                     File.Delete(targetPath);
                 File.Move(downloadTargetFolder + musicFile, targetPath);

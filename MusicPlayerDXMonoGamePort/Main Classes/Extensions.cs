@@ -121,6 +121,14 @@ namespace MusicPlayerDXMonoGamePort
             });
             return id;
         }
+        public static string GetYoutubeVideoTitle(this string search)
+        {
+            string id = "";
+            $"yt-dlp \"ytsearch:{search}\" --get-title --skip-download --no-playlist".RunAsConsoleCommand(10, () => { }, (string o, string err) => {
+                id = o.Trim('\n');
+            });
+            return id;
+        }
         public static string GetYoutubeVideoURLFromID(this string id)
         {
             return "https://www.youtube.com/watch?v=" + id;
