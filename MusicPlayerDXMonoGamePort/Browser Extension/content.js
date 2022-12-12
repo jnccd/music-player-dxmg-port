@@ -1,8 +1,7 @@
 var buttons = [];
 
-window.ontransitionend = function () { 
-  var check = document.getElementsByClassName('custom-music-player-download-button');
-  if (check.length == 0) {
+window.ontransitionend = function () {
+  if (buttons.length == 0) {
     
 	/// song download button
     addButton("Song Download", function(){
@@ -33,8 +32,12 @@ window.ontransitionend = function () {
 	});
 	
     /// properly resize ma bois
-    updateButtonSize();
-	window.addEventListener('resize', updateButtonSize);
+    //updateButtonSize();
+	//window.addEventListener('resize', updateButtonSize);
+	
+	/// Remove pesky official download button advertisement
+	var adDownload = document.getElementsByClassName('style-scope ytd-download-button-renderer')[0]
+	adDownload.parentNode.removeChild(adDownload)
     
 	console.log('MusicPlayer buttons added!');
   }
@@ -43,29 +46,21 @@ window.ontransitionend = function () {
 function addButton(text, clickEvent)
 {
     /// prepare button object
-    var b = document.createElement('ytd-subscribe-button-renderer');
-	b.className = 'custom-music-player-download-button';
+    var b = document.createElement('ytd-button-renderer');
+	b.className = 'style-scope ytd-menu-renderer';
 	b.setAttribute('is-icon-button', '');
+	b.style.width='125px';
 	b.addEventListener("click", function() {
       clickEvent();
     });
-	var bp = document.createElement('paper-button');
-	bp.className = 'style-scope ytd-subscribe-button-renderer';
-	b.append(bp);
-	var bs = document.createElement('yt-formatted-string');
-	bs.id = 'text';
-	bs.className = 'style-scope ytd-subscribe-button-renderer';
-	bp.append(bs);
     
     /// add button to document
-    var container = document.getElementsByClassName('style-scope ytd-video-secondary-info-renderer')[0];
-    if (container.children.length < 4)
-        container.appendChild(container.children[1].cloneNode());
-	container.children[3].appendChild(b);
+    var container = document.getElementsByClassName('item style-scope ytd-watch-metadata')[0];
+	container.appendChild(b);
     
     /// post add adjustments
-    b.children[0].style.height = '35px';
     b.children[0].append(document.createTextNode(text));
+	b.children[0].className = "yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-m yt-spec-button-shape-next--icon-leading";
     
     buttons[buttons.length] = b;
 }
