@@ -46,7 +46,9 @@ namespace MusicPlayerDXMonoGamePort
         private void DropShadow_GotFocus(object sender, EventArgs e)
         {
             ShowWindow(Handle, 4);
-            parentForm.BringToFront();
+            if (parentForm != null)
+                ShowWindow(parentForm.Handle, 0x0010); // SW_SHOWNOACTIVATE
+            //parentForm.BringToFront();
         }
 
         private void ParentForm_GotFocus(object sender, EventArgs e)
