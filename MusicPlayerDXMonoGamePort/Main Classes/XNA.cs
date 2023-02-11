@@ -772,7 +772,7 @@ namespace MusicPlayerDXMonoGamePort
                     {
                         try
                         {
-                            Thread.Sleep(100);
+                            Thread.Sleep(500);
                             RequestedSong.Default.Reload();
                             if (RequestedSong.Default.RequestedSongString != "")
                             {
