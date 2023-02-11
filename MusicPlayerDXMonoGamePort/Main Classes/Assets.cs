@@ -526,6 +526,11 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     byte[] buffer = new byte[16384];
 
+                    EntireSongWaveBuffer = null;
+
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+
                     Channel32ReaderThreaded.Position = 0;
                     EntireSongWaveBuffer = new GigaFloatList();
                     
