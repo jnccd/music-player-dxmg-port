@@ -169,6 +169,7 @@ namespace MusicPlayerDXMonoGamePort
         // MultiThreading
         public static Task T = null;
         public static bool AbortAbort = false;
+        public static bool SavingToFileRightNow = false;
 
         // NAudio
         public static WaveChannel32 Channel32;
@@ -199,6 +200,7 @@ namespace MusicPlayerDXMonoGamePort
 
         // Debug
         public static long CurrentDebugTime = 0;
+        public static long CurrentDebugTime2 = 0;
 
         // Loading / Disposing Data
         public static void LoadLoadingScreen(ContentManager Content, GraphicsDevice GD)
@@ -523,11 +525,6 @@ namespace MusicPlayerDXMonoGamePort
                 lock (Channel32ReaderThreaded)
                 {
                     byte[] buffer = new byte[16384];
-
-                    EntireSongWaveBuffer = null;
-
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
 
                     Channel32ReaderThreaded.Position = 0;
                     EntireSongWaveBuffer = new GigaFloatList();
@@ -976,25 +973,41 @@ namespace MusicPlayerDXMonoGamePort
                 return -x.Score.CompareTo(y.Score);
             });
 
-            config.Default.SongPaths = UpvotedSongData.Select(x => x.Name).ToArray();
-            config.Default.SongScores = UpvotedSongData.Select(x => x.Score).ToArray();
-            config.Default.SongUpvoteStreak = UpvotedSongData.Select(x => x.Streak).ToArray();
-            config.Default.SongTotalLikes = UpvotedSongData.Select(x => x.TotalLikes).ToArray();
-            config.Default.SongTotalDislikes = UpvotedSongData.Select(x => x.TotalDislikes).ToArray();
-            config.Default.SongDate = UpvotedSongData.Select(x => x.AddingDates).ToArray();
-            config.Default.SongVolume = UpvotedSongData.Select(x => x.Volume).ToArray();
+            Task.Run(() =>
+            {
+                if (!SavingToFileRightNow)
+                {
+                    SavingToFileRightNow = true;
 
-            config.Default.HistorySong = HistorySongData.Select(x => x.Name).ToArray();
-            config.Default.HistoryDate = HistorySongData.Select(x => x.Date).ToArray();
-            config.Default.HistoryChange = HistorySongData.Select(x => x.Change).ToArray();
+                    lock (UpvotedSongData)
+                    {
+                        lock (HistorySongData)
+                        {
+                            config.Default.SongPaths = UpvotedSongData.Select(x => x.Name).ToArray();
+                            config.Default.SongScores = UpvotedSongData.Select(x => x.Score).ToArray();
+                            config.Default.SongUpvoteStreak = UpvotedSongData.Select(x => x.Streak).ToArray();
+                            config.Default.SongTotalLikes = UpvotedSongData.Select(x => x.TotalLikes).ToArray();
+                            config.Default.SongTotalDislikes = UpvotedSongData.Select(x => x.TotalDislikes).ToArray();
+                            config.Default.SongDate = UpvotedSongData.Select(x => x.AddingDates).ToArray();
+                            config.Default.SongVolume = UpvotedSongData.Select(x => x.Volume).ToArray();
 
-            config.Default.Background = (int)Program.game.BgModes;
-            config.Default.Vis = (int)Program.game.VisSetting;
+                            config.Default.HistorySong = HistorySongData.Select(x => x.Name).ToArray();
+                            config.Default.HistoryDate = HistorySongData.Select(x => x.Date).ToArray();
+                            config.Default.HistoryChange = HistorySongData.Select(x => x.Change).ToArray();
 
-            config.Default.Col = System.Drawing.Color.FromArgb(Program.game.primaryColor.R, Program.game.primaryColor.G, Program.game.primaryColor.B);
-            config.Default.FirstStart = false;
+                            config.Default.Background = (int)Program.game.BgModes;
+                            config.Default.Vis = (int)Program.game.VisSetting;
 
-            config.Default.Save();
+                            config.Default.Col = System.Drawing.Color.FromArgb(Program.game.primaryColor.R, Program.game.primaryColor.G, Program.game.primaryColor.B);
+                            config.Default.FirstStart = false;
+
+                            config.Default.Save();
+                        }
+                    }
+
+                    SavingToFileRightNow = false;
+                }
+            });
         }
         private static float GetUpvoteWeight(float SongScore)
         {
@@ -1203,6 +1216,8 @@ namespace MusicPlayerDXMonoGamePort
         }
         public static void UpdateSongChoosingList(string SongPath)
         {
+            CurrentDebugTime2 = Stopwatch.GetTimestamp();
+
             // TODO: Fix doubled chance
             string SongName = SongPath.Split('\\').Last();
 
@@ -1225,6 +1240,8 @@ namespace MusicPlayerDXMonoGamePort
                 SongChoosingList.Insert(index, SongPath);
             for (int j = 0; j < count - amount; j++)
                 SongChoosingList.RemoveAt(index);
+
+            Debug.WriteLine("SongChoosingList " + (Stopwatch.GetTimestamp() - CurrentDebugTime2));
 #if DEBUG
             // testing shit
             TestChoosingListIntegrity();
@@ -1236,7 +1253,7 @@ namespace MusicPlayerDXMonoGamePort
             float ChanceIncreasePerUpvote = Playlist.Count / 700;
             if (UpvotedSongDataIndex >= 0)
             {
-                switch (0) // Im keeping old choosing algorhytms so I can experiment without fucking up too badly
+                switch (0) // Im keeping old choosing algorithms so I can experiment
                 {
                     case 0: // Default choosing
                         // Give songs with good ratio extra chance
@@ -1275,14 +1292,14 @@ namespace MusicPlayerDXMonoGamePort
         }
         private static void TestChoosingListIntegrity()
         {
-            for (int i = 0; i < UpvotedSongData.Count; i++)
-            {
-                float count = SongChoosingList.FindAll(x => x == UpvotedSongData[i].Path).Count;
-                float target = GetSongChoosingAmount(i) + 1;
+            //for (int i = 0; i < UpvotedSongData.Count; i++)
+            //{
+            //    float count = SongChoosingList.FindAll(x => x == UpvotedSongData[i].Path).Count;
+            //    float target = GetSongChoosingAmount(i) + 1;
 
-                if (Math.Abs(count - target) > 1  && UpvotedSongData[i].Path != null)
-                    UpvotedSongData.GetHashCode(); // Breakpoint here
-            }
+            //    if (Math.Abs(count - target) > 1 && UpvotedSongData[i].Path != null)
+            //        UpvotedSongData.GetHashCode(); // Breakpoint here
+            //}
         }
 
         // Draw Methods
