@@ -1210,7 +1210,7 @@ namespace MusicPlayerDXMonoGamePort
             int index = SongChoosingList.FindIndex(x => x == SongPath);
             if (index == -1)
             {
-                Console.WriteLine("oi that song doesnt even exist lol");
+                //Console.WriteLine("oi that song doesnt even exist lol");
                 return;
             }
             int i = index;
