@@ -122,6 +122,7 @@ namespace MusicPlayerDXMonoGamePort
         float X1;
         float X2;
         int ScrollWheelCooldown = 0;
+        bool wasClickedOn = false;
 
         public OptionsMenu optionsMenu;
         public Statistics statistics;
@@ -824,6 +825,8 @@ namespace MusicPlayerDXMonoGamePort
                 else
                     selectedControl = SelectedControl.DragWindow;
             }
+            if (Control.WasLMBJustPressed() && Control.GetMouseRect().Intersects(Values.WindowRect))
+                wasClickedOn = true;
             if (Control.WasLMBJustReleased())
             {
                 if (selectedControl == SelectedControl.DurationBar)
@@ -917,6 +920,9 @@ namespace MusicPlayerDXMonoGamePort
                     break;
             }
             gameWindowForm.Location = config.Default.WindowPos;
+
+            if (!wasClickedOn)
+                return;
 
             // Pause [Space]
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.Space))
