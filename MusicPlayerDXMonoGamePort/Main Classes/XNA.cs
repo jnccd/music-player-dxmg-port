@@ -1515,7 +1515,7 @@ namespace MusicPlayerDXMonoGamePort
                     TempRect.Y = 0;
                     TempRect.Width = Values.WindowRect.Width + 100;
                     TempRect.Height = Values.WindowRect.Height + 100;
-                    spriteBatch.Draw(Assets.White, TempRect, Color.FromNonPremultiplied(primaryColor.R / 2, primaryColor.G / 2, primaryColor.B / 2, 255 / 2));
+                    spriteBatch.Draw(Assets.White, TempRect, Color.FromNonPremultiplied(0, 0, 0, 75));
                     spriteBatch.End();
                     EndBlur();
                 }
