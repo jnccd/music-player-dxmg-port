@@ -962,6 +962,7 @@ namespace MusicPlayerDXMonoGamePort
                     Shadow = new DropShadow(gameWindowForm, true);
                     Shadow.Show();
                     Shadow.UpdateSizeLocation();
+                    gameWindowForm.BringToFront();
                 }
                 ForceBackgroundRedraw();
             }
