@@ -1505,8 +1505,8 @@ namespace MusicPlayerDXMonoGamePort
                     // Blurred Background
                     foreach (Screen S in Screen.AllScreens)
                     {
-                        TempRect.X = S.Bounds.X - gameWindowForm.Location.X + 50 + oldPos.X - newPos.X;
-                        TempRect.Y = S.Bounds.Y - gameWindowForm.Location.Y + 50 + oldPos.Y - newPos.Y;
+                        TempRect.X = S.Bounds.X - gameWindowForm.Location.X + 50;
+                        TempRect.Y = S.Bounds.Y - gameWindowForm.Location.Y + 50;
                         TempRect.Width = S.Bounds.Width;
                         TempRect.Height = S.Bounds.Height;
                         spriteBatch.Draw(Assets.bg, TempRect, Color.White);
@@ -1543,20 +1543,24 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     if (Assets.CoverPicture == null || ForcedCoverBackgroundRedraw)
                     {
-                        string path = Assets.currentlyPlayingSongPath;
-                        TagLib.File file = TagLib.File.Create(path);
-                        TagLib.IPicture pic = file.Tag.Pictures[0];
-                        MemoryStream ms = new MemoryStream(pic.Data.Data);
-                        if (ms != null && ms.Length > 4096)
+                        try
                         {
-                            System.Drawing.Image currentImage = System.Drawing.Image.FromStream(ms);
-                            path = Values.CurrentExecutablePath + "\\Downloads\\Thumbnail.png";
-                            Directory.CreateDirectory(Path.GetDirectoryName(path));
-                            using (var stream = File.Create(path)) { }
-                            currentImage.Save(path);
-                            Assets.CoverPicture = Texture2D.FromStream(Program.game.GraphicsDevice, new FileStream(path, FileMode.Open));
+                            string path = Assets.currentlyPlayingSongPath;
+                            TagLib.File file = TagLib.File.Create(path);
+                            TagLib.IPicture pic = file.Tag.Pictures[0];
+                            MemoryStream ms = new MemoryStream(pic.Data.Data);
+                            if (ms != null && ms.Length > 4096)
+                            {
+                                System.Drawing.Image currentImage = System.Drawing.Image.FromStream(ms);
+                                path = Values.CurrentExecutablePath + "\\Downloads\\Thumbnail.png";
+                                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                                using (var stream = File.Create(path)) { }
+                                currentImage.Save(path);
+                                Assets.CoverPicture = Texture2D.FromStream(Program.game.GraphicsDevice, new FileStream(path, FileMode.Open));
+                            }
+                            ms.Close();
                         }
-                        ms.Close();
+                        catch { }
                         ForcedCoverBackgroundRedraw = false;
                     }
 
