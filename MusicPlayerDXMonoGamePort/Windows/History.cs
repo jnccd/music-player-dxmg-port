@@ -30,10 +30,10 @@ namespace MusicPlayerDXMonoGamePort
             int RowIndex = dataGridView1.FirstDisplayedScrollingRowIndex;
             dataGridView1.Rows.Clear();
 
-            for (int i = 0; i < Assets.HistorySongData.Count; i++)
+            for (int i = 0; i < SongManager.HistorySongData.Count; i++)
             {
-                dataGridView1.Rows.Add(new object[] { Assets.HistorySongData[i].Name, DateTime.FromBinary(Assets.HistorySongData[i].Date), Assets.HistorySongData[i].Change });
-                if (!Config.Data.songDatabaseEntries.Select(x => x.Name).Contains(Assets.HistorySongData[i].Name + ".mp3"))
+                dataGridView1.Rows.Add(new object[] { SongManager.HistorySongData[i].Name, DateTime.FromBinary(SongManager.HistorySongData[i].Date), SongManager.HistorySongData[i].Change });
+                if (!Config.Data.songDatabaseEntries.Select(x => x.Name).Contains(SongManager.HistorySongData[i].Name + ".mp3"))
                     dataGridView1.Rows[dataGridView1.Rows.Count - 1].DefaultCellStyle.BackColor = Color.Red;
             }
 
@@ -45,7 +45,7 @@ namespace MusicPlayerDXMonoGamePort
         {
             if (e.Button == MouseButtons.Left)
             {
-                if (e.RowIndex >= 0 && !Assets.PlayPlaylistSong(dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3"))
+                if (e.RowIndex >= 0 && !SongManager.PlayPlaylistSong(dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3"))
                     MessageBox.Show("This entry isnt linked to a mp3 file!");
             }
         }
@@ -157,7 +157,7 @@ namespace MusicPlayerDXMonoGamePort
                 //                    ResultURL = "https://www.youtube.com" + cuthtml;
                 //                }
 
-                //                int seconds = (int)(Assets.Channel32.Position / (double)Assets.Channel32.Length * Assets.Channel32.TotalTime.TotalSeconds);
+                //                int seconds = (int)(SongManager.Channel32.Position / (double)SongManager.Channel32.Length * SongManager.Channel32.TotalTime.TotalSeconds);
                 //                Uri U = new Uri(ResultURL + "&t=" + seconds + "s");
                 //                Process.Start(U.ToString());
 

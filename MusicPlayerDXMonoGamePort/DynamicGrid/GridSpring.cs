@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using MusicPlayerDXMonoGamePort.Main_Classes;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -44,7 +45,7 @@ namespace MusicPlayerDXMonoGamePort
             {
                 lock (End2)
                 {
-                    Assets.DrawLine(End1.Pos, End2.Pos, 1, Program.game.primaryColor, SB);
+                    SongVisualization.DrawLine(End1.Pos, End2.Pos, 1, Program.game.primaryColor, SB);
                 }
             }
             //SB.DrawString(Assets.Font, ((int)(End1.Pos - End2.Pos).Length()).ToString(), (End1.Pos + End2.Pos) / 2, Color.Blue);
@@ -55,7 +56,7 @@ namespace MusicPlayerDXMonoGamePort
             {
                 lock (End2)
                 {
-                    Assets.DrawLine(End1.Pos + new Vector2(5), End2.Pos + new Vector2(5), 1, Color.Black * 0.6f, SB);
+                    SongVisualization.DrawLine(End1.Pos + new Vector2(5), End2.Pos + new Vector2(5), 1, Color.Black * 0.6f, SB);
                 }
             }
             //SB.DrawString(Assets.Font, ((int)(End1.Pos - End2.Pos).Length()).ToString(), (End1.Pos + End2.Pos) / 2, Color.Blue);

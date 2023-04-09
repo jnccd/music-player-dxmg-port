@@ -39,20 +39,20 @@ namespace MusicPlayerDXMonoGamePort
                 int vkCode = Marshal.ReadInt32(lParam);
                 // --------------------------- My code ---------------------------
 
-                if (Values.Timer > Assets.SongChangedTickTime + 30)
+                if (Values.Timer > SongManager.SongChangedTickTime + 30)
                 {
                     // Key Events
                     if ((Keys)vkCode == Keys.MediaPlayPause)
-                        Assets.PlayPause();
+                        SongManager.PlayPause();
 
                     if ((Keys)vkCode == Keys.MediaNextTrack)
-                        Assets.GetNextSong(false, true);
+                        SongManager.GetNextSong(false, true);
 
                     if ((Keys)vkCode == Keys.MediaPreviousTrack)
-                        Assets.GetPreviousSong();
+                        SongManager.GetPreviousSong();
 
                     if ((Keys)vkCode == Keys.MediaStop)
-                        Assets.IsCurrentSongUpvoted = !Assets.IsCurrentSongUpvoted;
+                        SongManager.IsCurrentSongUpvoted = !SongManager.IsCurrentSongUpvoted;
                 }
 
                 // --------------------------- My code ---------------------------

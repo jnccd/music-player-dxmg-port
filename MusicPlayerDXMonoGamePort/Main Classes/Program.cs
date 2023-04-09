@@ -80,8 +80,8 @@ namespace MusicPlayerDXMonoGamePort
                 config.Default.Save();
             }
 
-            Assets.HistorySongData = new List<HistorySong>();
-            string path = Assets.historyFilePath;
+            SongManager.HistorySongData = new List<HistorySong>();
+            string path = SongManager.historyFilePath;
             if (File.Exists(path))
             {
                 string[] Songs = File.ReadLines(path).ToArray();
@@ -99,7 +99,7 @@ namespace MusicPlayerDXMonoGamePort
                         Title = Path.GetFileNameWithoutExtension(Uri.UnescapeDataString(Split[2].Trim('\t')));
                     }
 
-                    Assets.HistorySongData.Add(new HistorySong(Title, ScoreChange, Time));
+                    SongManager.HistorySongData.Add(new HistorySong(Title, ScoreChange, Time));
                 }
             }
             #endregion
@@ -220,7 +220,7 @@ namespace MusicPlayerDXMonoGamePort
 
                 DiscordRPCWrapper.Shutdown();
                 InterceptKeys.UnhookWindowsHookEx(InterceptKeys._hookID);
-                Assets.DisposeNAudioData();
+                SongManager.DisposeNAudioData();
                 if (game.optionsMenu != null)
                     game.optionsMenu.InvokeIfRequired(game.optionsMenu.Close);
                 if (game.statistics != null)
@@ -330,7 +330,7 @@ start MusicPlayerDXMonoGamePort.exe");
                                 if (game.Download(split[0]) && split.Length > 1)
                                 {
                                     long secondspassed = Convert.ToInt64(split[1].Split('.')[0]);
-                                    Assets.Channel32.Position = secondspassed * Assets.Channel32.WaveFormat.AverageBytesPerSecond;
+                                    SongManager.Channel32.Position = secondspassed * SongManager.Channel32.WaveFormat.AverageBytesPerSecond;
                                 }
                             }
                             if (fileName == "MusicPlayer.VideoDownloadRequest")
