@@ -1,7 +1,6 @@
 ﻿using Configuration;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using MusicPlayerDXMonoGamePort.Main_Classes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

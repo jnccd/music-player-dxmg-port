@@ -21,7 +21,6 @@ using System.Runtime;
 using MessageBox = System.Windows.Forms.MessageBox;
 using SharpDX.Direct2D1.Effects;
 using Configuration;
-using MusicPlayerDXMonoGamePort.Main_Classes;
 
 namespace MusicPlayerDXMonoGamePort
 {

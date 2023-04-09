@@ -14,7 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MusicPlayerDXMonoGamePort.Main_Classes
+namespace MusicPlayerDXMonoGamePort
 {
     public class SongVisualization
     {
