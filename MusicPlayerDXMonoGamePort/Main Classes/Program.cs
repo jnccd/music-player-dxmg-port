@@ -246,7 +246,7 @@ echo  / _, _//  __/(__  )/ /_ / /_/ // /   / /_ / // / / // /_/ /_  _  _
 echo /_/ ^|_^| ^\___//____/ \__/ \__,_//_/    \__//_//_/ /_/ \__, /(_)(_)(_)
 echo                                                     /____/          
 ping 127.0.0.1 > nul
-start MusicPlayer.exe"); // TODO: Fix exe name
+start MusicPlayerDXMonoGamePort.exe");
 
             Process.Start(RestartLocation);
         }
