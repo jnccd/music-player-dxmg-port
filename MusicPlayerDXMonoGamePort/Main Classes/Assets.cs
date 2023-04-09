@@ -1250,8 +1250,12 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     case 0: // Default choosing
                         // Give songs with good ratio extra chance
+                        float ratio = 0;
                         if (curSong.TotalDislikes > 0)
-                            amount += (Values.Sigmoid((float)curSong.TotalLikes / curSong.TotalDislikes / 200) - 0.5f) * 100 * ChanceIncreasePerUpvote;
+                            ratio = curSong.TotalLikes / (float)curSong.TotalDislikes;
+                        else if (curSong.TotalLikes > 0)
+                            ratio = float.MaxValue;
+                        amount += (Values.Sigmoid(ratio) - 0.5f) * 100 * ChanceIncreasePerUpvote;
 
                         // Give songs with good score extra chance
                         if (curSong.Score > 0)
