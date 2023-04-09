@@ -14,7 +14,7 @@ namespace Configuration
 
         public bool AntiAliasing = true;
         public bool AutoStopDiscordRpcOnGameDetection = true;
-        public bool AutoVolume = true;
+        public bool AutoVolume = false;
         public Color BackgroundColor = Color.White;
         public string BrowserDownloadFolderPath;
         public Color Col = Color.Transparent;
