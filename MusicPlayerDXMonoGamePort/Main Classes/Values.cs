@@ -19,6 +19,7 @@ using System.Text;
 using Microsoft.Win32;
 using System.Diagnostics;
 using System.Reflection;
+using Configuration;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -50,11 +51,11 @@ namespace MusicPlayerDXMonoGamePort
         {
             get
             {
-                return config.Default.Volume;
+                return Config.Data.Volume;
             }
             set
             {
-                config.Default.Volume = value;
+                Config.Data.Volume = value;
             }
         }
         public static float VolumeMultiplier = 1;

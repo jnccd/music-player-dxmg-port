@@ -1,4 +1,5 @@
-﻿using MediaToolkit;
+﻿using Configuration;
+using MediaToolkit;
 using MediaToolkit.Model;
 using System;
 using System.Collections.Generic;
@@ -41,14 +42,14 @@ namespace MusicPlayerDXMonoGamePort
 
         private void OptionsMenu_Load(object sender, EventArgs e)
         {
-            cDiscRPC.Checked = config.Default.AutoStopDiscordRPConGameDetection;
-            if (config.Default.DiscordRPCActive)
+            cDiscRPC.Checked = Config.Data.AutoStopDiscordRpcOnGameDetection;
+            if (Config.Data.DiscordRpcActive)
                 bDiscordRPC.Text = "Deactivate DiscordRPC";
             else
                 bDiscordRPC.Text = "Activate DiscordRPC";
-            if (config.Default.BrowserDownloadFolderPath != "" && config.Default.BrowserDownloadFolderPath != null)
+            if (Config.Data.BrowserDownloadFolderPath != "" && Config.Data.BrowserDownloadFolderPath != null)
                 bBDownloadF.Text = "Change Browser Extension Download Folder";
-            trackBar1.Value = config.Default.WavePreload;
+            trackBar1.Value = Config.Data.WavePreload;
             label1.Text = "Percentage of the songs samples that can be preloaded " + trackBar1.Value + "%";
             if (Program.game.Preload)
             {
@@ -62,9 +63,9 @@ namespace MusicPlayerDXMonoGamePort
                 trackBar1.Enabled = false;
                 label1.Enabled = false;
             }
-            cAutoVolume.Checked = config.Default.AutoVolume;
-            tSmoothness.Value = (int)(config.Default.Smoothness * 100);
-            if (config.Default.OldSmooth)
+            cAutoVolume.Checked = Config.Data.AutoVolume;
+            tSmoothness.Value = (int)(Config.Data.Smoothness * 100);
+            if (Config.Data.OldSmooth)
             {
                 tSmoothness.Enabled = false;
                 cOldSmooth.Checked = true;
@@ -100,7 +101,7 @@ namespace MusicPlayerDXMonoGamePort
         }
         private void trackBar1_Scroll(object sender, EventArgs e)
         {
-            config.Default.WavePreload = trackBar1.Value;
+            Config.Data.WavePreload = trackBar1.Value;
 
             label1.Text = "Percentage of the songs samples that can be preloaded " + trackBar1.Value + "%";
         }
@@ -117,7 +118,7 @@ namespace MusicPlayerDXMonoGamePort
         }
         private void AAtoggle_Click(object sender, EventArgs e)
         {
-            config.Default.AntiAliasing = !config.Default.AntiAliasing;
+            Config.Data.AntiAliasing = !Config.Data.AntiAliasing;
         }
         private void Reset_Click_1(object sender, EventArgs e)
         {
@@ -218,7 +219,7 @@ namespace MusicPlayerDXMonoGamePort
 
         private void cAutoVolume_CheckedChanged(object sender, EventArgs e)
         {
-            config.Default.AutoVolume = cAutoVolume.Checked;
+            Config.Data.AutoVolume = cAutoVolume.Checked;
         }
 
         private void bConsoleThreadRestart_Click(object sender, EventArgs e)
@@ -232,12 +233,12 @@ namespace MusicPlayerDXMonoGamePort
 
         private void tSmoothness_Scroll(object sender, EventArgs e)
         {
-            config.Default.Smoothness = tSmoothness.Value / 100f;
+            Config.Data.Smoothness = tSmoothness.Value / 100f;
         }
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
-            config.Default.OldSmooth = cOldSmooth.Checked;
+            Config.Data.OldSmooth = cOldSmooth.Checked;
             tSmoothness.Enabled = !cOldSmooth.Checked;
         }
 
@@ -302,7 +303,7 @@ namespace MusicPlayerDXMonoGamePort
         private void bBDownloadF_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog FBD = new FolderBrowserDialog();
-            FBD.SelectedPath = config.Default.BrowserDownloadFolderPath;
+            FBD.SelectedPath = Config.Data.BrowserDownloadFolderPath;
             DialogResult result = FBD.ShowDialog();
             if (result == DialogResult.OK)
             {
@@ -313,16 +314,16 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     if (Directory.Exists(FBD.SelectedPath))
                     {
-                        config.Default.BrowserDownloadFolderPath = FBD.SelectedPath;
-                        config.Default.Save();
+                        Config.Data.BrowserDownloadFolderPath = FBD.SelectedPath;
+                        Config.Save();
 
-                        Program.crackopenthebois.Path = config.Default.BrowserDownloadFolderPath;
+                        Program.crackopenthebois.Path = Config.Data.BrowserDownloadFolderPath;
                         Program.crackopenthebois.Changed += Program.CrackOpen;
                         Program.crackopenthebois.EnableRaisingEvents = true;
                     }
                     else
                     {
-                        MessageBox.Show("Couldn't set filewatcher! (wrong SelectedPath: " + config.Default.BrowserDownloadFolderPath + " )");
+                        MessageBox.Show("Couldn't set filewatcher! (wrong SelectedPath: " + Config.Data.BrowserDownloadFolderPath + " )");
                     }
                 }
                 catch (Exception ex) { MessageBox.Show("Couldn't set filewatcher! (ERROR: " + ex + ")"); }
@@ -339,9 +340,9 @@ namespace MusicPlayerDXMonoGamePort
             if (bDiscordRPC.Enabled)
             {
                 bDiscordRPC.Enabled = false;
-                config.Default.DiscordRPCActive = !config.Default.DiscordRPCActive;
+                Config.Data.DiscordRpcActive = !Config.Data.DiscordRpcActive;
 
-                if (config.Default.DiscordRPCActive)
+                if (Config.Data.DiscordRpcActive)
                 {
                     DiscordRPCWrapper.Initialize("460490126607384576");
                     Program.game.UpdateDiscordRPC();
@@ -374,7 +375,7 @@ namespace MusicPlayerDXMonoGamePort
 
         private void checkBox1_CheckedChanged_1(object sender, EventArgs e)
         {
-            config.Default.AutoStopDiscordRPConGameDetection = cDiscRPC.Checked;
+            Config.Data.AutoStopDiscordRpcOnGameDetection = cDiscRPC.Checked;
         }
 
         private void bDrag_MouseDown(object sender, MouseEventArgs e)
@@ -415,12 +416,12 @@ namespace MusicPlayerDXMonoGamePort
                 Program.game.backgroundColor = Microsoft.Xna.Framework.Color.White;
                 Program.game.secondaryColor = Microsoft.Xna.Framework.Color.Lerp(Program.game.primaryColor, Program.game.backgroundColor, 0.4f);
             }
-            config.Default.BackgroundColor = Color.FromArgb(Program.game.backgroundColor.R, Program.game.backgroundColor.G, Program.game.backgroundColor.B, Program.game.backgroundColor.A);
+            Config.Data.BackgroundColor = Color.FromArgb(Program.game.backgroundColor.R, Program.game.backgroundColor.G, Program.game.backgroundColor.B, Program.game.backgroundColor.A);
         }
 
         private void trackBar2_Scroll(object sender, EventArgs e)
         {
-            config.Default.ShadowDistance = trackBar2.Value;
+            Config.Data.ShadowDistance = trackBar2.Value;
             Program.game.UpdateRectangles();
             Program.game.ForceTitleRedraw(false);
             Program.game.UpdateShadowRects();

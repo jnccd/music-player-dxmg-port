@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Configuration;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -50,7 +51,7 @@ namespace MusicPlayerDXMonoGamePort
             object[] o = new object[7];
             object[,] SongInfo = Assets.GetSongInformationList();
 
-            for (int i = 0; i < Assets.UpvotedSongData.Count; i++)
+            for (int i = 0; i < Config.Data.songDatabaseEntries.Count; i++)
             {
                 o[0] = SongInfo[i, 0];
                 o[1] = SongInfo[i, 1];
@@ -298,10 +299,10 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        int UpvotedSongNamesIndex = Assets.UpvotedSongData.FindIndex(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
+                        int UpvotedSongNamesIndex = Config.Data.songDatabaseEntries.FindIndex(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
                         if (UpvotedSongNamesIndex != -1)
                         {
-                            Assets.UpvotedSongData[UpvotedSongNamesIndex].Volume = -1;
+                            Config.Data.songDatabaseEntries[UpvotedSongNamesIndex].Volume = -1;
                             Assets.SaveUserSettings(false);
                             bRefresh_Click(null, EventArgs.Empty);
                         }
@@ -313,7 +314,7 @@ namespace MusicPlayerDXMonoGamePort
                     try
                     {
                         string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
-                        int UpvotedSongNamesIndex = Assets.UpvotedSongData.FindIndex(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
+                        int UpvotedSongNamesIndex = Config.Data.songDatabaseEntries.FindIndex(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
                         int PlaylistIndex = Assets.Playlist.IndexOf(path);
 
                         if (!File.Exists(path))
@@ -338,14 +339,14 @@ namespace MusicPlayerDXMonoGamePort
                                 string dest = path.Split('\\').Reverse().Skip(1).Reverse().Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";
                                 File.Move(path, dest);
 
-                                string historyPath = Values.CurrentExecutablePath + "\\History.txt";
+                                string historyPath = Assets.historyFilePath;
                                 if (File.Exists(historyPath))
                                 {
                                     string[] historyContent = File.ReadAllLines(historyPath);
                                     for (int i = 0; i < historyContent.Length; i++)
                                     {
                                         string[] split = historyContent[i].Split(':');
-                                        if (split[0] == Assets.UpvotedSongData[UpvotedSongNamesIndex].Name)
+                                        if (split[0] == Config.Data.songDatabaseEntries[UpvotedSongNamesIndex].Name)
                                         {
                                             split[0] = Dia.result + ".mp3";
                                             historyContent[i] = split.Aggregate((y, j) => y + ":" + j);
@@ -355,7 +356,7 @@ namespace MusicPlayerDXMonoGamePort
                                     File.WriteAllLines(historyPath, historyContent);
                                 }
 
-                                Assets.UpvotedSongData[UpvotedSongNamesIndex].Name = Dia.result + ".mp3";
+                                Config.Data.songDatabaseEntries[UpvotedSongNamesIndex].Name = Dia.result + ".mp3";
                                 Assets.SaveUserSettings(false);
 
                                 Assets.Playlist[PlaylistIndex] = dest;
@@ -436,9 +437,9 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        int index = Assets.UpvotedSongData.FindIndex(x => x.Name == dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3");
+                        int index = Config.Data.songDatabaseEntries.FindIndex(x => x.Name == dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3");
                         if (index >= 0)
-                            Assets.UpvotedSongData.RemoveAt(index);
+                            Config.Data.songDatabaseEntries.RemoveAt(index);
 
                         bRefresh_Click(null, EventArgs.Empty);
                     }
