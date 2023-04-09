@@ -107,7 +107,7 @@ namespace MusicPlayerDXMonoGamePort
         Thread MainThread;
         Task SongCheckThread;
         Task CloseConfirmationThread;
-        const float MaxVolume = 0.75f;
+        const float MaxVolume = 1f;
         int lastSongRequestCheck = -100;
         public long SkipStartPosition = 0;
         public long SongTimeSkipped = 0;
