@@ -1242,7 +1242,7 @@ namespace MusicPlayerDXMonoGamePort
         public static float GetSongChoosingAmount(int UpvotedSongDataIndex)
         {
             float amount = 0;
-            float ChanceIncreasePerUpvote = Playlist.Count / 700f;
+            float ChanceIncreasePerUpvote = 1000f / Playlist.Count;
             UpvotedSong curSong = Config.Data.songDatabaseEntries[UpvotedSongDataIndex];
             if (UpvotedSongDataIndex >= 0)
             {
