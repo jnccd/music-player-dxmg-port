@@ -831,12 +831,12 @@ namespace MusicPlayerDXMonoGamePort
             CurrentDebugTime = Stopwatch.GetTimestamp();
             
             double random = Values.RDM.NextDouble();
-            if (random < 0.6)
+            if (random < 0.3)
             {
                 // Just get a song from the Choosing List
                 PlaySongFromTheChoosingList();
             }
-            else if (random < 0.95)
+            else if (random < 0.85)
             {
                 // Play a song that hasnt been played yet
                 int index = Config.Data.songDatabaseEntries.FindIndex(x => x.Streak == 0);
@@ -1239,29 +1239,29 @@ namespace MusicPlayerDXMonoGamePort
         public static float GetSongChoosingAmount(int UpvotedSongDataIndex)
         {
             float amount = 0;
-            float ChanceIncreasePerUpvote = Playlist.Count / 700;
+            float ChanceIncreasePerUpvote = Playlist.Count / 700f;
+            UpvotedSong curSong = Config.Data.songDatabaseEntries[UpvotedSongDataIndex];
             if (UpvotedSongDataIndex >= 0)
             {
                 switch (0) // Im keeping old choosing algorithms so I can experiment
                 {
                     case 0: // Default choosing
                         // Give songs with good ratio extra chance
-                        amount += (Values.Sigmoid((float)Config.Data.songDatabaseEntries[UpvotedSongDataIndex].TotalLikes / Config.Data.songDatabaseEntries[UpvotedSongDataIndex].TotalDislikes / 200) - 0.5f) * 100 * ChanceIncreasePerUpvote;
-                        if (float.IsNaN(amount))
-                            amount = 0;
+                        if (curSong.TotalDislikes > 0)
+                            amount += (Values.Sigmoid((float)curSong.TotalLikes / curSong.TotalDislikes / 200) - 0.5f) * 100 * ChanceIncreasePerUpvote;
 
                         // Give songs with good score extra chance
-                        if (Config.Data.songDatabaseEntries[UpvotedSongDataIndex].Score > 0)
-                            amount += (int)(Math.Ceiling(Config.Data.songDatabaseEntries[UpvotedSongDataIndex].Score * ChanceIncreasePerUpvote));
+                        if (curSong.Score > 0)
+                            amount += (int)(Math.Ceiling(curSong.Score * ChanceIncreasePerUpvote)) * 2;
 
                         // Give young songs extra chance
                         float age = SongAge(UpvotedSongDataIndex);
-                        if (age < 15)
+                        if (age < 30)
                             amount += (int)((30 - age) * ChanceIncreasePerUpvote * 60f / 30f);
                         break;
 
                     case 1: // Ratio only choosing
-                        amount = (float)Config.Data.songDatabaseEntries[UpvotedSongDataIndex].TotalLikes / Config.Data.songDatabaseEntries[UpvotedSongDataIndex].TotalDislikes;
+                        amount = (float)curSong.TotalLikes / curSong.TotalDislikes;
                         if (float.IsInfinity(amount))
                             amount = HighestSongRatioInR + 100;
                         break;
