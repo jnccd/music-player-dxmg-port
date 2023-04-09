@@ -729,7 +729,7 @@ namespace MusicPlayerDXMonoGamePort
 
             HistorySongData.Add(new HistorySong(Path.GetFileNameWithoutExtension(currentlyPlayingSongName), ScoreChange, DateTime.Now.ToBinary()));
             var newEntry = HistorySongData.Last();
-            File.AppendAllText(SongManager.historyFilePath, $"{newEntry.Date}\t:{newEntry.Change}\t\t\t:{newEntry.Name}\n");
+            File.AppendAllText(SongManager.historyFilePath, $"{newEntry.Date}\t:{newEntry.Change}\t\t\t:{Uri.EscapeDataString(newEntry.Name)}\n");
 
             //HistorySongData = HistorySongData.Where(x => !string.IsNullOrWhiteSpace(x.Name)).ToList();
         }
