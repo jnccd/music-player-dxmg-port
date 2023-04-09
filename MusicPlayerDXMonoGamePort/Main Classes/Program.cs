@@ -11,6 +11,8 @@ using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using System.Text;
 using System.Configuration;
+using Configuration;
+using System.Text.Encodings.Web;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -49,7 +51,7 @@ namespace MusicPlayerDXMonoGamePort
                 return;
             }
             // Also check for cheeky curious changes to the settings
-            if (config.Default.MultiThreading == false)
+            if (Config.Data.MultiThreading == false)
             {
                 MessageBox.Show("Dont mess with the settings file!\nLook this is an old option and it wont do much but possibly break the program so just activate it again.");
                 return;
@@ -62,76 +64,29 @@ namespace MusicPlayerDXMonoGamePort
             Values.DisableConsoleRezise();
             Values.RegisterUriScheme();
 
-            // Support for older SongUpvote Lists
-            if (config.Default.SongTotalDislikes == null && config.Default.SongPaths != null)
-                config.Default.SongTotalDislikes = new int[config.Default.SongPaths.Length];
-            if (config.Default.SongVolume == null && config.Default.SongPaths != null)
-            {
-                config.Default.SongVolume = new float[config.Default.SongPaths.Length];
-                for (int i = 0; i < config.Default.SongPaths.Length; i++)
-                    config.Default.SongVolume[i] = -1;
-            }
-
             #region Song Data List initialization
-            Assets.UpvotedSongData = new List<UpvotedSong>();
-            if (config.Default.SongPaths != null && config.Default.SongScores != null && config.Default.SongUpvoteStreak != null && config.Default.SongTotalLikes != null &&
-                config.Default.SongTotalDislikes != null && config.Default.SongDate != null && config.Default.SongVolume != null &&
-                config.Default.SongScores.Length == config.Default.SongPaths.Length && config.Default.SongUpvoteStreak.Length == config.Default.SongPaths.Length &&
-                config.Default.SongTotalLikes.Length == config.Default.SongPaths.Length && config.Default.SongTotalDislikes.Length == config.Default.SongPaths.Length &&
-                config.Default.SongDate.Length == config.Default.SongPaths.Length && config.Default.SongVolume.Length == config.Default.SongPaths.Length)
-            {
-                for (int i = 0; i < config.Default.SongPaths.Length; i++)
-                    Assets.UpvotedSongData.Add(new UpvotedSong(config.Default.SongPaths[i], config.Default.SongScores[i], config.Default.SongUpvoteStreak[i],
-                            config.Default.SongTotalLikes[i], config.Default.SongTotalDislikes[i], config.Default.SongDate[i], config.Default.SongVolume[i]));
-            }
-            else if (!config.Default.FirstStart)
-                MessageBox.Show("Song statistics corrupted!\nResetting...");
-
             Assets.HistorySongData = new List<HistorySong>();
-            string path = Values.CurrentExecutablePath + "\\History.txt";
+            string path = Assets.historyFilePath;
             if (File.Exists(path))
             {
                 string[] Songs = File.ReadLines(path).ToArray();
 
-                for (int i = 0; i < Songs.Length; i++)
+                for (int i = 0; i < Math.Min(Songs.Length, 25); i++)
                 {
                     string[] Split = Songs[Songs.Length - i - 1].Split(':');
                     string Title = "";
                     long Time = 0;
-                    string ScoreChange = "";
-                    if (Split.Length == 1)
+                    float ScoreChange = 0;
+                    if (Split.Length == 3)
                     {
-                        Title = Path.GetFileNameWithoutExtension(Songs[Songs.Length - i - 1]);
-                    }
-                    else if (Split.Length == 2)
-                    {
-                        Title = Path.GetFileNameWithoutExtension(Split[0]);
-                        Time = Convert.ToInt64(Split[1]);
-                    }
-                    else if (Split.Length == 3)
-                    {
-                        Title = Path.GetFileNameWithoutExtension(Split[0]);
-                        Time = Convert.ToInt64(Split[1]);
-                        ScoreChange = Split[2];
+                        Time = Convert.ToInt64(Split[0].Trim('\t'));
+                        ScoreChange = Convert.ToSingle(Split[1].Trim('\t'));
+                        Title = Path.GetFileNameWithoutExtension(Uri.UnescapeDataString(Split[2].Trim('\t')));
                     }
 
-                    Assets.HistorySongData.Add(new HistorySong(Title, Convert.ToSingle(ScoreChange), Time));
+                    Assets.HistorySongData.Add(new HistorySong(Title, ScoreChange, Time));
                 }
-
-                File.Delete(path);
             }
-            if (config.Default.HistorySong != null && config.Default.HistoryDate != null && config.Default.HistoryDate.Length == config.Default.HistorySong.Length &&
-                config.Default.HistoryChange != null && config.Default.HistoryChange.Length == config.Default.HistorySong.Length)
-            {
-                for (int i = 0; i < config.Default.HistorySong.Length; i++)
-                    Assets.HistorySongData.Add(new HistorySong(config.Default.HistorySong[i], config.Default.HistoryChange[i], config.Default.HistoryDate[i]));
-            }
-            else if (!config.Default.FirstStart)
-                MessageBox.Show("Song history corrupted!");
-
-            Assets.HistorySongData.Sort(delegate (HistorySong x, HistorySong y) {
-                return -DateTime.FromBinary(x.Date).CompareTo(DateTime.FromBinary(y.Date));
-            });
             #endregion
 
             Console.Clear();
@@ -144,13 +99,13 @@ namespace MusicPlayerDXMonoGamePort
             Program.args = args;
 
             InterceptKeys._hookID = InterceptKeys.SetHook(InterceptKeys._proc);
-            if (config.Default.DiscordRPCActive)
+            if (Config.Data.DiscordRpcActive)
                 DiscordRPCWrapper.Initialize("460490126607384576");
 
             #region clear old browser requests
-            if (config.Default.BrowserDownloadFolderPath != "" && config.Default.BrowserDownloadFolderPath != null)
+            if (Config.Data.BrowserDownloadFolderPath != "" && Config.Data.BrowserDownloadFolderPath != null)
             {
-                string[] bois = Directory.GetFiles(config.Default.BrowserDownloadFolderPath);
+                string[] bois = Directory.GetFiles(Config.Data.BrowserDownloadFolderPath);
                 for (int i = 0; i < bois.Length; i++)
                 {
                     string fileExtension = Path.GetExtension(bois[i]);
@@ -193,23 +148,23 @@ namespace MusicPlayerDXMonoGamePort
             catch { Console.WriteLine("Couldn't set filewatcher! (UNKNOWN ERROR)"); }
 
             // DownloadPath
-            if (config.Default.BrowserDownloadFolderPath != "" && config.Default.BrowserDownloadFolderPath != null)
+            if (Config.Data.BrowserDownloadFolderPath != "" && Config.Data.BrowserDownloadFolderPath != null)
             {
                 crackopenthebois = new FileSystemWatcher();
                 try
                 {
-                    if (Directory.Exists(config.Default.BrowserDownloadFolderPath))
+                    if (Directory.Exists(Config.Data.BrowserDownloadFolderPath))
                     {
-                        config.Default.BrowserDownloadFolderPath = config.Default.BrowserDownloadFolderPath;
-                        config.Default.Save();
+                        Config.Data.BrowserDownloadFolderPath = Config.Data.BrowserDownloadFolderPath;
+                        Config.Save();
 
-                        crackopenthebois.Path = config.Default.BrowserDownloadFolderPath;
+                        crackopenthebois.Path = Config.Data.BrowserDownloadFolderPath;
                         crackopenthebois.Changed += CrackOpen;
                         crackopenthebois.EnableRaisingEvents = true;
                     }
                     else
                     {
-                        MessageBox.Show("Couldn't set filewatcher! (wrong SelectedPath: " + config.Default.BrowserDownloadFolderPath + " )");
+                        MessageBox.Show("Couldn't set filewatcher! (wrong SelectedPath: " + Config.Data.BrowserDownloadFolderPath + " )");
                     }
                 }
                 catch (Exception ex) { MessageBox.Show("Couldn't set filewatcher! (ERROR: " + ex + ")"); }
@@ -291,7 +246,7 @@ echo  / _, _//  __/(__  )/ /_ / /_/ // /   / /_ / // / / // /_/ /_  _  _
 echo /_/ ^|_^| ^\___//____/ \__/ \__,_//_/    \__//_//_/ /_/ \__, /(_)(_)(_)
 echo                                                     /____/          
 ping 127.0.0.1 > nul
-start MusicPlayer.exe");
+start MusicPlayer.exe"); // TODO: Fix exe name
 
             Process.Start(RestartLocation);
         }
@@ -303,7 +258,7 @@ start MusicPlayer.exe");
             IntPtr hwnd, int idObject, int idChild,
             uint dwEventThread, uint dwmsEventTime)
         {
-            if (eventType == Values.EVENT_SYSTEM_FOREGROUND && config.Default.AutoStopDiscordRPConGameDetection)
+            if (eventType == Values.EVENT_SYSTEM_FOREGROUND && Config.Data.AutoStopDiscordRpcOnGameDetection)
             {
                 Program.hwnd = hwnd;
                 Task T = Task.Factory.StartNew(() =>
@@ -322,12 +277,12 @@ start MusicPlayer.exe");
 
                     bool gameActive = Values.IsForegroundFullScreen();
                     //Debug.WriteLine("Switched to: " + sb.ToString() + "\t\t| IsFullscreen: " + gameActive);
-                    if (config.Default.DiscordRPCActive && gameActive)
+                    if (Config.Data.DiscordRpcActive && gameActive)
                     {
                         if (game.optionsMenu != null)
                             game.optionsMenu.InvokeIfRequired(game.optionsMenu.DiscordToggleWrapper);
                     }
-                    if (!config.Default.DiscordRPCActive && !gameActive)
+                    if (!Config.Data.DiscordRpcActive && !gameActive)
                     {
                         if (game.optionsMenu != null)
                             game.optionsMenu.InvokeIfRequired(game.optionsMenu.DiscordToggleWrapper);
@@ -339,7 +294,7 @@ start MusicPlayer.exe");
         public static void CrackOpen(object source, FileSystemEventArgs ev)
         {
             Thread.Sleep(50);
-            string[] bois = Directory.GetFiles(config.Default.BrowserDownloadFolderPath);
+            string[] bois = Directory.GetFiles(Config.Data.BrowserDownloadFolderPath);
             for (int i = 0; i < bois.Length; i++)
             {
                 string fileName = Path.GetFileName(bois[i]);

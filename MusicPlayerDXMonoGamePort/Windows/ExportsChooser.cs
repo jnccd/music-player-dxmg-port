@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Configuration;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -30,7 +31,7 @@ namespace MusicPlayerDXMonoGamePort
 
         private void ExportsChooser_Load(object sender, EventArgs e)
         {
-            foreach (UpvotedSong s in Assets.UpvotedSongData)
+            foreach (UpvotedSong s in Config.Data.songDatabaseEntries)
                 if (File.Exists(s.Path))
                     SongsToChooseFrom.Add(s);
 

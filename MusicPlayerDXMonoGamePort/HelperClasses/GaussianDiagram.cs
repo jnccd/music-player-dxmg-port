@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Configuration;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -336,7 +337,7 @@ namespace MusicPlayerDXMonoGamePort
                     DrawRect.Height = (int)Diagram[i] + BaseHeight;
                     spriteBatch.Draw(Assets.White, DrawRect, Color.White);
 
-                    if (config.Default.AntiAliasing)
+                    if (Config.Data.AntiAliasing)
                     {
                         float NeighbourA;
                         float NeighbourB;
@@ -397,7 +398,7 @@ namespace MusicPlayerDXMonoGamePort
                 );
                 
 
-                if (config.Default.AntiAliasing)
+                if (Config.Data.AntiAliasing)
                 {
                     for (int i = 0; i < Diagram.Length; i++)
                     {
@@ -450,16 +451,16 @@ namespace MusicPlayerDXMonoGamePort
                 DiagramSize = 0;
 
                 // Shadow
-                DrawRect.X = P.X + config.Default.ShadowDistance;
-                DrawRect.Y = P.Y + config.Default.ShadowDistance;
+                DrawRect.X = P.X + Config.Data.ShadowDistance;
+                DrawRect.Y = P.Y + Config.Data.ShadowDistance;
                 DrawRect.Width = (int)((Length / 2) * (Values.Timer / 40f));
                 DrawRect.Height = 8;
                 spriteBatch.Draw(Assets.White, DrawRect, Color.Black * 0.6f);
 
                 DrawRect.Width = (int)((Length / 2) * (Values.Timer / 40f));
                 DrawRect.Height = 8;
-                DrawRect.X = P.X + Length - DrawRect.Width + config.Default.ShadowDistance;
-                DrawRect.Y = P.Y + config.Default.ShadowDistance;
+                DrawRect.X = P.X + Length - DrawRect.Width + Config.Data.ShadowDistance;
+                DrawRect.Y = P.Y + Config.Data.ShadowDistance;
                 spriteBatch.Draw(Assets.White, DrawRect, Color.Black * 0.6f);
 
 
@@ -484,8 +485,8 @@ namespace MusicPlayerDXMonoGamePort
                 Height = (int)(TargetHeight * Values.AnimationFunction(((Values.Timer - 50) / 50f)));
 
                 // Shadow
-                DrawRect.X = P.X + config.Default.ShadowDistance;
-                DrawRect.Y = P.Y + config.Default.ShadowDistance;
+                DrawRect.X = P.X + Config.Data.ShadowDistance;
+                DrawRect.Y = P.Y + Config.Data.ShadowDistance;
                 DrawRect.Width = Length - 1;
                 DrawRect.Height = 8;
                 spriteBatch.Draw(Assets.White, DrawRect, Color.Black * 0.6f);
@@ -501,8 +502,8 @@ namespace MusicPlayerDXMonoGamePort
             // Drawing the Target
             if (WithShadow)
             {
-                DrawRect.X = (int)(Values.WindowSize.X / 2 + (config.Default.ShadowDistance - Values.WindowSize.X / 2) * DiagramSize);
-                DrawRect.Y = (int)(Values.WindowSize.Y / 2 + (config.Default.ShadowDistance - Values.WindowSize.Y / 2) * DiagramSize);
+                DrawRect.X = (int)(Values.WindowSize.X / 2 + (Config.Data.ShadowDistance - Values.WindowSize.X / 2) * DiagramSize);
+                DrawRect.Y = (int)(Values.WindowSize.Y / 2 + (Config.Data.ShadowDistance - Values.WindowSize.Y / 2) * DiagramSize);
                 DrawRect.Width = (int)(Values.WindowSize.X * DiagramSize);
                 DrawRect.Height = (int)(Values.WindowSize.Y * DiagramSize);
                 spriteBatch.Draw(ShadowTarget, DrawRect, Color.Black * 0.6f);
@@ -527,8 +528,8 @@ namespace MusicPlayerDXMonoGamePort
                         int H = (int)GetMaximum((int)(i * Width), (int)((i + 1) * Width));
 
                         for (int j = 0; j < (int)(Width / 1.2f); j++)
-                            Assets.DrawLine(new Vector2(i * Width + j + P.X + config.Default.ShadowDistance, P.Y - H + config.Default.ShadowDistance),
-                                            new Vector2(i * Width + j + P.X + config.Default.ShadowDistance, P.Y + (int)(Width / 1.2f) + config.Default.ShadowDistance),
+                            Assets.DrawLine(new Vector2(i * Width + j + P.X + Config.Data.ShadowDistance, P.Y - H + Config.Data.ShadowDistance),
+                                            new Vector2(i * Width + j + P.X + Config.Data.ShadowDistance, P.Y + (int)(Width / 1.2f) + Config.Data.ShadowDistance),
                                             1, Color.Black * 0.6f, spriteBatch);
                     }
                 }
@@ -557,8 +558,8 @@ namespace MusicPlayerDXMonoGamePort
                         if (value > 1)
                             value = 1;
 
-                        Assets.DrawLine(new Vector2(i + P.X + config.Default.ShadowDistance, P.Y - (int)(value * Height) + config.Default.ShadowDistance),
-                                        new Vector2(i + P.X + config.Default.ShadowDistance, P.Y + 10 + config.Default.ShadowDistance),
+                        Assets.DrawLine(new Vector2(i + P.X + Config.Data.ShadowDistance, P.Y - (int)(value * Height) + Config.Data.ShadowDistance),
+                                        new Vector2(i + P.X + Config.Data.ShadowDistance, P.Y + 10 + Config.Data.ShadowDistance),
                                         1, Color.Black * 0.6f, spriteBatch);
                     }
                 }

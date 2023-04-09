@@ -20,6 +20,7 @@ using MediaToolkit;
 using System.Runtime;
 using MessageBox = System.Windows.Forms.MessageBox;
 using SharpDX.Direct2D1.Effects;
+using Configuration;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -69,8 +70,8 @@ namespace MusicPlayerDXMonoGamePort
         const float speed = 0.35f;
 
         // Visualization
-        public Visualizations VisSetting = (Visualizations)config.Default.Vis;
-        public BackGroundModes BgModes = (BackGroundModes)config.Default.Background;
+        public Visualizations VisSetting = (Visualizations)Config.Data.Vis;
+        public BackGroundModes BgModes = (BackGroundModes)Config.Data.Background;
         public Color primaryColor = Color.FromNonPremultiplied(25, 75, 255, 255);
         public Color secondaryColor = Color.Green;
         public Color backgroundColor = Color.White;
@@ -114,7 +115,7 @@ namespace MusicPlayerDXMonoGamePort
         bool ForcedTitleRedraw = false;
         bool ForcedBackgroundRedraw = false;
         public bool ForcedCoverBackgroundRedraw = false;
-        System.Drawing.Point newPos = new System.Drawing.Point(config.Default.WindowPos.X, config.Default.WindowPos.Y);
+        System.Drawing.Point newPos = new System.Drawing.Point(Config.Data.WindowPos.X, Config.Data.WindowPos.Y);
         System.Drawing.Point oldPos;
         Point Diff = new Point();
         Point[] WindowPoints = new Point[4];
@@ -176,7 +177,7 @@ namespace MusicPlayerDXMonoGamePort
             gameWindowForm.FormBorderStyle = FormBorderStyle.None;
             gameWindowForm.Move += ((object sender, EventArgs e) =>
             {
-                gameWindowForm.Location = new System.Drawing.Point(config.Default.WindowPos.X, config.Default.WindowPos.Y);
+                gameWindowForm.Location = new System.Drawing.Point(Config.Data.WindowPos.X, Config.Data.WindowPos.Y);
             });
             //this.TargetElapsedTime = TimeSpan.FromSeconds(1.0f / 120.0f);
             //graphics.SynchronizeWithVerticalRetrace = false;
@@ -225,7 +226,7 @@ namespace MusicPlayerDXMonoGamePort
 
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            Preload = config.Default.Preload;
+            Preload = Config.Data.Preload;
             
             Assets.LoadLoadingScreen(Content, GraphicsDevice);
 
@@ -241,7 +242,7 @@ namespace MusicPlayerDXMonoGamePort
             BlurredTex = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
             TempBlur = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
             Assets.gaussianBlur.Parameters["InvTexsize"].SetValue(new Vector2(1 / (float)BlurredTex.Width, 1 / (float)BlurredTex.Height));
-            backgroundColor = config.Default.BackgroundColor.ToXNAColor();
+            backgroundColor = Config.Data.BackgroundColor.ToXNAColor();
 
             //InactiveSleepTime = new TimeSpan(0);
 
@@ -555,7 +556,7 @@ namespace MusicPlayerDXMonoGamePort
 
                 // move file to lib
                 string musicFile = Path.GetFileName(Directory.GetFiles(downloadTargetFolder).Where(x => x.EndsWith(".mp3")).First());
-                string targetPath = config.Default.MusicPath + "\\" + musicFile.Replace(" - Topic", "");
+                string targetPath = Config.Data.MusicPath + "\\" + musicFile.Replace(" - Topic", "");
                 if (File.Exists(targetPath))
                     File.Delete(targetPath);
                 File.Move(downloadTargetFolder + musicFile, targetPath);
@@ -618,7 +619,7 @@ namespace MusicPlayerDXMonoGamePort
                 return false;
             }
 
-            if (config.Default.BrowserDownloadFolderPath == "" || config.Default.BrowserDownloadFolderPath == null)
+            if (Config.Data.BrowserDownloadFolderPath == "" || Config.Data.BrowserDownloadFolderPath == null)
             {
                 MessageBox.Show("I need to put it into the BrowserDownloadFolderPath but I dont have it");
                 return false;
@@ -633,7 +634,7 @@ namespace MusicPlayerDXMonoGamePort
                 Console.ForegroundColor = ConsoleColor.Yellow;
 
                 Process P = new Process();
-                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", $"-f mp4 -o \"{config.Default.BrowserDownloadFolderPath}\\%(title)s.%(ext)s\" {url}");
+                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", $"-f mp4 -o \"{Config.Data.BrowserDownloadFolderPath}\\%(title)s.%(ext)s\" {url}");
                 P.StartInfo.UseShellExecute = false;
 
                 P.Start();
@@ -709,7 +710,7 @@ namespace MusicPlayerDXMonoGamePort
                 if (Assets.Channel32 != null && Assets.Channel32.Position > Assets.Channel32.Length - Assets.bufferLength / 2)
                     Assets.GetNextSong(false, false);
 
-                if (config.Default.Preload && Assets.EntireSongWaveBuffer != null)
+                if (Config.Data.Preload && Assets.EntireSongWaveBuffer != null)
                 {
                     Assets.UpdateWaveBufferWithEntireSongWB();
                 }
@@ -743,10 +744,10 @@ namespace MusicPlayerDXMonoGamePort
 
             try
             {
-                if (config.Default.AutoVolume)
+                if (Config.Data.AutoVolume)
                     Assets.Channel32.Volume = (1 - Values.OutputVolume) * Values.TargetVolume * Values.VolumeMultiplier; // Null pointer exception? 13.02.18 13:36 / 27.02.18 01:35
                 else
-                    Assets.Channel32.Volume = 0.75f * Values.TargetVolume * Values.VolumeMultiplier;
+                    Assets.Channel32.Volume = 0.75f * Values.TargetVolume * Values.VolumeMultiplier; // Null pointer exception? 09.04.23 17:55
             }
             catch { }
 
@@ -898,8 +899,8 @@ namespace MusicPlayerDXMonoGamePort
                     break;
 
                 case SelectedControl.DragWindow:
-                    oldPos.X = config.Default.WindowPos.X;
-                    oldPos.Y = config.Default.WindowPos.Y;
+                    oldPos.X = Config.Data.WindowPos.X;
+                    oldPos.Y = Config.Data.WindowPos.Y;
 
                     newPos.X = gameWindowForm.Location.X + Control.CurMS.X - MouseClickedPos.X;
                     newPos.Y = gameWindowForm.Location.Y + Control.CurMS.Y - MouseClickedPos.Y;
@@ -907,19 +908,19 @@ namespace MusicPlayerDXMonoGamePort
                     if (newPos.X % 50 == 0)
                         GetHashCode();
                     
-                    config.Default.WindowPos = newPos;
+                    Config.Data.WindowPos = newPos;
                     KeepWindowInScreen();
                     ForceBackgroundRedraw();
 
                     if (VisSetting == Visualizations.grid)
                     {
-                        TempVector.X = oldPos.X - config.Default.WindowPos.X;
-                        TempVector.Y = oldPos.Y - config.Default.WindowPos.Y;
+                        TempVector.X = oldPos.X - Config.Data.WindowPos.X;
+                        TempVector.Y = oldPos.Y - Config.Data.WindowPos.Y;
                         DG.ApplyForceGlobally(TempVector);
                     }
                     break;
             }
-            gameWindowForm.Location = config.Default.WindowPos;
+            gameWindowForm.Location = Config.Data.WindowPos;
 
             if (!wasClickedOn)
                 return;
@@ -930,7 +931,7 @@ namespace MusicPlayerDXMonoGamePort
 
             // Set Location to (0, 0) [0]
             if (Control.CurKS.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.D0))
-                config.Default.WindowPos = new System.Drawing.Point(0, 0);
+                Config.Data.WindowPos = new System.Drawing.Point(0, 0);
 
             // Open OptionsMenu [O / F1]
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.O) ||
@@ -1014,7 +1015,7 @@ namespace MusicPlayerDXMonoGamePort
 
             // Toggle Anti-Alising [A]
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.A))
-                config.Default.AntiAliasing = !config.Default.AntiAliasing;
+                Config.Data.AntiAliasing = !Config.Data.AntiAliasing;
 
             // Toggle Preload [P]
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.P))
@@ -1155,8 +1156,8 @@ namespace MusicPlayerDXMonoGamePort
             if (DR != DialogResult.Yes)
                 return;
 
-            config.Default.MusicPath = "";
-            config.Default.Save();
+            Config.Data.MusicPath = "";
+            Config.Save();
             ProcessStartInfo Info = new ProcessStartInfo();
             Info.Arguments = "/C ping 127.0.0.1 -n 2 && cls && \"" + Application.ExecutablePath + "\"";
             Info.WindowStyle = ProcessWindowStyle.Hidden;
@@ -1182,10 +1183,10 @@ namespace MusicPlayerDXMonoGamePort
                 //Debug.WriteLine("GD Update 1 " + (Stopwatch.GetTimestamp() - CurrentDebugTime));
                 //CurrentDebugTime = Stopwatch.GetTimestamp();
                 GauD.Update(values);
-                if (config.Default.OldSmooth)
+                if (Config.Data.OldSmooth)
                     GauD.Smoothen();
                 else
-                    GauD.NewSmoothen(config.Default.Smoothness);
+                    GauD.NewSmoothen(Config.Data.Smoothness);
                 //Debug.WriteLine("New Smooth " + (Stopwatch.GetTimestamp() - CurrentDebugTime));
             }
         }
@@ -1208,11 +1209,11 @@ namespace MusicPlayerDXMonoGamePort
         }
         public void KeepWindowInScreen()
         {
-            TempRect.X = config.Default.WindowPos.X;
-            TempRect.Y = config.Default.WindowPos.Y;
+            TempRect.X = Config.Data.WindowPos.X;
+            TempRect.Y = Config.Data.WindowPos.Y;
             TempRect.Width = gameWindowForm.Bounds.Width;
             TempRect.Height = gameWindowForm.Bounds.Height;
-            config.Default.WindowPos = KeepWindowInScreen(TempRect);
+            Config.Data.WindowPos = KeepWindowInScreen(TempRect);
         }
         public System.Drawing.Point KeepWindowInScreen(Rectangle WindowBounds)
         {
@@ -1376,14 +1377,14 @@ namespace MusicPlayerDXMonoGamePort
         }
         public void UpdateShadowRects()
         {
-            DurationBarShadow = new Rectangle(DurationBar.X + config.Default.ShadowDistance, DurationBar.Y + config.Default.ShadowDistance, DurationBar.Width, DurationBar.Height);
-            VolumeIconShadow = new Rectangle(VolumeIcon.X + config.Default.ShadowDistance, VolumeIcon.Y + config.Default.ShadowDistance, VolumeIcon.Width, VolumeIcon.Height);
-            VolumeBarShadow = new Rectangle(VolumeBar.X + config.Default.ShadowDistance, VolumeBar.Y + config.Default.ShadowDistance, VolumeBar.Width, VolumeBar.Height);
-            PlayPauseButtonShadow = new Rectangle(PlayPauseButton.X + config.Default.ShadowDistance, PlayPauseButton.Y + config.Default.ShadowDistance, PlayPauseButton.Width, PlayPauseButton.Height);
-            UpvoteShadow = new Rectangle(Upvote.X + config.Default.ShadowDistance, Upvote.Y + config.Default.ShadowDistance, Upvote.Width, Upvote.Height);
-            UpvoteButtonShadow = new Rectangle(UpvoteButton.X + config.Default.ShadowDistance, UpvoteButton.Y + config.Default.ShadowDistance, UpvoteButton.Width, UpvoteButton.Height);
-            CloseButtonShadow = new Rectangle(CloseButton.X + config.Default.ShadowDistance, CloseButton.Y + config.Default.ShadowDistance, CloseButton.Width, CloseButton.Height);
-            OptionsButtonShadow = new Rectangle(OptionsButton.X + config.Default.ShadowDistance, OptionsButton.Y + config.Default.ShadowDistance, OptionsButton.Width, OptionsButton.Height);
+            DurationBarShadow = new Rectangle(DurationBar.X + Config.Data.ShadowDistance, DurationBar.Y + Config.Data.ShadowDistance, DurationBar.Width, DurationBar.Height);
+            VolumeIconShadow = new Rectangle(VolumeIcon.X + Config.Data.ShadowDistance, VolumeIcon.Y + Config.Data.ShadowDistance, VolumeIcon.Width, VolumeIcon.Height);
+            VolumeBarShadow = new Rectangle(VolumeBar.X + Config.Data.ShadowDistance, VolumeBar.Y + Config.Data.ShadowDistance, VolumeBar.Width, VolumeBar.Height);
+            PlayPauseButtonShadow = new Rectangle(PlayPauseButton.X + Config.Data.ShadowDistance, PlayPauseButton.Y + Config.Data.ShadowDistance, PlayPauseButton.Width, PlayPauseButton.Height);
+            UpvoteShadow = new Rectangle(Upvote.X + Config.Data.ShadowDistance, Upvote.Y + Config.Data.ShadowDistance, Upvote.Width, Upvote.Height);
+            UpvoteButtonShadow = new Rectangle(UpvoteButton.X + Config.Data.ShadowDistance, UpvoteButton.Y + Config.Data.ShadowDistance, UpvoteButton.Width, UpvoteButton.Height);
+            CloseButtonShadow = new Rectangle(CloseButton.X + Config.Data.ShadowDistance, CloseButton.Y + Config.Data.ShadowDistance, CloseButton.Width, CloseButton.Height);
+            OptionsButtonShadow = new Rectangle(OptionsButton.X + Config.Data.ShadowDistance, OptionsButton.Y + Config.Data.ShadowDistance, OptionsButton.Width, OptionsButton.Height);
         }
 
         // Draw
@@ -1440,10 +1441,10 @@ namespace MusicPlayerDXMonoGamePort
                     GraphicsDevice.Clear(Color.Transparent);
                     spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicWrap, DepthStencilState.Default, RasterizerState.CullNone);
                     
-                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(X1 + config.Default.ShadowDistance, config.Default.ShadowDistance), Color.Black * 0.6f); } catch { }
+                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(X1 + Config.Data.ShadowDistance, Config.Data.ShadowDistance), Color.Black * 0.6f); } catch { }
                     try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(X1, 0), backgroundColor); } catch { }
 
-                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(X2 + config.Default.ShadowDistance, config.Default.ShadowDistance), Color.Black * 0.6f); } catch { }
+                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(X2 + Config.Data.ShadowDistance, Config.Data.ShadowDistance), Color.Black * 0.6f); } catch { }
                     try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(X2, 0), backgroundColor); } catch { }
                 }
                 else
@@ -1454,7 +1455,7 @@ namespace MusicPlayerDXMonoGamePort
                     GraphicsDevice.Clear(Color.Transparent);
                     spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicWrap, DepthStencilState.Default, RasterizerState.CullNone);
 
-                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(config.Default.ShadowDistance), Color.Black * 0.6f); } catch { }
+                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(Config.Data.ShadowDistance), Color.Black * 0.6f); } catch { }
                     try { spriteBatch.DrawString(Assets.Title, Title, Vector2.Zero, Color.White); } catch { }
                 }
 
@@ -1615,16 +1616,16 @@ namespace MusicPlayerDXMonoGamePort
                     #region Second Row HUD Shadows
                     if (UpvoteSavedAlpha > 0)
                     {
-                        TempVector.X = Upvote.X + Upvote.Width + 3 + config.Default.ShadowDistance;
-                        TempVector.Y = Upvote.Y + Upvote.Height / 2 - 8 + config.Default.ShadowDistance;
+                        TempVector.X = Upvote.X + Upvote.Width + 3 + Config.Data.ShadowDistance;
+                        TempVector.Y = Upvote.Y + Upvote.Height / 2 - 8 + Config.Data.ShadowDistance;
                         spriteBatch.Draw(Assets.Upvote, UpvoteShadow, Color.Black * 0.6f * UpvoteSavedAlpha);
                         //spriteBatch.DrawString(Assets.Font, "Upvote saved! (" + Assets.LastUpvotedSongStreak.ToString() + " points)", new Vector2(Upvote.X + Upvote.Width + 8, Upvote.Y + Upvote.Height / 2 - 3), Color.Black * 0.6f * UpvoteSavedAlpha);
                         spriteBatch.DrawString(Assets.Font, "Upvote saved!", TempVector, Color.Black * 0.6f * UpvoteSavedAlpha);
                     }
                     else if (SecondRowMessageAlpha > 0)
                     {
-                        TempVector.X = 24 + config.Default.ShadowDistance;
-                        TempVector.Y = 45 + config.Default.ShadowDistance;
+                        TempVector.X = 24 + Config.Data.ShadowDistance;
+                        TempVector.Y = 45 + Config.Data.ShadowDistance;
                         if (SecondRowMessageAlpha > 1)
                             spriteBatch.DrawString(Assets.Font, SecondRowMessageText, TempVector, Color.Black * 0.6f);
                         else
@@ -1643,11 +1644,11 @@ namespace MusicPlayerDXMonoGamePort
                         // Shadow
                         for (int i = 1; i < 512; i++)
                         {
-                            Assets.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (Assets.WaveBuffer.Length / StepLength) + config.Default.ShadowDistance,
-                                            Height + (int)(Assets.WaveBuffer[(i - 1) * StepLength] * 100) + config.Default.ShadowDistance),
+                            Assets.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (Assets.WaveBuffer.Length / StepLength) + Config.Data.ShadowDistance,
+                                            Height + (int)(Assets.WaveBuffer[(i - 1) * StepLength] * 100) + Config.Data.ShadowDistance),
 
-                                            new Vector2(i * Values.WindowSize.X / (Assets.WaveBuffer.Length / StepLength) + config.Default.ShadowDistance,
-                                            Height + (int)(Assets.WaveBuffer[i * StepLength] * 100) + config.Default.ShadowDistance),
+                                            new Vector2(i * Values.WindowSize.X / (Assets.WaveBuffer.Length / StepLength) + Config.Data.ShadowDistance,
+                                            Height + (int)(Assets.WaveBuffer[i * StepLength] * 100) + Config.Data.ShadowDistance),
 
                                             2, Color.Black * 0.6f, spriteBatch);
                         }
@@ -1682,11 +1683,11 @@ namespace MusicPlayerDXMonoGamePort
                         // Shadow
                         for (int i = 1; i < 512; i++)
                         {
-                            Assets.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (512) + config.Default.ShadowDistance,
-                                            Height + (int)(Assets.WaveBuffer[(i - 1) * StepLength] * 100) + config.Default.ShadowDistance),
+                            Assets.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (512) + Config.Data.ShadowDistance,
+                                            Height + (int)(Assets.WaveBuffer[(i - 1) * StepLength] * 100) + Config.Data.ShadowDistance),
 
-                                            new Vector2(i * Values.WindowSize.X / (512) + config.Default.ShadowDistance,
-                                            Height + (int)(Assets.WaveBuffer[i * StepLength] * 100) + config.Default.ShadowDistance),
+                                            new Vector2(i * Values.WindowSize.X / (512) + Config.Data.ShadowDistance,
+                                            Height + (int)(Assets.WaveBuffer[i * StepLength] * 100) + Config.Data.ShadowDistance),
 
                                             2, Color.Black * 0.6f, spriteBatch);
                         }
@@ -1714,7 +1715,7 @@ namespace MusicPlayerDXMonoGamePort
                     {
                         float size = (float)Approximate.Sqrt(Values.OutputVolume * 100 * Values.TargetVolume);
                         
-                        spriteBatch.Draw(Assets.White, new Rectangle(35 + config.Default.ShadowDistance, 50 + config.Default.ShadowDistance, Values.WindowSize.X - 70, Values.WindowSize.Y - 100), Color.Black * 0.6f);
+                        spriteBatch.Draw(Assets.White, new Rectangle(35 + Config.Data.ShadowDistance, 50 + Config.Data.ShadowDistance, Values.WindowSize.X - 70, Values.WindowSize.Y - 100), Color.Black * 0.6f);
                         spriteBatch.Draw(Assets.TrumpetBoyBackground, new Rectangle(35, 50, Values.WindowSize.X - 70, Values.WindowSize.Y - 100), Color.White);
 
                         int x = 290;
@@ -1765,13 +1766,13 @@ namespace MusicPlayerDXMonoGamePort
                             TempRect.Width = (int)(DurationBar.Width * PlayPercetage);
                             TempRect.Height = 3;
                             spriteBatch.Draw(Assets.White, TempRect, primaryColor);
-                            if (Assets.EntireSongWaveBuffer != null && config.Default.Preload)
+                            if (Assets.EntireSongWaveBuffer != null && Config.Data.Preload)
                             {
                                 double LoadPercetage = (double)Assets.EntireSongWaveBuffer.Count / Assets.Channel32.Length * 4.0;
                                 TempRect.X = DurationBar.X + (int)(DurationBar.Width * PlayPercetage);
                                 TempRect.Width = (int)(DurationBar.Width * LoadPercetage) - (int)(DurationBar.Width * PlayPercetage);
                                 spriteBatch.Draw(Assets.White, TempRect, secondaryColor);
-                                if (config.Default.AntiAliasing)
+                                if (Config.Data.AntiAliasing)
                                 {
                                     TempRect.X = DurationBar.X + (int)(DurationBar.Width * LoadPercetage);
                                     TempRect.Width = 1;
@@ -1779,7 +1780,7 @@ namespace MusicPlayerDXMonoGamePort
                                     spriteBatch.Draw(Assets.White, TempRect, secondaryColor * AAPercentage);
                                 }
                             }
-                            if (config.Default.AntiAliasing)
+                            if (Config.Data.AntiAliasing)
                             {
                                 TempRect.X = DurationBar.X + (int)(DurationBar.Width * PlayPercetage);
                                 TempRect.Width = 1;
