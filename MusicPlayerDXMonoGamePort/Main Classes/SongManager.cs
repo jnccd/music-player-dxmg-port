@@ -1,6 +1,5 @@
 ﻿using Configuration;
 using Microsoft.Xna.Framework.Media;
-using MusicPlayerDXMonoGamePort.Main_Classes;
 using NAudio.CoreAudioApi;
 using NAudio.Dsp;
 using NAudio.Wave;
@@ -42,7 +41,6 @@ namespace MusicPlayerDXMonoGamePort
         public static bool IsCurrentSongUpvoted;
         public static int LastUpvotedSongStreak;
         static List<string> SongChoosingList = new List<string>();
-        static int lastSongChoosingListLength = 0;
         public static float LastScoreChange = 0;
 
         // NAudio
@@ -104,7 +102,7 @@ namespace MusicPlayerDXMonoGamePort
             return false;
         }
 
-        // Startup Song
+        // Start Song
         public static void PlayFirstSong()
         {
             foreach (UpvotedSong s in Config.Data.songDatabaseEntries)
@@ -225,6 +223,77 @@ namespace MusicPlayerDXMonoGamePort
             }
             return false;
         }
+        private static void PlaySongByPath(string PathString)
+        {
+            if (!File.Exists(PathString))
+            {
+                Playlist.Remove(PathString);
+                PlayerHistory.RemoveAt(PlayerHistoryIndex);
+                PlayerHistoryIndex--;
+                if (PlayerHistoryIndex < 0)
+                    PlayerHistoryIndex = 0;
+                GetNextSong(true, false);
+                return;
+            }
+
+            int index = Config.Data.songDatabaseEntries.FindIndex(x => x.Name == currentlyPlayingSongName);
+            if (index != -1 && Config.Data.songDatabaseEntries[index].Volume != -1)
+            {
+                float mult = Values.BaseVolume / Config.Data.songDatabaseEntries[index].Volume;
+                Values.VolumeMultiplier = mult;
+                //Program.game.ShowSecondRowMessage("Applied Volume multiplier of: " + Math.Round(mult, 2), 1);
+            }
+            else if (Values.VolumeMultiplier > 2 || Values.VolumeMultiplier < 0.1f)
+                Values.VolumeMultiplier = 1;
+
+            Config.Data.Preload = Program.game.Preload;
+            Program.game.ReHookGlobalKeyHooks();
+            if (T != null && T.Status == TaskStatus.Running)
+            {
+                AbortAbort = true;
+                T.Wait();
+            }
+
+            Program.game.SongTimeSkipped = 0;
+            Program.game.ForcedCoverBackgroundRedraw = true;
+            Program.game.ForceTitleRedraw(true);
+            if (Program.game.DG != null)
+                Program.game.DG.Clear();
+
+            DisposeNAudioData();
+
+            if (PathString.Contains("\""))
+                PathString = PathString.Trim(new char[] { '"', ' ' });
+
+            mp3 = new Mp3FileReader(PathString);
+            mp3Reader = new Mp3FileReader(PathString);
+            mp3ReaderThreaded = new Mp3FileReader(PathString);
+            Channel32 = new WaveChannel32(mp3);
+            Channel32Reader = new WaveChannel32(mp3Reader);
+            Channel32ReaderThreaded = new WaveChannel32(mp3ReaderThreaded);
+
+            output = new DirectSoundOut();
+            output.Init(Channel32);
+
+            if (Config.Data.Preload)
+            {
+                if (Config.Data.MultiThreading)
+                    T = Task.Factory.StartNew(SongVisualization.UpdateEntireSongBuffers);
+                else
+                    SongVisualization.UpdateEntireSongBuffers();
+            }
+
+            output.Play();
+            Channel32.Volume = 0;
+            SongStartTime = (int)Values.Timer;
+            Channel32.Position = SongVisualization.bufferLength / 2;
+
+            currentlyPlayingSongData = Config.Data.songDatabaseEntries.Find(x => x.Name == currentlyPlayingSongName);
+            AddSongToListIfNotDoneSoFar(currentlyPlayingSongPath);
+            //Program.game.UpdateDiscordRPC();
+        }
+
+        // Song Choosing
         private static void GetNewPlaylistSong()
         {
             // TODO: Real time song choosing
@@ -297,74 +366,96 @@ namespace MusicPlayerDXMonoGamePort
             PlayerHistoryIndex = PlayerHistory.Count - 1;
             PlaySongByPath(PlayerHistory[PlayerHistoryIndex]);
         }
-        private static void PlaySongByPath(string PathString)
+        public static void CreateSongChoosingList()
         {
-            if (!File.Exists(PathString))
+            //CurrentDebugTime = Stopwatch.GetTimestamp();
+
+            SongChoosingList.Clear();
+            for (int i = 0; i < Playlist.Count; i++)
             {
-                Playlist.Remove(PathString);
-                PlayerHistory.RemoveAt(PlayerHistoryIndex);
-                PlayerHistoryIndex--;
-                if (PlayerHistoryIndex < 0)
-                    PlayerHistoryIndex = 0;
-                GetNextSong(true, false);
+                SongChoosingList.Add(Playlist[i]);
+
+                float amount = GetSongChoosingAmount(Config.Data.songDatabaseEntries.Select(x => x.Name).ToList().IndexOf(Playlist[i].Split('\\').Last())) + 1;
+
+                for (int k = 0; k < amount; k++)
+                    SongChoosingList.Add(Playlist[i]);
+            }
+#if DEBUG
+            // testing shit
+            TestChoosingListIntegrity();
+#endif
+            //Debug.WriteLine("SongChoosing List update time: " + (Stopwatch.GetTimestamp() - CurrentDebugTime) + " length: " + SongChoosingList.Count);
+        }
+        public static void UpdateSongChoosingList(string SongPath)
+        {
+            CurrentDebugTime2 = Stopwatch.GetTimestamp();
+
+            // TODO: Fix doubled chance
+            string SongName = SongPath.Split('\\').Last();
+
+            // Getting Choosing List Count
+            int index = SongChoosingList.FindIndex(x => x == SongPath);
+            if (index == -1)
+            {
+                //Console.WriteLine("oi that song doesnt even exist lol");
                 return;
             }
+            int i = index;
+            while (i < SongChoosingList.Count && SongChoosingList[i] == SongPath)
+                i++;
+            int count = i - index;
 
-            int index = Config.Data.songDatabaseEntries.FindIndex(x => x.Name == currentlyPlayingSongName);
-            if (index != -1 && Config.Data.songDatabaseEntries[index].Volume != -1)
+            // Getting target Count
+            int amount = (int)GetSongChoosingAmount(Config.Data.songDatabaseEntries.FindIndex(x => x.Name == SongName)) + 1;
+
+            for (int j = 0; j < amount - count; j++)
+                SongChoosingList.Insert(index, SongPath);
+            for (int j = 0; j < count - amount; j++)
+                SongChoosingList.RemoveAt(index);
+
+            Debug.WriteLine($"SongChoosingList Time: {Stopwatch.GetTimestamp() - CurrentDebugTime2} - Size {SongChoosingList.Count}");
+
+#if DEBUG
+            // testing shit
+            TestChoosingListIntegrity();
+#endif
+        }
+        public static float GetSongChoosingAmount(int UpvotedSongDataIndex)
+        {
+            float amount = 0;
+            float ChanceIncreasePerUpvote = 1000f / Playlist.Count;
+            UpvotedSong curSong = Config.Data.songDatabaseEntries[UpvotedSongDataIndex];
+            if (UpvotedSongDataIndex >= 0)
             {
-                float mult = Values.BaseVolume / Config.Data.songDatabaseEntries[index].Volume;
-                Values.VolumeMultiplier = mult;
-                //Program.game.ShowSecondRowMessage("Applied Volume multiplier of: " + Math.Round(mult, 2), 1);
+                switch (0) // Im keeping old choosing algorithms so I can experiment
+                {
+                    case 0: // Default choosing
+                        // Give songs with good ratio extra chance
+                        float ratio = 0;
+                        if (curSong.TotalDislikes > 0)
+                            ratio = curSong.TotalLikes / (float)curSong.TotalDislikes;
+                        else if (curSong.TotalLikes > 0)
+                            ratio = float.MaxValue;
+                        amount += (Values.Sigmoid(ratio) - 0.5f) * 100 * ChanceIncreasePerUpvote;
+
+                        // Give songs with good score extra chance
+                        if (curSong.Score > 0)
+                            amount += (int)(Math.Ceiling(curSong.Score * ChanceIncreasePerUpvote));
+
+                        // Give young songs extra chance
+                        float age = SongAge(UpvotedSongDataIndex);
+                        if (age < 30)
+                            amount += (int)((30 - age) * ChanceIncreasePerUpvote * 60f / 30f);
+                        break;
+
+                    case 1: // Ratio only choosing
+                        amount = (float)curSong.TotalLikes / curSong.TotalDislikes;
+                        if (float.IsInfinity(amount))
+                            amount = HighestSongRatioInR + 100;
+                        break;
+                }
             }
-            else if (Values.VolumeMultiplier > 2 || Values.VolumeMultiplier < 0.1f)
-                Values.VolumeMultiplier = 1;
-
-            Config.Data.Preload = Program.game.Preload;
-            Program.game.ReHookGlobalKeyHooks();
-            if (T != null && T.Status == TaskStatus.Running)
-            {
-                AbortAbort = true;
-                T.Wait();
-            }
-
-            Program.game.SongTimeSkipped = 0;
-            Program.game.ForcedCoverBackgroundRedraw = true;
-            Program.game.ForceTitleRedraw(true);
-            if (Program.game.DG != null)
-                Program.game.DG.Clear();
-
-            DisposeNAudioData();
-
-            if (PathString.Contains("\""))
-                PathString = PathString.Trim(new char[] { '"', ' ' });
-
-            mp3 = new Mp3FileReader(PathString);
-            mp3Reader = new Mp3FileReader(PathString);
-            mp3ReaderThreaded = new Mp3FileReader(PathString);
-            Channel32 = new WaveChannel32(mp3);
-            Channel32Reader = new WaveChannel32(mp3Reader);
-            Channel32ReaderThreaded = new WaveChannel32(mp3ReaderThreaded);
-
-            output = new DirectSoundOut();
-            output.Init(Channel32);
-
-            if (Config.Data.Preload)
-            {
-                if (Config.Data.MultiThreading)
-                    T = Task.Factory.StartNew(SongVisualization.UpdateEntireSongBuffers);
-                else
-                    SongVisualization.UpdateEntireSongBuffers();
-            }
-
-            output.Play();
-            Channel32.Volume = 0;
-            SongStartTime = (int)Values.Timer;
-            Channel32.Position = SongVisualization.bufferLength / 2;
-
-            currentlyPlayingSongData = Config.Data.songDatabaseEntries.Find(x => x.Name == currentlyPlayingSongName);
-            AddSongToListIfNotDoneSoFar(currentlyPlayingSongPath);
-            //Program.game.UpdateDiscordRPC();
+            return amount;
         }
 
         // Move through PlayerHistory
@@ -629,97 +720,6 @@ namespace MusicPlayerDXMonoGamePort
                 if (s.Split('\\').Last() == SongName && File.Exists(s))
                     return s;
             return "";
-        }
-        public static void CreateSongChoosingList()
-        {
-            //CurrentDebugTime = Stopwatch.GetTimestamp();
-
-            SongChoosingList.Clear();
-            for (int i = 0; i < Playlist.Count; i++)
-            {
-                SongChoosingList.Add(Playlist[i]);
-
-                float amount = GetSongChoosingAmount(Config.Data.songDatabaseEntries.Select(x => x.Name).ToList().IndexOf(Playlist[i].Split('\\').Last())) + 1;
-
-                for (int k = 0; k < amount; k++)
-                    SongChoosingList.Add(Playlist[i]);
-            }
-#if DEBUG
-            // testing shit
-            TestChoosingListIntegrity();
-#endif
-            //Debug.WriteLine("SongChoosing List update time: " + (Stopwatch.GetTimestamp() - CurrentDebugTime) + " length: " + SongChoosingList.Count);
-        }
-        public static void UpdateSongChoosingList(string SongPath)
-        {
-            CurrentDebugTime2 = Stopwatch.GetTimestamp();
-
-            // TODO: Fix doubled chance
-            string SongName = SongPath.Split('\\').Last();
-
-            // Getting Choosing List Count
-            int index = SongChoosingList.FindIndex(x => x == SongPath);
-            if (index == -1)
-            {
-                //Console.WriteLine("oi that song doesnt even exist lol");
-                return;
-            }
-            int i = index;
-            while (i < SongChoosingList.Count && SongChoosingList[i] == SongPath)
-                i++;
-            int count = i - index;
-
-            // Getting target Count
-            int amount = (int)GetSongChoosingAmount(Config.Data.songDatabaseEntries.FindIndex(x => x.Name == SongName)) + 1;
-
-            for (int j = 0; j < amount - count; j++)
-                SongChoosingList.Insert(index, SongPath);
-            for (int j = 0; j < count - amount; j++)
-                SongChoosingList.RemoveAt(index);
-
-            Debug.WriteLine($"SongChoosingList Time: {Stopwatch.GetTimestamp() - CurrentDebugTime2} - Size {SongChoosingList.Count}");
-
-#if DEBUG
-            // testing shit
-            TestChoosingListIntegrity();
-#endif
-        }
-        public static float GetSongChoosingAmount(int UpvotedSongDataIndex)
-        {
-            float amount = 0;
-            float ChanceIncreasePerUpvote = 1000f / Playlist.Count;
-            UpvotedSong curSong = Config.Data.songDatabaseEntries[UpvotedSongDataIndex];
-            if (UpvotedSongDataIndex >= 0)
-            {
-                switch (0) // Im keeping old choosing algorithms so I can experiment
-                {
-                    case 0: // Default choosing
-                        // Give songs with good ratio extra chance
-                        float ratio = 0;
-                        if (curSong.TotalDislikes > 0)
-                            ratio = curSong.TotalLikes / (float)curSong.TotalDislikes;
-                        else if (curSong.TotalLikes > 0)
-                            ratio = float.MaxValue;
-                        amount += (Values.Sigmoid(ratio) - 0.5f) * 100 * ChanceIncreasePerUpvote;
-
-                        // Give songs with good score extra chance
-                        if (curSong.Score > 0)
-                            amount += (int)(Math.Ceiling(curSong.Score * ChanceIncreasePerUpvote));
-
-                        // Give young songs extra chance
-                        float age = SongAge(UpvotedSongDataIndex);
-                        if (age < 30)
-                            amount += (int)((30 - age) * ChanceIncreasePerUpvote * 60f / 30f);
-                        break;
-
-                    case 1: // Ratio only choosing
-                        amount = (float)curSong.TotalLikes / curSong.TotalDislikes;
-                        if (float.IsInfinity(amount))
-                            amount = HighestSongRatioInR + 100;
-                        break;
-                }
-            }
-            return amount;
         }
         private static void SaveCurrentSongToHistoryFile(float ScoreChange)
         {
