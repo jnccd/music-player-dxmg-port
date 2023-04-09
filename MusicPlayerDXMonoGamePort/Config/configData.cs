@@ -37,4 +37,28 @@ namespace Configuration
             
         }
     }
+
+    public class UpvotedSong
+    {
+        public UpvotedSong(string Name, float Score, int Streak, int TotalLikes, int TotalDislikes, long AddingDates, float Volume)
+        {
+            this.Name = Name;
+            this.Score = Score;
+            this.Streak = Streak;
+            this.TotalLikes = TotalLikes;
+            this.TotalDislikes = TotalDislikes;
+            this.AddingDates = AddingDates;
+            this.Volume = Volume;
+        }
+
+        public string Name;
+        public float Score;
+        public int Streak;
+        public int TotalLikes;
+        public int TotalDislikes;
+        public long AddingDates;
+        public float Volume;
+
+        public string Path; // Only used in ExportChooser.cs
+    }
 }
