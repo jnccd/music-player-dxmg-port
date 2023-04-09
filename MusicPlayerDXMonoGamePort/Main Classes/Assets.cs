@@ -1161,14 +1161,16 @@ namespace MusicPlayerDXMonoGamePort
             
             for (int i = 0; i < Config.Data.songDatabaseEntries.Count; i++)
             {
-                SongInformationArray[i, 0] = Path.GetFileNameWithoutExtension(Config.Data.songDatabaseEntries[i].Name);
-                SongInformationArray[i, 1] = Config.Data.songDatabaseEntries[i].Score;
-                SongInformationArray[i, 2] = Config.Data.songDatabaseEntries[i].Streak;
-                SongInformationArray[i, 3] = Config.Data.songDatabaseEntries[i].TotalLikes + "/" + Config.Data.songDatabaseEntries[i].TotalDislikes + "=" + ((float)Config.Data.songDatabaseEntries[i].TotalLikes / Config.Data.songDatabaseEntries[i].TotalDislikes);
-                if (Config.Data.songDatabaseEntries[i].Volume != -1)
-                    SongInformationArray[i, 4] = Values.BaseVolume / Config.Data.songDatabaseEntries[i].Volume;
+                UpvotedSong curSong = Config.Data.songDatabaseEntries[i];
+
+                SongInformationArray[i, 0] = curSong.Name;
+                SongInformationArray[i, 1] = curSong.Score;
+                SongInformationArray[i, 2] = curSong.Streak;
+                SongInformationArray[i, 3] = curSong.TotalLikes + "/" + curSong.TotalDislikes + "=" + ((float)curSong.TotalLikes / curSong.TotalDislikes);
+                if (curSong.Volume != -1)
+                    SongInformationArray[i, 4] = Values.BaseVolume / curSong.Volume;
                 SongInformationArray[i, 5] = SongAge(i);
-                SongInformationArray[i, 6] = SongChoosingList.FindAll(x => x == Config.Data.songDatabaseEntries[i].Path).Count / (float)SongChoosingList.Count * 100;
+                SongInformationArray[i, 6] = SongChoosingList.FindAll(x => x == curSong.Path).Count / (float)SongChoosingList.Count * 100;
             }
 
             return SongInformationArray;
@@ -1230,7 +1232,8 @@ namespace MusicPlayerDXMonoGamePort
             for (int j = 0; j < count - amount; j++)
                 SongChoosingList.RemoveAt(index);
 
-            Debug.WriteLine("SongChoosingList " + (Stopwatch.GetTimestamp() - CurrentDebugTime2));
+            Debug.WriteLine($"SongChoosingList Time: {Stopwatch.GetTimestamp() - CurrentDebugTime2} - Size {SongChoosingList.Count}");
+
 #if DEBUG
             // testing shit
             TestChoosingListIntegrity();
@@ -1252,7 +1255,7 @@ namespace MusicPlayerDXMonoGamePort
 
                         // Give songs with good score extra chance
                         if (curSong.Score > 0)
-                            amount += (int)(Math.Ceiling(curSong.Score * ChanceIncreasePerUpvote)) * 2;
+                            amount += (int)(Math.Ceiling(curSong.Score * ChanceIncreasePerUpvote));
 
                         // Give young songs extra chance
                         float age = SongAge(UpvotedSongDataIndex);
