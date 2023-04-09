@@ -65,6 +65,23 @@ namespace MusicPlayerDXMonoGamePort
             Values.RegisterUriScheme();
 
             #region Song Data List initialization
+            // Legacy config support
+            if (config.Default.SongPaths != null && config.Default.SongScores != null && config.Default.SongUpvoteStreak != null && config.Default.SongTotalLikes != null &&
+                config.Default.SongTotalDislikes != null && config.Default.SongDate != null && config.Default.SongVolume != null &&
+                config.Default.SongScores.Length == config.Default.SongPaths.Length && config.Default.SongUpvoteStreak.Length == config.Default.SongPaths.Length &&
+                config.Default.SongTotalLikes.Length == config.Default.SongPaths.Length && config.Default.SongTotalDislikes.Length == config.Default.SongPaths.Length &&
+                config.Default.SongDate.Length == config.Default.SongPaths.Length && config.Default.SongVolume.Length == config.Default.SongPaths.Length)
+            {
+                Config.Data.songDatabaseEntries.Clear();
+                for (int i = 0; i < config.Default.SongPaths.Length; i++)
+                    Config.Data.songDatabaseEntries.Add(new UpvotedSong(config.Default.SongPaths[i], config.Default.SongScores[i], config.Default.SongUpvoteStreak[i],
+                            config.Default.SongTotalLikes[i], config.Default.SongTotalDislikes[i], config.Default.SongDate[i], config.Default.SongVolume[i]));
+                config.Default.SongPaths = null;
+                config.Default.Save();
+            }
+            else if (!config.Default.FirstStart)
+                MessageBox.Show("Song statistics corrupted!\nResetting...");
+
             Assets.HistorySongData = new List<HistorySong>();
             string path = Assets.historyFilePath;
             if (File.Exists(path))
