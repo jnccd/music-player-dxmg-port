@@ -1,6 +1,7 @@
 ﻿using Configuration;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MusicPlayerDXMonoGamePort.Main_Classes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -528,7 +529,7 @@ namespace MusicPlayerDXMonoGamePort
                         int H = (int)GetMaximum((int)(i * Width), (int)((i + 1) * Width));
 
                         for (int j = 0; j < (int)(Width / 1.2f); j++)
-                            Assets.DrawLine(new Vector2(i * Width + j + P.X + Config.Data.ShadowDistance, P.Y - H + Config.Data.ShadowDistance),
+                            SongVisualization.DrawLine(new Vector2(i * Width + j + P.X + Config.Data.ShadowDistance, P.Y - H + Config.Data.ShadowDistance),
                                             new Vector2(i * Width + j + P.X + Config.Data.ShadowDistance, P.Y + (int)(Width / 1.2f) + Config.Data.ShadowDistance),
                                             1, Color.Black * 0.6f, spriteBatch);
                     }
@@ -539,7 +540,7 @@ namespace MusicPlayerDXMonoGamePort
                     int H = (int)GetMaximum((int)(i * Width), (int)((i + 1) * Width));
 
                     for (int j = 0; j < (int)(Width / 1.2f); j++)
-                        Assets.DrawLine(new Vector2(i * Width + j + P.X, P.Y - H),
+                        SongVisualization.DrawLine(new Vector2(i * Width + j + P.X, P.Y - H),
                                         new Vector2(i * Width + j + P.X, P.Y + (int)(Width / 1.2f)),
                                         1, Color.Lerp(Program.game.primaryColor, Program.game.secondaryColor, i / values.Length), spriteBatch);
                 }
@@ -558,7 +559,7 @@ namespace MusicPlayerDXMonoGamePort
                         if (value > 1)
                             value = 1;
 
-                        Assets.DrawLine(new Vector2(i + P.X + Config.Data.ShadowDistance, P.Y - (int)(value * Height) + Config.Data.ShadowDistance),
+                        SongVisualization.DrawLine(new Vector2(i + P.X + Config.Data.ShadowDistance, P.Y - (int)(value * Height) + Config.Data.ShadowDistance),
                                         new Vector2(i + P.X + Config.Data.ShadowDistance, P.Y + 10 + Config.Data.ShadowDistance),
                                         1, Color.Black * 0.6f, spriteBatch);
                     }
@@ -571,7 +572,7 @@ namespace MusicPlayerDXMonoGamePort
                     if (value > 1)
                         value = 1;
 
-                    Assets.DrawLine(new Vector2(i + P.X, P.Y - (int)(value * Height)),
+                    SongVisualization.DrawLine(new Vector2(i + P.X, P.Y - (int)(value * Height)),
                                     new Vector2(i + P.X, P.Y + 10),
                                     1, Color.Lerp(Program.game.primaryColor, Program.game.secondaryColor, i / values.Length), spriteBatch);
                 }

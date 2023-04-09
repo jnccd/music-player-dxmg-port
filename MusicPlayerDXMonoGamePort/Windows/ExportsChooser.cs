@@ -48,7 +48,7 @@ namespace MusicPlayerDXMonoGamePort
             ChanceAmounts = new float[SongsToChooseFrom.Count];
             for (int i = 0; i < SongsToChooseFrom.Count; i++)
             {
-                int amount = (int)Assets.GetSongChoosingAmount(i) + 1;
+                int amount = (int)SongManager.GetSongChoosingAmount(i) + 1;
                 sum += amount;
                 ChanceAmounts[i] = amount;
             }

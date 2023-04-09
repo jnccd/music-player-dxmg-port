@@ -111,10 +111,10 @@ namespace MusicPlayerDXMonoGamePort
         }
         private void button1_Click(object sender, EventArgs e)
         {
-            if (!File.Exists(Assets.currentlyPlayingSongPath))
+            if (!File.Exists(SongManager.currentlyPlayingSongPath))
                 return;
             else
-                Process.Start("explorer.exe", "/select, \"" + Assets.currentlyPlayingSongPath + "\"");
+                Process.Start("explorer.exe", "/select, \"" + SongManager.currentlyPlayingSongPath + "\"");
         }
         private void AAtoggle_Click(object sender, EventArgs e)
         {
@@ -140,7 +140,7 @@ namespace MusicPlayerDXMonoGamePort
                 try
                 {
                     // Get fitting youtube video
-                    string url = string.Format("https://www.youtube.com/results?search_query=" + Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongName));
+                    string url = string.Format("https://www.youtube.com/results?search_query=" + Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongName));
                     HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create(url);
                     req.KeepAlive = false;
                     WebResponse W = req.GetResponse();
@@ -380,7 +380,7 @@ namespace MusicPlayerDXMonoGamePort
 
         private void bDrag_MouseDown(object sender, MouseEventArgs e)
         {
-            string path = Assets.currentlyPlayingSongPath;
+            string path = SongManager.currentlyPlayingSongPath;
             string[] files = new string[1]; files[0] = path;
             bDrag.DoDragDrop(new DataObject(DataFormats.FileDrop, files), DragDropEffects.Copy);
         }

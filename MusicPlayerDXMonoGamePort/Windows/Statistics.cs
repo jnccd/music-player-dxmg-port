@@ -25,6 +25,12 @@ namespace MusicPlayerDXMonoGamePort
         Point MousePos;
         Point MouseDrag;
 
+        public struct DistancePerSong
+        {
+            public int SongIndex;
+            public float SongDifference;
+        }
+
         public Statistics(XNA parent)
         {
             /*
@@ -49,7 +55,7 @@ namespace MusicPlayerDXMonoGamePort
             int RowIndex = dataGridView1.FirstDisplayedScrollingRowIndex;
             dataGridView1.Rows.Clear();
             object[] o = new object[7];
-            object[,] SongInfo = Assets.GetSongInformationList();
+            object[,] SongInfo = SongManager.GetSongInformationList();
 
             for (int i = 0; i < Config.Data.songDatabaseEntries.Count; i++)
             {
@@ -76,7 +82,7 @@ namespace MusicPlayerDXMonoGamePort
             dataGridView1.Columns[dataGridView1.Columns.Count - 1].Width = 2;
 
             for (int i = 0; i < dataGridView1.Rows.Count; i++)
-                if (Assets.currentlyPlayingSongName.Equals(dataGridView1.Rows[i].Cells[0].Value))
+                if (SongManager.currentlyPlayingSongName.Equals(dataGridView1.Rows[i].Cells[0].Value))
                 {
                     dataGridView1.Rows[i].Selected = true;
                     int heightInRows = dataGridView1.Height / dataGridView1.Rows[0].Height;
@@ -120,7 +126,7 @@ namespace MusicPlayerDXMonoGamePort
         }
         private void toPlaying_Click(object sender, EventArgs e)
         {
-            toSong(Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongName));
+            toSong(Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongName));
         }
 
         // Data Grid View Events
@@ -138,7 +144,7 @@ namespace MusicPlayerDXMonoGamePort
         {
             if (e.Button == MouseButtons.Left)
             {
-                if (e.RowIndex >= 0 && !Assets.PlayPlaylistSong(dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3"))
+                if (e.RowIndex >= 0 && !SongManager.PlayPlaylistSong(dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3"))
                     MessageBox.Show("This entry isnt linked to a mp3 file!");
             }
         }
@@ -216,7 +222,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        if (!Assets.PlayPlaylistSong(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3"))
+                        if (!SongManager.PlayPlaylistSong(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3"))
                             MessageBox.Show("This entry isnt linked to a mp3 file!");
                     }
                     catch { }
@@ -225,7 +231,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        Assets.QueueNewSong(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString(), false);
+                        SongManager.QueueNewSong(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString(), false);
                     }
                     catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
                 })));
@@ -260,14 +266,14 @@ namespace MusicPlayerDXMonoGamePort
                     catch (Exception ex) { 
                         MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
                 })));
-                if (dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongName)))
+                if (dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongName)))
                     m.Items.Add(new ToolStripMenuItem("Open in Browser with timestamp", null, ((object s, EventArgs ev) =>
                     {
                         try
                         {
                             Task.Factory.StartNew(() =>
                             {
-                                int seconds = (int)(Assets.Channel32.Position / (double)Assets.Channel32.Length * Assets.Channel32.TotalTime.TotalSeconds);
+                                int seconds = (int)(SongManager.Channel32.Position / (double)SongManager.Channel32.Length * SongManager.Channel32.TotalTime.TotalSeconds);
                                 Uri U = new Uri(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().GetYoutubeVideoURL() + "&t=" + seconds + "s");
                                 new Process
                                 {
@@ -277,8 +283,8 @@ namespace MusicPlayerDXMonoGamePort
                                     }
                                 }.Start();
 
-                                if (Assets.IsPlaying())
-                                    Assets.PlayPause();
+                                if (SongManager.IsPlaying())
+                                    SongManager.PlayPause();
                             });
                         }
                         catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
@@ -287,7 +293,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
+                        string path = SongManager.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
                         if (!File.Exists(path))
                             return;
                         else
@@ -303,7 +309,7 @@ namespace MusicPlayerDXMonoGamePort
                         if (UpvotedSongNamesIndex != -1)
                         {
                             Config.Data.songDatabaseEntries[UpvotedSongNamesIndex].Volume = -1;
-                            Assets.SaveUserSettings(false);
+                            SongManager.SaveUserSettings(false);
                             bRefresh_Click(null, EventArgs.Empty);
                         }
                     }
@@ -313,14 +319,14 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
+                        string path = SongManager.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
                         int UpvotedSongNamesIndex = Config.Data.songDatabaseEntries.FindIndex(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
-                        int PlaylistIndex = Assets.Playlist.IndexOf(path);
+                        int PlaylistIndex = SongManager.Playlist.IndexOf(path);
 
                         if (!File.Exists(path))
                             return;
 
-                        if (dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongName)))
+                        if (dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongName)))
                         {
                             MessageBox.Show("Sorry Dave but im afraight I cant do that\n(You cant play a file and rename it at the same time!)");
                             return;
@@ -339,7 +345,7 @@ namespace MusicPlayerDXMonoGamePort
                                 string dest = path.Split('\\').Reverse().Skip(1).Reverse().Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";
                                 File.Move(path, dest);
 
-                                string historyPath = Assets.historyFilePath;
+                                string historyPath = SongManager.historyFilePath;
                                 if (File.Exists(historyPath))
                                 {
                                     string[] historyContent = File.ReadAllLines(historyPath);
@@ -357,11 +363,11 @@ namespace MusicPlayerDXMonoGamePort
                                 }
 
                                 Config.Data.songDatabaseEntries[UpvotedSongNamesIndex].Name = Dia.result + ".mp3";
-                                Assets.SaveUserSettings(false);
+                                SongManager.SaveUserSettings(false);
 
-                                Assets.Playlist[PlaylistIndex] = dest;
+                                SongManager.Playlist[PlaylistIndex] = dest;
 
-                                Assets.CreateSongChoosingList();
+                                SongManager.CreateSongChoosingList();
                                 bRefresh_Click(null, EventArgs.Empty);
                             }
                             catch (Exception ex) { MessageBox.Show(ex.ToString()); }
@@ -384,7 +390,7 @@ namespace MusicPlayerDXMonoGamePort
                         List<string> SongPaths = new List<string>();
                         for (int i = 0; i < dataGridView1.Rows.Count; i++)
                             if (dataGridView1.Rows[i].Selected)
-                                SongPaths.Add(Assets.GetSongPathFromSongName((string)dataGridView1.Rows[i].Cells[0].Value));
+                                SongPaths.Add(SongManager.GetSongPathFromSongName((string)dataGridView1.Rows[i].Cells[0].Value));
                         UpdateMetadata updat = new UpdateMetadata(SongPaths.ToArray());
 
                         if (SongPaths.Count > 0)
@@ -400,7 +406,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
+                        string path = SongManager.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
                         TagLib.File file = TagLib.File.Create(path);
                         TagLib.IPicture pic = file.Tag.Pictures[0];
                         MemoryStream ms = new MemoryStream(pic.Data.Data);
@@ -469,7 +475,7 @@ namespace MusicPlayerDXMonoGamePort
             timerTicks++;
             if (timerTicks == 2 && Math.Abs(MousePos.X - MouseDrag.X + MousePos.Y - MouseDrag.Y) < 15)
             {
-                string path = Assets.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
+                string path = SongManager.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
                 string[] files = new string[1]; files[0] = path;
                 dataGridView1.DoDragDrop(new DataObject(DataFormats.FileDrop, files), DragDropEffects.Copy);
                 timer1.Enabled = false;

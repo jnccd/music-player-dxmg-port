@@ -21,6 +21,7 @@ using System.Runtime;
 using MessageBox = System.Windows.Forms.MessageBox;
 using SharpDX.Direct2D1.Effects;
 using Configuration;
+using MusicPlayerDXMonoGamePort.Main_Classes;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -200,8 +201,8 @@ namespace MusicPlayerDXMonoGamePort
             {
                 Program.Closing = true;
                 InterceptKeys.UnhookWindowsHookEx(InterceptKeys._hookID);
-                Assets.DisposeNAudioData();
-                Assets.SaveUserSettings(true);
+                SongManager.DisposeNAudioData();
+                SongManager.SaveUserSettings(true);
                 if (optionsMenu != null)
                     optionsMenu.InvokeIfRequired(optionsMenu.Close);
                 if (statistics != null)
@@ -251,7 +252,7 @@ namespace MusicPlayerDXMonoGamePort
             Console.WriteLine("Finished Loading!");
             StartSongInputLoop();
 
-            ShowSecondRowMessage("Found  " + Assets.Playlist.Count + "  Songs!", 3);
+            ShowSecondRowMessage("Found  " + SongManager.Playlist.Count + "  Songs!", 3);
 
             KeepWindowInScreen();
             Shadow = new DropShadow(gameWindowForm, true);
@@ -342,8 +343,8 @@ namespace MusicPlayerDXMonoGamePort
                                     originY++;
                                     Path = "";
                                     Console.SetCursorPosition(0, originY);
-                                    Console.WriteLine(Values.AsTime((Assets.Channel32.Position / (double)Assets.Channel32.Length) * Assets.Channel32.TotalTime.TotalSeconds)
-                                        + " / " + Values.AsTime(Assets.Channel32.TotalTime.TotalSeconds));
+                                    Console.WriteLine(Values.AsTime((SongManager.Channel32.Position / (double)SongManager.Channel32.Length) * SongManager.Channel32.TotalTime.TotalSeconds)
+                                        + " / " + Values.AsTime(SongManager.Channel32.TotalTime.TotalSeconds));
                                     originY++;
                                 }
                                 else if (Path.StartsWith("/settime "))
@@ -353,7 +354,7 @@ namespace MusicPlayerDXMonoGamePort
 
                                     try
                                     {
-                                        Assets.Channel32.Position = (long)(Convert.ToInt32(Path) * (Assets.Channel32.Length / Assets.Channel32.TotalTime.TotalSeconds));
+                                        SongManager.Channel32.Position = (long)(Convert.ToInt32(Path) * (SongManager.Channel32.Length / SongManager.Channel32.TotalTime.TotalSeconds));
                                     }
                                     catch (Exception ex) { Console.WriteLine(ex.ToString()); }
 
@@ -362,9 +363,9 @@ namespace MusicPlayerDXMonoGamePort
                                 }
                                 else if (Path.StartsWith("/songbufferstate"))
                                 {
-                                    Console.WriteLine("\nWas aborted: " + Assets.SongBufferThreadWasAborted);
-                                    Console.WriteLine("\nLast exception: " + Assets.LastSongBufferThreadException.ToString());
-                                    Console.WriteLine("\nLast exception stack trace: " + Assets.LastSongBufferThreadException.StackTrace + "\n");
+                                    Console.WriteLine("\nWas aborted: " + SongVisualization.SongBufferThreadWasAborted);
+                                    Console.WriteLine("\nLast exception: " + SongVisualization.LastSongBufferThreadException.ToString());
+                                    Console.WriteLine("\nLast exception stack trace: " + SongVisualization.LastSongBufferThreadException.StackTrace + "\n");
 
                                     Path = "";
                                     originY = Console.CursorTop + 1;
@@ -403,13 +404,13 @@ namespace MusicPlayerDXMonoGamePort
                                     originY++;
                                     Path = "";
                                     Console.SetCursorPosition(0, originY);
-                                    Console.WriteLine("Searching for " + Assets.currentlyPlayingSongName.Split('.').First() + "...");
+                                    Console.WriteLine("Searching for " + SongManager.currentlyPlayingSongName.Split('.').First() + "...");
                                     originY++;
 
                                     Task.Factory.StartNew(() =>
                                     {
                                         // Use the I'm Feeling Lucky URL
-                                        string url = string.Format("https://www.google.com/search?num=100&site=&source=hp&q={0}&btnI=1", Assets.currentlyPlayingSongName.Split('.').First());
+                                        string url = string.Format("https://www.google.com/search?num=100&site=&source=hp&q={0}&btnI=1", SongManager.currentlyPlayingSongName.Split('.').First());
                                         url = url.Replace(' ', '+');
                                         WebRequest req = HttpWebRequest.Create(url);
                                         Uri U = req.GetResponse().ResponseUri;
@@ -478,7 +479,7 @@ namespace MusicPlayerDXMonoGamePort
                                             queue = Path.Remove(0, "/queue".Length + 1);
                                         else
                                             queue = Path.Remove(0, "/q".Length + 1);
-                                        Assets.QueueNewSong(Path, true);
+                                        SongManager.QueueNewSong(Path, true);
                                         Path = "";
                                     }
                                     catch (Exception ex)
@@ -514,7 +515,7 @@ namespace MusicPlayerDXMonoGamePort
                     Console.WriteLine();
                     if (Path.StartsWith("https://"))
                         Download(Path);
-                    else if (Assets.PlayNewSong(Path))
+                    else if (SongManager.PlayNewSong(Path))
                         LastConsoleInput.Add(Path.Trim('"'));
                 }
             });
@@ -533,7 +534,7 @@ namespace MusicPlayerDXMonoGamePort
                 PauseConsoleInputThread = true;
                 Values.ShowConsole();
 
-                PlaybackState PlayState = Assets.output.PlaybackState;
+                PlaybackState PlayState = SongManager.output.PlaybackState;
                 
                 string downloadTargetFolder = Values.CurrentExecutablePath + "\\Downloads\\";
                 string download = downloadInput;
@@ -589,12 +590,12 @@ namespace MusicPlayerDXMonoGamePort
                 catch { Console.WriteLine("Failed to write yt thumbnail"); }
 
                 // Play it
-                Assets.AddSongToListIfNotDoneSoFar(targetPath);
-                Assets.PlayNewSong(targetPath);
+                SongManager.AddSongToListIfNotDoneSoFar(targetPath);
+                SongManager.PlayNewSong(targetPath);
                 originY = Console.CursorTop;
 
                 if (PlayState == PlaybackState.Paused || PlayState == PlaybackState.Stopped)
-                    Assets.PlayPause();
+                    SongManager.PlayPause();
                 
                 ConsoleBackgroundOperationRunning = false;
                 PauseConsoleInputThread = false;
@@ -671,17 +672,17 @@ namespace MusicPlayerDXMonoGamePort
                 // Next / Previous Song [MouseWheel] ((On Win10 mouseWheel input is send to the process even if its not focused))
                 if (Control.ScrollWheelWentDown())
                 {
-                    Assets.GetPreviousSong();
+                    SongManager.GetPreviousSong();
                     ScrollWheelCooldown = 60;
                 }
                 if (Control.ScrollWheelWentUp())
                 {
-                    Assets.GetNextSong(false, true);
+                    SongManager.GetNextSong(false, true);
                     ScrollWheelCooldown = 60;
                 }
             }
 
-            if (Assets.IsCurrentSongUpvoted) {
+            if (SongManager.IsCurrentSongUpvoted) {
                 if (UpvoteIconAlpha < 1)
                     UpvoteIconAlpha += 0.05f;
             }
@@ -694,32 +695,32 @@ namespace MusicPlayerDXMonoGamePort
             ScrollWheelCooldown--;
 
             Values.LastOutputVolume = Values.OutputVolume;
-            if (Assets.output != null && Assets.output.PlaybackState == PlaybackState.Playing)
+            if (SongManager.output != null && SongManager.output.PlaybackState == PlaybackState.Playing)
             {
                 if (LongTitle)
                     ForcedTitleRedraw = true;
 
-                if (Assets.WaveBuffer != null)
-                    Values.OutputVolume = Values.GetRootMeanSquareApproximation(Assets.WaveBuffer);
+                if (SongVisualization.WaveBuffer != null)
+                    Values.OutputVolume = Values.GetRootMeanSquareApproximation(SongVisualization.WaveBuffer);
 
                 if (Values.OutputVolume < 0.0001f)
                     Values.OutputVolume = 0.0001f;
 
                 Values.OutputVolumeIncrease = Values.LastOutputVolume - Values.OutputVolume;
 
-                if (Assets.Channel32 != null && Assets.Channel32.Position > Assets.Channel32.Length - Assets.bufferLength / 2)
-                    Assets.GetNextSong(false, false);
+                if (SongManager.Channel32 != null && SongManager.Channel32.Position > SongManager.Channel32.Length - SongVisualization.bufferLength / 2)
+                    SongManager.GetNextSong(false, false);
 
-                if (Config.Data.Preload && Assets.EntireSongWaveBuffer != null)
+                if (Config.Data.Preload && SongVisualization.EntireSongWaveBuffer != null)
                 {
-                    Assets.UpdateWaveBufferWithEntireSongWB();
+                    SongVisualization.UpdateWaveBufferWithEntireSongWB();
                 }
                 else
-                    Assets.UpdateWaveBuffer();
+                    SongVisualization.UpdateWaveBuffer();
 
-                if (VisSetting != Visualizations.line && VisSetting != Visualizations.none && Assets.Channel32 != null)
+                if (VisSetting != Visualizations.line && VisSetting != Visualizations.none && SongManager.Channel32 != null)
                 {
-                    Assets.UpdateFFTbuffer();
+                    SongVisualization.UpdateFFTbuffer();
                     UpdateGD();
                 }
                 if (VisSetting == Visualizations.grid)
@@ -745,9 +746,9 @@ namespace MusicPlayerDXMonoGamePort
             try
             {
                 if (Config.Data.AutoVolume)
-                    Assets.Channel32.Volume = (1 - Values.OutputVolume) * Values.TargetVolume * Values.VolumeMultiplier; // Null pointer exception? 13.02.18 13:36 / 27.02.18 01:35
+                    SongManager.Channel32.Volume = (1 - Values.OutputVolume) * Values.TargetVolume * Values.VolumeMultiplier; // Null pointer exception? 13.02.18 13:36 / 27.02.18 01:35
                 else
-                    Assets.Channel32.Volume = 0.75f * Values.TargetVolume * Values.VolumeMultiplier; // Null pointer exception? 09.04.23 17:55
+                    SongManager.Channel32.Volume = 0.75f * Values.TargetVolume * Values.VolumeMultiplier; // Null pointer exception? 09.04.23 17:55
             }
             catch { }
 
@@ -779,7 +780,7 @@ namespace MusicPlayerDXMonoGamePort
                             if (RequestedSong.Default.RequestedSongString != "")
                             {
                                 lastSongRequestCheck = (int)Values.Timer;
-                                Assets.PlayNewSong(RequestedSong.Default.RequestedSongString);
+                                SongManager.PlayNewSong(RequestedSong.Default.RequestedSongString);
                                 RequestedSong.Default.RequestedSongString = "";
                                 RequestedSong.Default.Save();
                             }
@@ -811,7 +812,7 @@ namespace MusicPlayerDXMonoGamePort
                 if (Control.GetMouseRect().Intersects(DurationBarHitbox))
                 {
                     selectedControl = SelectedControl.DurationBar;
-                    SkipStartPosition = Assets.Channel32.Position;
+                    SkipStartPosition = SongManager.Channel32.Position;
                 }
                 else if (Control.GetMouseRect().Intersects(VolumeBarHitbox))
                     selectedControl = SelectedControl.VolumeSlider;
@@ -832,8 +833,8 @@ namespace MusicPlayerDXMonoGamePort
             {
                 if (selectedControl == SelectedControl.DurationBar)
                 {
-                    SongTimeSkipped = Assets.Channel32.Position - SkipStartPosition;
-                    Assets.output.Play();
+                    SongTimeSkipped = SongManager.Channel32.Position - SkipStartPosition;
+                    SongManager.output.Play();
                     UpdateDiscordRPC();
                 }
                 selectedControl = SelectedControl.None;
@@ -856,7 +857,7 @@ namespace MusicPlayerDXMonoGamePort
 
                 case SelectedControl.PlayPauseButton:
                     if (Control.WasLMBJustPressed() || !WasFocusedLastFrame && gameWindowForm.Focused)
-                        Assets.PlayPause();
+                        SongManager.PlayPause();
                     break;
 
                 case SelectedControl.CloseButton:
@@ -884,18 +885,18 @@ namespace MusicPlayerDXMonoGamePort
 
                 case SelectedControl.UpvoteButton:
                     if (Control.WasLMBJustPressed() || !WasFocusedLastFrame && gameWindowForm.Focused)
-                        Assets.IsCurrentSongUpvoted = !Assets.IsCurrentSongUpvoted;
+                        SongManager.IsCurrentSongUpvoted = !SongManager.IsCurrentSongUpvoted;
                     break;
 
                 case SelectedControl.DurationBar:
-                    Assets.Channel32.Position =
+                    SongManager.Channel32.Position =
                            (long)(((Control.GetMouseVector().X - DurationBar.X) / DurationBar.Width) *
-                           Assets.Channel32.TotalTime.TotalSeconds * Assets.Channel32.WaveFormat.AverageBytesPerSecond);
+                           SongManager.Channel32.TotalTime.TotalSeconds * SongManager.Channel32.WaveFormat.AverageBytesPerSecond);
 
                     if (Control.CurMS.X == Control.LastMS.X)
-                        Assets.output.Pause();
+                        SongManager.output.Pause();
                     else
-                        Assets.output.Play();
+                        SongManager.output.Play();
                     break;
 
                 case SelectedControl.DragWindow:
@@ -927,7 +928,7 @@ namespace MusicPlayerDXMonoGamePort
 
             // Pause [Space]
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.Space))
-                Assets.PlayPause();
+                SongManager.PlayPause();
 
             // Set Location to (0, 0) [0]
             if (Control.CurKS.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.D0))
@@ -979,7 +980,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        Clipboard.SetText(Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongName).GetYoutubeVideoURL());
+                        Clipboard.SetText(Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongName).GetYoutubeVideoURL());
                         ShowSecondRowMessage("Copied  URL  to  clipboard!", 1);
                     }
                     catch (Exception e) { MessageBox.Show("Can't find that song.\n\nException: " + e.ToString()); }
@@ -1026,7 +1027,7 @@ namespace MusicPlayerDXMonoGamePort
 
             // Upvote/Like Current Song [L]
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.L))
-                Assets.IsCurrentSongUpvoted = !Assets.IsCurrentSongUpvoted;
+                SongManager.IsCurrentSongUpvoted = !SongManager.IsCurrentSongUpvoted;
 
             // Higher / Lower Volume [Up/Down]
             if (Control.CurKS.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Up))
@@ -1040,9 +1041,9 @@ namespace MusicPlayerDXMonoGamePort
 
             // Next / Previous Song [Left/Right]
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.Left))
-                Assets.GetPreviousSong();
+                SongManager.GetPreviousSong();
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.Right))
-                Assets.GetNextSong(false, true);
+                SongManager.GetNextSong(false, true);
 
             // Close [Esc]
             if (Control.CurKS.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Escape) && base.IsActive)
@@ -1062,10 +1063,10 @@ namespace MusicPlayerDXMonoGamePort
             // Show Music File in Explorer [E]
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.E))
             {
-                if (!File.Exists(Assets.currentlyPlayingSongPath))
+                if (!File.Exists(SongManager.currentlyPlayingSongPath))
                     return;
                 else
-                    Process.Start("explorer.exe", "/select, \"" + Assets.currentlyPlayingSongPath + "\"");
+                    Process.Start("explorer.exe", "/select, \"" + SongManager.currentlyPlayingSongPath + "\"");
             }
 
             // Show Music File in Browser [I]
@@ -1076,7 +1077,7 @@ namespace MusicPlayerDXMonoGamePort
                     try
                     {
                         // Get fitting youtube video
-                        string url = string.Format("https://www.youtube.com/results?search_query=" + Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongName));
+                        string url = string.Format("https://www.youtube.com/results?search_query=" + Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongName));
                         HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create(url);
                         req.KeepAlive = false;
                         WebResponse W = req.GetResponse();
@@ -1169,16 +1170,16 @@ namespace MusicPlayerDXMonoGamePort
         public void UpdateGD()
         {
             //CurrentDebugTime = Stopwatch.GetTimestamp();
-            if (Assets.FFToutput != null)
+            if (SongVisualization.FFToutput != null)
             {
                 //Debug.WriteLine("GD Update 0 " + (Stopwatch.GetTimestamp() - CurrentDebugTime));
                 //CurrentDebugTime = Stopwatch.GetTimestamp();
-                float ReadLength = Assets.FFToutput.Length / 3f;
+                float ReadLength = SongVisualization.FFToutput.Length / 3f;
                 for (int i = 70; i < Values.WindowSize.X; i++)
                 {
                     double lastindex = Math.Pow(ReadLength, (i - 1) / (double)Values.WindowSize.X);
                     double index = Math.Pow(ReadLength, i / (double)Values.WindowSize.X);
-                    values[i - 70] = Assets.GetMaxHeight(Assets.FFToutput, (int)lastindex, (int)index) * Values.VolumeMultiplier * 2;
+                    values[i - 70] = SongVisualization.GetMaxHeight(SongVisualization.FFToutput, (int)lastindex, (int)index) * Values.VolumeMultiplier * 2;
                 }
                 //Debug.WriteLine("GD Update 1 " + (Stopwatch.GetTimestamp() - CurrentDebugTime));
                 //CurrentDebugTime = Stopwatch.GetTimestamp();
@@ -1197,11 +1198,11 @@ namespace MusicPlayerDXMonoGamePort
             TargetVolumeBar.Width = (int)(75 * Values.TargetVolume / MaxVolume);
             TargetVolumeBar.Height = 8;
 
-            if (Assets.Channel32 != null)
+            if (SongManager.Channel32 != null)
             {
                 ActualVolumeBar.X = Values.WindowSize.X - 25 - 75;
                 ActualVolumeBar.Y = 24;
-                ActualVolumeBar.Width = (int)(75 * Assets.Channel32.Volume / Values.VolumeMultiplier / MaxVolume);
+                ActualVolumeBar.Width = (int)(75 * SongManager.Channel32.Volume / Values.VolumeMultiplier / MaxVolume);
                 if (ActualVolumeBar.Width > 75)
                     ActualVolumeBar.Width = 75;
                 ActualVolumeBar.Height = 8;
@@ -1309,18 +1310,18 @@ namespace MusicPlayerDXMonoGamePort
         public void UpdateDiscordRPC()
         {
             // Old Arguments
-            bool IsPlaying = (Assets.output.PlaybackState == PlaybackState.Playing);
+            bool IsPlaying = (SongManager.output.PlaybackState == PlaybackState.Playing);
             bool ElapsedTime = true;
 
-            string SongName = Path.GetFileNameWithoutExtension(Assets.currentlyPlayingSongPath);
+            string SongName = Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongPath);
             string[] SongNameSplit = SongName.Split('-');
 
             DateTime startTime, endTime;
             string smolimagekey = "", smolimagetext = "", bigimagekey = "iconv2";
             if (IsPlaying)
             {
-                startTime = DateTime.Now.AddSeconds(-(Assets.Channel32.Position / (double)Assets.Channel32.Length) * Assets.Channel32.TotalTime.TotalSeconds);
-                endTime = DateTime.Now.AddSeconds((1 - Assets.Channel32.Position / (double)Assets.Channel32.Length) * Assets.Channel32.TotalTime.TotalSeconds);
+                startTime = DateTime.Now.AddSeconds(-(SongManager.Channel32.Position / (double)SongManager.Channel32.Length) * SongManager.Channel32.TotalTime.TotalSeconds);
+                endTime = DateTime.Now.AddSeconds((1 - SongManager.Channel32.Position / (double)SongManager.Channel32.Length) * SongManager.Channel32.TotalTime.TotalSeconds);
 
                 smolimagekey = "playv2";
                 smolimagetext = "Playing";
@@ -1336,9 +1337,9 @@ namespace MusicPlayerDXMonoGamePort
 
             string details, state, time;
             if (IsPlaying)
-                time = " (" + Values.AsTime(Assets.Channel32.TotalTime.TotalSeconds) + ")";
+                time = " (" + Values.AsTime(SongManager.Channel32.TotalTime.TotalSeconds) + ")";
             else
-                time = " (" + Values.AsTime(Assets.Channel32.Position / (double)Assets.Channel32.Length * Assets.Channel32.TotalTime.TotalSeconds) + " / " + Values.AsTime(Assets.Channel32.TotalTime.TotalSeconds) + ")";
+                time = " (" + Values.AsTime(SongManager.Channel32.Position / (double)SongManager.Channel32.Length * SongManager.Channel32.TotalTime.TotalSeconds) + " / " + Values.AsTime(SongManager.Channel32.TotalTime.TotalSeconds) + ")";
             if (SongName.Length < 20)
             {
                 details = SongName;
@@ -1397,10 +1398,10 @@ namespace MusicPlayerDXMonoGamePort
             // Song Title
             if (ForcedTitleRedraw || TitleTarget == null || TitleTarget.IsContentLost || TitleTarget.IsDisposed)
             {
-                if (Assets.currentlyPlayingSongName.EndsWith(".mp3"))
-                    Title = Assets.currentlyPlayingSongName.Remove(Assets.currentlyPlayingSongName.Length - 4);
+                if (SongManager.currentlyPlayingSongName.EndsWith(".mp3"))
+                    Title = SongManager.currentlyPlayingSongName.Remove(SongManager.currentlyPlayingSongName.Length - 4);
                 else
-                    Title = Assets.currentlyPlayingSongName;
+                    Title = SongManager.currentlyPlayingSongName;
 
                 char[] arr = Title.ToCharArray();
                 for (int i = 0; i < arr.Length; i++)
@@ -1465,7 +1466,7 @@ namespace MusicPlayerDXMonoGamePort
             }
 
             // FFT Diagram
-            if (VisSetting == Visualizations.fft && Assets.output != null && Assets.output.PlaybackState == PlaybackState.Playing || Assets.output != null && GauD.WasRenderTargetContentLost())
+            if (VisSetting == Visualizations.fft && SongManager.output != null && SongManager.output.PlaybackState == PlaybackState.Playing || SongManager.output != null && GauD.WasRenderTargetContentLost())
             {
                 //CurrentDebugTime2 = Stopwatch.GetTimestamp();
                 //GauD.DrawToRenderTarget3DAcc(spriteBatch, GraphicsDevice);
@@ -1546,7 +1547,7 @@ namespace MusicPlayerDXMonoGamePort
                     {
                         try
                         {
-                            string path = Assets.currentlyPlayingSongPath;
+                            string path = SongManager.currentlyPlayingSongPath;
                             TagLib.File file = TagLib.File.Create(path);
                             TagLib.IPicture pic = file.Tag.Pictures[0];
                             MemoryStream ms = new MemoryStream(pic.Data.Data);
@@ -1636,30 +1637,30 @@ namespace MusicPlayerDXMonoGamePort
                     // Visualizations
                     #region Line graph
                     // Line Graph
-                    if (VisSetting == Visualizations.line && Assets.Channel32 != null)
+                    if (VisSetting == Visualizations.line && SongManager.Channel32 != null)
                     {
                         float Height = Values.WindowSize.Y / 1.96f;
-                        int StepLength = Assets.WaveBuffer.Length / 512;
+                        int StepLength = SongVisualization.WaveBuffer.Length / 512;
 
                         // Shadow
                         for (int i = 1; i < 512; i++)
                         {
-                            Assets.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (Assets.WaveBuffer.Length / StepLength) + Config.Data.ShadowDistance,
-                                            Height + (int)(Assets.WaveBuffer[(i - 1) * StepLength] * 100) + Config.Data.ShadowDistance),
+                            SongVisualization.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (SongVisualization.WaveBuffer.Length / StepLength) + Config.Data.ShadowDistance,
+                                            Height + (int)(SongVisualization.WaveBuffer[(i - 1) * StepLength] * 100) + Config.Data.ShadowDistance),
 
-                                            new Vector2(i * Values.WindowSize.X / (Assets.WaveBuffer.Length / StepLength) + Config.Data.ShadowDistance,
-                                            Height + (int)(Assets.WaveBuffer[i * StepLength] * 100) + Config.Data.ShadowDistance),
+                                            new Vector2(i * Values.WindowSize.X / (SongVisualization.WaveBuffer.Length / StepLength) + Config.Data.ShadowDistance,
+                                            Height + (int)(SongVisualization.WaveBuffer[i * StepLength] * 100) + Config.Data.ShadowDistance),
 
                                             2, Color.Black * 0.6f, spriteBatch);
                         }
 
                         for (int i = 1; i < 512; i++)
                         {
-                            Assets.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (Assets.WaveBuffer.Length / StepLength),
-                                            Height + (int)(Assets.WaveBuffer[(i - 1) * StepLength] * 100)),
+                            SongVisualization.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (SongVisualization.WaveBuffer.Length / StepLength),
+                                            Height + (int)(SongVisualization.WaveBuffer[(i - 1) * StepLength] * 100)),
 
-                                            new Vector2(i * Values.WindowSize.X / (Assets.WaveBuffer.Length / StepLength),
-                                            Height + (int)(Assets.WaveBuffer[i * StepLength] * 100)),
+                                            new Vector2(i * Values.WindowSize.X / (SongVisualization.WaveBuffer.Length / StepLength),
+                                            Height + (int)(SongVisualization.WaveBuffer[i * StepLength] * 100)),
 
                                             2, Color.Lerp(primaryColor, secondaryColor, i / 512), spriteBatch);
                         }
@@ -1667,38 +1668,38 @@ namespace MusicPlayerDXMonoGamePort
                     #endregion
                     #region Dynamic Line graph
                     // Line Graph
-                    if (VisSetting == Visualizations.dynamicline && Assets.Channel32 != null)
+                    if (VisSetting == Visualizations.dynamicline && SongManager.Channel32 != null)
                     {
                         float Height = Values.WindowSize.Y / 1.96f;
-                        int StepLength = Assets.WaveBuffer.Length / 512;
-                        float MostUsedFrequency = Array.IndexOf(Assets.RawFFToutput, Assets.RawFFToutput.Max());
+                        int StepLength = SongVisualization.WaveBuffer.Length / 512;
+                        float MostUsedFrequency = Array.IndexOf(SongVisualization.RawFFToutput, SongVisualization.RawFFToutput.Max());
                         float MostUsedWaveLength = 10000;
                         if (MostUsedFrequency != 0)
                             MostUsedWaveLength = 1 / MostUsedFrequency;
                         float[] MostUsedFrequencyMultiplications = new float[100];
                         for (int i = 1; i <= 100; i++)
                             MostUsedFrequencyMultiplications[i - 1] = MostUsedFrequency * i;
-                        //Debug.WriteLine((MostUsedFrequency / Assets.Channel32.WaveFormat.SampleRate * Assets.RawFFToutput.Length) + " ::: " + MostUsedFrequency);
+                        //Debug.WriteLine((MostUsedFrequency / SongManager.Channel32.WaveFormat.SampleRate * Assets.RawFFToutput.Length) + " ::: " + MostUsedFrequency);
 
                         // Shadow
                         for (int i = 1; i < 512; i++)
                         {
-                            Assets.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (512) + Config.Data.ShadowDistance,
-                                            Height + (int)(Assets.WaveBuffer[(i - 1) * StepLength] * 100) + Config.Data.ShadowDistance),
+                            SongVisualization.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (512) + Config.Data.ShadowDistance,
+                                            Height + (int)(SongVisualization.WaveBuffer[(i - 1) * StepLength] * 100) + Config.Data.ShadowDistance),
 
                                             new Vector2(i * Values.WindowSize.X / (512) + Config.Data.ShadowDistance,
-                                            Height + (int)(Assets.WaveBuffer[i * StepLength] * 100) + Config.Data.ShadowDistance),
+                                            Height + (int)(SongVisualization.WaveBuffer[i * StepLength] * 100) + Config.Data.ShadowDistance),
 
                                             2, Color.Black * 0.6f, spriteBatch);
                         }
 
                         for (int i = 1; i < 512; i++)
                         {
-                            Assets.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (512),
-                                            Height + (int)(Assets.WaveBuffer[(i - 1) * StepLength] * 100)),
+                            SongVisualization.DrawLine(new Vector2((i - 1) * Values.WindowSize.X / (512),
+                                            Height + (int)(SongVisualization.WaveBuffer[(i - 1) * StepLength] * 100)),
 
                                             new Vector2(i * Values.WindowSize.X / (512),
-                                            Height + (int)(Assets.WaveBuffer[i * StepLength] * 100)),
+                                            Height + (int)(SongVisualization.WaveBuffer[i * StepLength] * 100)),
 
                                             2, Color.Lerp(primaryColor, secondaryColor, i / 512), spriteBatch);
                         }
@@ -1706,12 +1707,12 @@ namespace MusicPlayerDXMonoGamePort
                     #endregion
                     #region FFT Graph
                     // FFT Graph
-                    if (VisSetting == Visualizations.fft && Assets.Channel32 != null && Assets.FFToutput != null)
+                    if (VisSetting == Visualizations.fft && SongManager.Channel32 != null && SongVisualization.FFToutput != null)
                         GauD.DrawRenderTarget(spriteBatch);
                     #endregion
                     #region Trumpet boy
                     // FFT Graph
-                    if (VisSetting == Visualizations.trumpetboy && Assets.Channel32 != null && Assets.FFToutput != null)
+                    if (VisSetting == Visualizations.trumpetboy && SongManager.Channel32 != null && SongVisualization.FFToutput != null)
                     {
                         float size = (float)Approximate.Sqrt(Values.OutputVolume * 100 * Values.TargetVolume);
                         
@@ -1729,7 +1730,7 @@ namespace MusicPlayerDXMonoGamePort
                     }
                     #endregion
                     #region Raw FFT Graph
-                    if (VisSetting == Visualizations.rawfft && Assets.Channel32 != null && Assets.FFToutput != null)
+                    if (VisSetting == Visualizations.rawfft && SongManager.Channel32 != null && SongVisualization.FFToutput != null)
                     {
                         GauD.DrawInputData(spriteBatch);
                     }
@@ -1755,20 +1756,20 @@ namespace MusicPlayerDXMonoGamePort
                     // Duration Bar
                     spriteBatch.Draw(Assets.White, DurationBarShadow, Color.Black * 0.6f);
                     spriteBatch.Draw(Assets.White, DurationBar, backgroundColor);
-                    if (Assets.Channel32 != null)
+                    if (SongManager.Channel32 != null)
                     {
-                        lock (Assets.Channel32)
+                        lock (SongManager.Channel32)
                         {
-                            float PlayPercetage = (Assets.Channel32.Position / (float)Assets.Channel32.WaveFormat.AverageBytesPerSecond /
-                                ((float)Assets.Channel32.TotalTime.TotalSeconds));
+                            float PlayPercetage = (SongManager.Channel32.Position / (float)SongManager.Channel32.WaveFormat.AverageBytesPerSecond /
+                                ((float)SongManager.Channel32.TotalTime.TotalSeconds));
                             TempRect.X = DurationBar.X;
                             TempRect.Y = DurationBar.Y;
                             TempRect.Width = (int)(DurationBar.Width * PlayPercetage);
                             TempRect.Height = 3;
                             spriteBatch.Draw(Assets.White, TempRect, primaryColor);
-                            if (Assets.EntireSongWaveBuffer != null && Config.Data.Preload)
+                            if (SongVisualization.EntireSongWaveBuffer != null && Config.Data.Preload)
                             {
-                                double LoadPercetage = (double)Assets.EntireSongWaveBuffer.Count / Assets.Channel32.Length * 4.0;
+                                double LoadPercetage = (double)SongVisualization.EntireSongWaveBuffer.Count / SongManager.Channel32.Length * 4.0;
                                 TempRect.X = DurationBar.X + (int)(DurationBar.Width * PlayPercetage);
                                 TempRect.Width = (int)(DurationBar.Width * LoadPercetage) - (int)(DurationBar.Width * PlayPercetage);
                                 spriteBatch.Draw(Assets.White, TempRect, secondaryColor);
@@ -1810,7 +1811,7 @@ namespace MusicPlayerDXMonoGamePort
                     }
 
                     // PlayPause Button
-                    if (Assets.IsPlaying())
+                    if (SongManager.IsPlaying())
                     {
                         spriteBatch.Draw(Assets.Pause, PlayPauseButtonShadow, Color.Black * 0.6f);
                         spriteBatch.Draw(Assets.Pause, PlayPauseButton, backgroundColor);
@@ -1934,7 +1935,7 @@ namespace MusicPlayerDXMonoGamePort
         void EndBlur()
         {
             GraphicsDevice.SetRenderTarget(BlurredTex);
-            Assets.gaussianBlur.Parameters["BlurWeights"].SetValue(Assets.vBlurWeights);
+            Assets.gaussianBlur.Parameters["BlurWeights"].SetValue(SongVisualization.vBlurWeights);
             Assets.gaussianBlur.Parameters["horz"].SetValue(false);
             GraphicsDevice.Clear(Color.Transparent);
             spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlur);
@@ -1945,7 +1946,7 @@ namespace MusicPlayerDXMonoGamePort
         {
             TempVector.X = -50;
             TempVector.Y = -50;
-            Assets.gaussianBlur.Parameters["BlurWeights"].SetValue(Assets.hBlurWeights);
+            Assets.gaussianBlur.Parameters["BlurWeights"].SetValue(SongVisualization.hBlurWeights);
             Assets.gaussianBlur.Parameters["horz"].SetValue(true);
             spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlur);
             spriteBatch.Draw(BlurredTex, TempVector, Color.White);
