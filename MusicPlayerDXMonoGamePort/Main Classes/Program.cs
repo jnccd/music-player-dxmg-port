@@ -79,8 +79,6 @@ namespace MusicPlayerDXMonoGamePort
                 config.Default.SongPaths = null;
                 config.Default.Save();
             }
-            else if (!config.Default.FirstStart)
-                MessageBox.Show("Song statistics corrupted!\nResetting...");
 
             Assets.HistorySongData = new List<HistorySong>();
             string path = Assets.historyFilePath;
