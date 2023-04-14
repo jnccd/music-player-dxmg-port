@@ -699,7 +699,11 @@ namespace MusicPlayerDXMonoGamePort
             {
                 UpvotedSong curSong = Config.Data.songDatabaseEntries[i];
 
-                SongInformationArray[i, 0] = curSong.Name;
+                string title = curSong.Name;
+                while (title.EndsWith(".mp3"))
+                    title = title.Remove(title.Length - 4);
+
+                SongInformationArray[i, 0] = title;
                 SongInformationArray[i, 1] = curSong.Score;
                 SongInformationArray[i, 2] = curSong.Streak;
                 SongInformationArray[i, 3] = curSong.TotalLikes + "/" + curSong.TotalDislikes + "=" + ((float)curSong.TotalLikes / curSong.TotalDislikes);
