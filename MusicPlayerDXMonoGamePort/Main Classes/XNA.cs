@@ -1397,10 +1397,9 @@ namespace MusicPlayerDXMonoGamePort
             // Song Title
             if (ForcedTitleRedraw || TitleTarget == null || TitleTarget.IsContentLost || TitleTarget.IsDisposed)
             {
-                if (SongManager.currentlyPlayingSongName.EndsWith(".mp3"))
-                    Title = SongManager.currentlyPlayingSongName.Remove(SongManager.currentlyPlayingSongName.Length - 4);
-                else
-                    Title = SongManager.currentlyPlayingSongName;
+                Title = SongManager.currentlyPlayingSongName;
+                while (Title.EndsWith(".mp3"))
+                    Title = Title.Remove(Title.Length - 4);
 
                 char[] arr = Title.ToCharArray();
                 for (int i = 0; i < arr.Length; i++)
