@@ -34,7 +34,7 @@ namespace Configuration
 
         public ConfigData()
         {
-            
+            songDatabaseEntries = new List<UpvotedSong>();
         }
     }
 
