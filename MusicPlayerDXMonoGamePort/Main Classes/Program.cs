@@ -185,12 +185,6 @@ namespace MusicPlayerDXMonoGamePort
             }
             #endregion
 
-            #region Game Started Stop Discord RPC Watcher
-            m_hhook = Values.SetWinEventHook(Values.EVENT_SYSTEM_FOREGROUND,
-                    Values.EVENT_SYSTEM_FOREGROUND, IntPtr.Zero,
-                    _WinEvent, 0, 0, Values.WINEVENT_OUTOFCONTEXT);
-            #endregion
-
 #if DEBUG
             game = new XNA();
             game.Run();
@@ -266,45 +260,6 @@ start MusicPlayerDXMonoGamePort.exe");
             Process.Start(RestartLocation);
         }
         #region Event Handlers
-        static IntPtr m_hhook;
-        static IntPtr hwnd;
-        static Values.WinEventDelegate _WinEvent = new Values.WinEventDelegate(WinEventProc);
-        static void WinEventProc(IntPtr hWinEventHook, uint eventType,
-            IntPtr hwnd, int idObject, int idChild,
-            uint dwEventThread, uint dwmsEventTime)
-        {
-            if (eventType == Values.EVENT_SYSTEM_FOREGROUND && Config.Data.AutoStopDiscordRpcOnGameDetection)
-            {
-                Program.hwnd = hwnd;
-                Task T = Task.Factory.StartNew(() =>
-                {
-                    Thread.Sleep(1500);
-                    //try
-                    //{
-                    //    StringBuilder sb = new StringBuilder(500);
-                    //    Values.GetWindowText(Program.hwnd, sb, sb.Capacity);
-                    //    string text = sb.ToString();
-                    //    uint id = 0;
-                    //    Values.GetWindowThreadProcessId(Program.hwnd, out id);
-                    //    Process P = Process.GetProcessById((int)id);
-                    //    P.GetHashCode();
-                    //} catch { }
-
-                    bool gameActive = Values.IsForegroundFullScreen();
-                    //Debug.WriteLine("Switched to: " + sb.ToString() + "\t\t| IsFullscreen: " + gameActive);
-                    if (Config.Data.DiscordRpcActive && gameActive)
-                    {
-                        if (game.optionsMenu != null)
-                            game.optionsMenu.InvokeIfRequired(game.optionsMenu.DiscordToggleWrapper);
-                    }
-                    if (!Config.Data.DiscordRpcActive && !gameActive)
-                    {
-                        if (game.optionsMenu != null)
-                            game.optionsMenu.InvokeIfRequired(game.optionsMenu.DiscordToggleWrapper);
-                    }
-                });
-            }
-        }
         static object crackLock = new object();
         public static void CrackOpen(object source, FileSystemEventArgs ev)
         {
