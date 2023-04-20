@@ -247,7 +247,7 @@ namespace MusicPlayerDXMonoGamePort
                 Values.VolumeMultiplier = 1;
 
             Config.Data.Preload = Program.game.Preload;
-            Program.game.ReHookGlobalKeyHooks();
+            Program.game.CreateGlobalKeyHooks();
             if (T != null && T.Status == TaskStatus.Running)
             {
                 AbortAbort = true;
