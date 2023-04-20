@@ -277,7 +277,7 @@ namespace MusicPlayerDXMonoGamePort
                     {
                         Path = Path.Replace("Ԫ", "");
 
-                        Thread.Sleep(5);
+                        //Thread.Sleep(5);
                         Console.SetCursorPosition(0, originY);
                         for (int i = 0; i < Path.Length / 65 + 4; i++)
                             Console.Write("                                                                    ");
