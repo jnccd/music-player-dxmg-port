@@ -113,7 +113,6 @@ namespace MusicPlayerDXMonoGamePort
 
             Program.args = args;
 
-            InterceptKeys._hookID = InterceptKeys.SetHook(InterceptKeys._proc);
             if (Config.Data.DiscordRpcActive)
                 DiscordRPCWrapper.Initialize("460490126607384576");
 
@@ -199,6 +198,7 @@ namespace MusicPlayerDXMonoGamePort
             try
             {
                 game = new XNA();
+                game.CreateGlobalKeyHooks();
                 game.Run();
             }
             catch (Exception ex)
@@ -219,7 +219,7 @@ namespace MusicPlayerDXMonoGamePort
                 }
 
                 DiscordRPCWrapper.Shutdown();
-                InterceptKeys.UnhookWindowsHookEx(InterceptKeys._hookID);
+                game.DisposeGlobalKeyHooks();
                 SongManager.DisposeNAudioData();
                 if (game.optionsMenu != null)
                     game.optionsMenu.InvokeIfRequired(game.optionsMenu.Close);

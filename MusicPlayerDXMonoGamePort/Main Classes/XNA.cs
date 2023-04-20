@@ -21,6 +21,8 @@ using System.Runtime;
 using MessageBox = System.Windows.Forms.MessageBox;
 using SharpDX.Direct2D1.Effects;
 using Configuration;
+using System.Reflection.Emit;
+using Keys = System.Windows.Forms.Keys;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -124,6 +126,7 @@ namespace MusicPlayerDXMonoGamePort
         float X2;
         int ScrollWheelCooldown = 0;
         bool wasClickedOn = false;
+        public static KeyboardHook keyHook;
 
         public OptionsMenu optionsMenu;
         public Statistics statistics;
@@ -199,7 +202,7 @@ namespace MusicPlayerDXMonoGamePort
             gameWindowForm.FormClosing += (object sender, FormClosingEventArgs e) =>
             {
                 Program.Closing = true;
-                InterceptKeys.UnhookWindowsHookEx(InterceptKeys._hookID);
+                DisposeGlobalKeyHooks();
                 SongManager.DisposeNAudioData();
                 SongManager.SaveUserSettings(true);
                 if (optionsMenu != null)
@@ -599,7 +602,7 @@ namespace MusicPlayerDXMonoGamePort
                 ConsoleBackgroundOperationRunning = false;
                 PauseConsoleInputThread = false;
 
-                ReHookGlobalKeyHooks();
+                CreateGlobalKeyHooks();
             }
             catch (Exception e)
             {
@@ -645,7 +648,7 @@ namespace MusicPlayerDXMonoGamePort
                 ConsoleBackgroundOperationRunning = false;
                 PauseConsoleInputThread = false;
 
-                ReHookGlobalKeyHooks();
+                CreateGlobalKeyHooks();
             }
             catch (Exception e)
             {
@@ -798,7 +801,7 @@ namespace MusicPlayerDXMonoGamePort
                 !WasFocusedLastFrame && gameWindowForm.Focused &&
                 Control.GetMouseRect().Intersects(Values.WindowRect))
             {
-                ReHookGlobalKeyHooks();
+                CreateGlobalKeyHooks();
                 MouseClickedPos.X = Control.CurMS.X;
                 MouseClickedPos.Y = Control.CurMS.Y;
 
@@ -1276,11 +1279,6 @@ namespace MusicPlayerDXMonoGamePort
                 return r;
             }
         }
-        public void ReHookGlobalKeyHooks()
-        {
-            InterceptKeys.UnhookWindowsHookEx(InterceptKeys._hookID);
-            InterceptKeys._hookID = InterceptKeys.SetHook(InterceptKeys._proc);
-        }
         public void ShowSecondRowMessage(string Message, float StartingAlpha)
         {
             SecondRowMessageAlpha = StartingAlpha;
@@ -1385,6 +1383,36 @@ namespace MusicPlayerDXMonoGamePort
             UpvoteButtonShadow = new Rectangle(UpvoteButton.X + Config.Data.ShadowDistance, UpvoteButton.Y + Config.Data.ShadowDistance, UpvoteButton.Width, UpvoteButton.Height);
             CloseButtonShadow = new Rectangle(CloseButton.X + Config.Data.ShadowDistance, CloseButton.Y + Config.Data.ShadowDistance, CloseButton.Width, CloseButton.Height);
             OptionsButtonShadow = new Rectangle(OptionsButton.X + Config.Data.ShadowDistance, OptionsButton.Y + Config.Data.ShadowDistance, OptionsButton.Width, OptionsButton.Height);
+        }
+        // Keyhook
+        public void CreateGlobalKeyHooks()
+        {
+            keyHook = new KeyboardHook(true);
+            keyHook.KeyDown += KeyHook_KeyDown;
+        }
+        public void KeyHook_KeyDown(Keys key, bool Shift, bool Ctrl, bool Alt)
+        {
+            if (Values.Timer > SongManager.SongChangedTickTime + 30)
+            {
+                var k = key;
+
+                // Key Events
+                if (k == Keys.MediaPlayPause)
+                    SongManager.PlayPause();
+
+                if (k == Keys.MediaNextTrack)
+                    SongManager.GetNextSong(false, true);
+
+                if (k == Keys.MediaPreviousTrack)
+                    SongManager.GetPreviousSong();
+
+                if (k == Keys.MediaStop)
+                    SongManager.IsCurrentSongUpvoted = !SongManager.IsCurrentSongUpvoted;
+            }
+        }
+        public void DisposeGlobalKeyHooks()
+        {
+            keyHook.Dispose();
         }
 
         // Draw
