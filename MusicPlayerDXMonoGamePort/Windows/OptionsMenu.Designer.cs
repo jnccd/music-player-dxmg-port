@@ -63,17 +63,17 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.label4 = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
-            this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tSmoothness)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar2)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
+            this.flowLayoutPanel2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.flowLayoutPanel1.SuspendLayout();
-            this.flowLayoutPanel2.SuspendLayout();
             this.SuspendLayout();
             // 
             // ColorChange
@@ -89,7 +89,7 @@
             // 
             // trackBar1
             // 
-            this.trackBar1.Location = new System.Drawing.Point(6, 245);
+            this.trackBar1.Location = new System.Drawing.Point(6, 368);
             this.trackBar1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.trackBar1.Maximum = 100;
             this.trackBar1.Minimum = 1;
@@ -103,7 +103,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(7, 227);
+            this.label1.Location = new System.Drawing.Point(7, 350);
             this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(308, 15);
@@ -221,7 +221,7 @@
             // 
             // PreloadToggle
             // 
-            this.PreloadToggle.Location = new System.Drawing.Point(7, 197);
+            this.PreloadToggle.Location = new System.Drawing.Point(7, 320);
             this.PreloadToggle.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.PreloadToggle.Name = "PreloadToggle";
             this.PreloadToggle.Size = new System.Drawing.Size(412, 27);
@@ -284,7 +284,7 @@
             // tSmoothness
             // 
             this.tSmoothness.LargeChange = 1;
-            this.tSmoothness.Location = new System.Drawing.Point(10, 312);
+            this.tSmoothness.Location = new System.Drawing.Point(10, 205);
             this.tSmoothness.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.tSmoothness.Maximum = 500;
             this.tSmoothness.Name = "tSmoothness";
@@ -297,7 +297,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(6, 293);
+            this.label3.Location = new System.Drawing.Point(6, 186);
             this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(123, 15);
@@ -307,7 +307,7 @@
             // cOldSmooth
             // 
             this.cOldSmooth.AutoSize = true;
-            this.cOldSmooth.Location = new System.Drawing.Point(312, 289);
+            this.cOldSmooth.Location = new System.Drawing.Point(311, 185);
             this.cOldSmooth.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cOldSmooth.Name = "cOldSmooth";
             this.cOldSmooth.Size = new System.Drawing.Size(107, 19);
@@ -408,11 +408,11 @@
             // trackBar2
             // 
             this.trackBar2.LargeChange = 1;
-            this.trackBar2.Location = new System.Drawing.Point(7, 378);
+            this.trackBar2.Location = new System.Drawing.Point(7, 271);
             this.trackBar2.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.trackBar2.Maximum = 15;
             this.trackBar2.Name = "trackBar2";
-            this.trackBar2.Size = new System.Drawing.Size(400, 45);
+            this.trackBar2.Size = new System.Drawing.Size(411, 45);
             this.trackBar2.TabIndex = 30;
             this.trackBar2.TickStyle = System.Windows.Forms.TickStyle.None;
             this.trackBar2.Value = 5;
@@ -423,13 +423,13 @@
             this.groupBox1.Controls.Add(this.label4);
             this.groupBox1.Controls.Add(this.button3);
             this.groupBox1.Controls.Add(this.ColorChange);
+            this.groupBox1.Controls.Add(this.PreloadToggle);
+            this.groupBox1.Controls.Add(this.trackBar1);
             this.groupBox1.Controls.Add(this.trackBar2);
+            this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Controls.Add(this.AAtoggle);
             this.groupBox1.Controls.Add(this.SwapVisualisations);
             this.groupBox1.Controls.Add(this.SwapBackgrounds);
-            this.groupBox1.Controls.Add(this.PreloadToggle);
-            this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Controls.Add(this.trackBar1);
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.tSmoothness);
             this.groupBox1.Controls.Add(this.cOldSmooth);
@@ -443,7 +443,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(10, 360);
+            this.label4.Location = new System.Drawing.Point(10, 253);
             this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(100, 15);
@@ -459,6 +459,19 @@
             this.groupBox2.TabIndex = 32;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Show";
+            // 
+            // flowLayoutPanel2
+            // 
+            this.flowLayoutPanel2.Controls.Add(this.ShowConsole);
+            this.flowLayoutPanel2.Controls.Add(this.Showinexploerer);
+            this.flowLayoutPanel2.Controls.Add(this.history);
+            this.flowLayoutPanel2.Controls.Add(this.ShowProgramFolder);
+            this.flowLayoutPanel2.Controls.Add(this.ShowBrowser);
+            this.flowLayoutPanel2.Controls.Add(this.ShowStatistics);
+            this.flowLayoutPanel2.Location = new System.Drawing.Point(1, 15);
+            this.flowLayoutPanel2.Name = "flowLayoutPanel2";
+            this.flowLayoutPanel2.Size = new System.Drawing.Size(417, 109);
+            this.flowLayoutPanel2.TabIndex = 0;
             // 
             // groupBox3
             // 
@@ -484,30 +497,17 @@
             this.flowLayoutPanel1.Controls.Add(this.bExport);
             this.flowLayoutPanel1.Controls.Add(this.button1);
             this.flowLayoutPanel1.Controls.Add(this.bDrag);
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 125);
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(1, 125);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(419, 101);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(417, 101);
             this.flowLayoutPanel1.TabIndex = 25;
             this.flowLayoutPanel1.Paint += new System.Windows.Forms.PaintEventHandler(this.flowLayoutPanel1_Paint);
-            // 
-            // flowLayoutPanel2
-            // 
-            this.flowLayoutPanel2.Controls.Add(this.ShowConsole);
-            this.flowLayoutPanel2.Controls.Add(this.Showinexploerer);
-            this.flowLayoutPanel2.Controls.Add(this.history);
-            this.flowLayoutPanel2.Controls.Add(this.ShowProgramFolder);
-            this.flowLayoutPanel2.Controls.Add(this.ShowBrowser);
-            this.flowLayoutPanel2.Controls.Add(this.ShowStatistics);
-            this.flowLayoutPanel2.Location = new System.Drawing.Point(0, 15);
-            this.flowLayoutPanel2.Name = "flowLayoutPanel2";
-            this.flowLayoutPanel2.Size = new System.Drawing.Size(419, 110);
-            this.flowLayoutPanel2.TabIndex = 0;
             // 
             // OptionsMenu
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(875, 453);
+            this.ClientSize = new System.Drawing.Size(1428, 643);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
@@ -526,10 +526,10 @@
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
+            this.flowLayoutPanel2.ResumeLayout(false);
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
             this.flowLayoutPanel1.ResumeLayout(false);
-            this.flowLayoutPanel2.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
