@@ -128,7 +128,7 @@
             this.AAtoggle.Name = "AAtoggle";
             this.AAtoggle.Size = new System.Drawing.Size(239, 27);
             this.AAtoggle.TabIndex = 4;
-            this.AAtoggle.Text = "Toggle Anti-Alising [A]";
+            this.AAtoggle.Text = "Toggle Anti-Aliasing [A]";
             this.AAtoggle.UseVisualStyleBackColor = true;
             this.AAtoggle.Click += new System.EventHandler(this.AAtoggle_Click);
             // 
