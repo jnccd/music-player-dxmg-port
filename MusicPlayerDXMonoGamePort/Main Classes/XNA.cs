@@ -126,7 +126,7 @@ namespace MusicPlayerDXMonoGamePort
         float X2;
         int ScrollWheelCooldown = 0;
         bool wasClickedOn = false;
-        public static KeyboardHook keyHook;
+        public static KeyboardHook keyHook = null;
 
         public OptionsMenu optionsMenu;
         public Statistics statistics;
@@ -1387,8 +1387,11 @@ namespace MusicPlayerDXMonoGamePort
         // Keyhook
         public void CreateGlobalKeyHooks()
         {
-            keyHook = new KeyboardHook(true);
-            keyHook.KeyDown += KeyHook_KeyDown;
+            if (keyHook == null)
+            {
+                keyHook = new KeyboardHook(true);
+                keyHook.KeyDown += KeyHook_KeyDown;
+            }
         }
         public void KeyHook_KeyDown(Keys key, bool Shift, bool Ctrl, bool Alt)
         {
@@ -1413,6 +1416,7 @@ namespace MusicPlayerDXMonoGamePort
         public void DisposeGlobalKeyHooks()
         {
             keyHook.Dispose();
+            keyHook = null;
         }
 
         // Draw

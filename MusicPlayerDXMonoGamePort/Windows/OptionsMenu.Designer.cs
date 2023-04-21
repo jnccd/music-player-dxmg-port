@@ -66,6 +66,7 @@
             this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            this.bKeyhook = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tSmoothness)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar2)).BeginInit();
@@ -203,17 +204,17 @@
             this.DownloadBox.Location = new System.Drawing.Point(7, 62);
             this.DownloadBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.DownloadBox.Name = "DownloadBox";
-            this.DownloadBox.Size = new System.Drawing.Size(334, 23);
+            this.DownloadBox.Size = new System.Drawing.Size(316, 23);
             this.DownloadBox.TabIndex = 11;
             this.DownloadBox.TextChanged += new System.EventHandler(this.DownloadBox_TextChanged);
             this.DownloadBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.DownloadBox_KeyDown);
             // 
             // Download
             // 
-            this.Download.Location = new System.Drawing.Point(349, 59);
+            this.Download.Location = new System.Drawing.Point(331, 59);
             this.Download.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Download.Name = "Download";
-            this.Download.Size = new System.Drawing.Size(63, 27);
+            this.Download.Size = new System.Drawing.Size(81, 27);
             this.Download.TabIndex = 12;
             this.Download.Text = "Start";
             this.Download.UseVisualStyleBackColor = true;
@@ -354,7 +355,7 @@
             this.bDiscordRPC.Location = new System.Drawing.Point(7, 257);
             this.bDiscordRPC.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.bDiscordRPC.Name = "bDiscordRPC";
-            this.bDiscordRPC.Size = new System.Drawing.Size(239, 27);
+            this.bDiscordRPC.Size = new System.Drawing.Size(198, 27);
             this.bDiscordRPC.TabIndex = 25;
             this.bDiscordRPC.Text = "Activate DiscordRPC";
             this.bDiscordRPC.UseVisualStyleBackColor = true;
@@ -470,7 +471,7 @@
             this.flowLayoutPanel2.Controls.Add(this.ShowStatistics);
             this.flowLayoutPanel2.Location = new System.Drawing.Point(1, 15);
             this.flowLayoutPanel2.Name = "flowLayoutPanel2";
-            this.flowLayoutPanel2.Size = new System.Drawing.Size(417, 109);
+            this.flowLayoutPanel2.Size = new System.Drawing.Size(417, 108);
             this.flowLayoutPanel2.TabIndex = 0;
             // 
             // groupBox3
@@ -497,17 +498,29 @@
             this.flowLayoutPanel1.Controls.Add(this.bExport);
             this.flowLayoutPanel1.Controls.Add(this.button1);
             this.flowLayoutPanel1.Controls.Add(this.bDrag);
+            this.flowLayoutPanel1.Controls.Add(this.bKeyhook);
             this.flowLayoutPanel1.Location = new System.Drawing.Point(1, 125);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
             this.flowLayoutPanel1.Size = new System.Drawing.Size(417, 101);
             this.flowLayoutPanel1.TabIndex = 25;
             this.flowLayoutPanel1.Paint += new System.Windows.Forms.PaintEventHandler(this.flowLayoutPanel1_Paint);
             // 
+            // bKeyhook
+            // 
+            this.bKeyhook.Location = new System.Drawing.Point(212, 69);
+            this.bKeyhook.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.bKeyhook.Name = "bKeyhook";
+            this.bKeyhook.Size = new System.Drawing.Size(200, 27);
+            this.bKeyhook.TabIndex = 29;
+            this.bKeyhook.Text = "Toggle Global Keyhooks";
+            this.bKeyhook.UseVisualStyleBackColor = true;
+            this.bKeyhook.Click += new System.EventHandler(this.bKeyhook_Click);
+            // 
             // OptionsMenu
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1428, 643);
+            this.ClientSize = new System.Drawing.Size(877, 452);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
@@ -573,5 +586,6 @@
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel2;
+        private System.Windows.Forms.Button bKeyhook;
     }
 }

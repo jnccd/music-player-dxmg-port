@@ -441,5 +441,15 @@ namespace MusicPlayerDXMonoGamePort
         {
 
         }
+
+        bool keyhookActivated = true;
+        private void bKeyhook_Click(object sender, EventArgs e)
+        {
+            if (keyhookActivated)
+                Program.game.DisposeGlobalKeyHooks();
+            else
+                Program.game.CreateGlobalKeyHooks();
+            keyhookActivated = !keyhookActivated;
+        }
     }
 }
