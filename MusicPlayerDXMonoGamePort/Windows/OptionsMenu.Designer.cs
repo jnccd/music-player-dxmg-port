@@ -135,10 +135,10 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(212, 36);
+            this.button1.Location = new System.Drawing.Point(211, 36);
             this.button1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(200, 27);
+            this.button1.Size = new System.Drawing.Size(199, 27);
             this.button1.TabIndex = 5;
             this.button1.Text = "Reset Music Source Folder";
             this.button1.UseVisualStyleBackColor = true;
@@ -273,10 +273,10 @@
             // 
             // bConsoleThreadRestart
             // 
-            this.bConsoleThreadRestart.Location = new System.Drawing.Point(212, 3);
+            this.bConsoleThreadRestart.Location = new System.Drawing.Point(211, 3);
             this.bConsoleThreadRestart.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.bConsoleThreadRestart.Name = "bConsoleThreadRestart";
-            this.bConsoleThreadRestart.Size = new System.Drawing.Size(200, 27);
+            this.bConsoleThreadRestart.Size = new System.Drawing.Size(199, 27);
             this.bConsoleThreadRestart.TabIndex = 18;
             this.bConsoleThreadRestart.Text = "Restart Console Input Thread";
             this.bConsoleThreadRestart.UseVisualStyleBackColor = true;
@@ -322,7 +322,7 @@
             this.bExport.Location = new System.Drawing.Point(4, 36);
             this.bExport.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.bExport.Name = "bExport";
-            this.bExport.Size = new System.Drawing.Size(200, 27);
+            this.bExport.Size = new System.Drawing.Size(199, 27);
             this.bExport.TabIndex = 22;
             this.bExport.Text = "Export Music Library";
             this.bExport.UseVisualStyleBackColor = true;
@@ -378,7 +378,7 @@
             this.bDrag.Location = new System.Drawing.Point(4, 69);
             this.bDrag.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.bDrag.Name = "bDrag";
-            this.bDrag.Size = new System.Drawing.Size(200, 27);
+            this.bDrag.Size = new System.Drawing.Size(199, 27);
             this.bDrag.TabIndex = 27;
             this.bDrag.Text = "DragDrop Song";
             this.bDrag.UseVisualStyleBackColor = true;
@@ -389,7 +389,7 @@
             this.button2.Location = new System.Drawing.Point(4, 3);
             this.button2.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(200, 27);
+            this.button2.Size = new System.Drawing.Size(199, 27);
             this.button2.TabIndex = 28;
             this.button2.Text = "Restart";
             this.button2.UseVisualStyleBackColor = true;
@@ -499,18 +499,18 @@
             this.flowLayoutPanel1.Controls.Add(this.button1);
             this.flowLayoutPanel1.Controls.Add(this.bDrag);
             this.flowLayoutPanel1.Controls.Add(this.bKeyhook);
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(1, 125);
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(3, 125);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(417, 101);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(414, 101);
             this.flowLayoutPanel1.TabIndex = 25;
             this.flowLayoutPanel1.Paint += new System.Windows.Forms.PaintEventHandler(this.flowLayoutPanel1_Paint);
             // 
             // bKeyhook
             // 
-            this.bKeyhook.Location = new System.Drawing.Point(212, 69);
+            this.bKeyhook.Location = new System.Drawing.Point(211, 69);
             this.bKeyhook.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.bKeyhook.Name = "bKeyhook";
-            this.bKeyhook.Size = new System.Drawing.Size(200, 27);
+            this.bKeyhook.Size = new System.Drawing.Size(199, 27);
             this.bKeyhook.TabIndex = 29;
             this.bKeyhook.Text = "Toggle Global Keyhooks";
             this.bKeyhook.UseVisualStyleBackColor = true;
