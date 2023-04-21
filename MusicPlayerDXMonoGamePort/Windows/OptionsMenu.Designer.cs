@@ -421,6 +421,7 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.BackColor = System.Drawing.SystemColors.Control;
             this.groupBox1.Controls.Add(this.label4);
             this.groupBox1.Controls.Add(this.button3);
             this.groupBox1.Controls.Add(this.ColorChange);
@@ -453,6 +454,7 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.BackColor = System.Drawing.SystemColors.Control;
             this.groupBox2.Controls.Add(this.flowLayoutPanel2);
             this.groupBox2.Location = new System.Drawing.Point(444, 12);
             this.groupBox2.Name = "groupBox2";
@@ -476,6 +478,7 @@
             // 
             // groupBox3
             // 
+            this.groupBox3.BackColor = System.Drawing.SystemColors.Control;
             this.groupBox3.Controls.Add(this.flowLayoutPanel1);
             this.groupBox3.Controls.Add(this.cAutoVolume);
             this.groupBox3.Controls.Add(this.label2);
