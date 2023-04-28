@@ -80,28 +80,7 @@ namespace MusicPlayerDXMonoGamePort
                 config.Default.Save();
             }
 
-            SongManager.HistorySongData = new List<HistorySong>();
-            string path = SongManager.historyFilePath;
-            if (File.Exists(path))
-            {
-                string[] Songs = File.ReadLines(path).ToArray();
-
-                for (int i = 0; i < Math.Min(Songs.Length, 25); i++)
-                {
-                    string[] Split = Songs[Songs.Length - i - 1].Split(':');
-                    string Title = "";
-                    long Time = 0;
-                    float ScoreChange = 0;
-                    if (Split.Length == 3)
-                    {
-                        Time = Convert.ToInt64(Split[0].Trim('\t'));
-                        ScoreChange = Convert.ToSingle(Split[1].Trim('\t'));
-                        Title = Path.GetFileNameWithoutExtension(Uri.UnescapeDataString(Split[2].Trim('\t')));
-                    }
-
-                    SongManager.HistorySongData.Add(new HistorySong(Title, ScoreChange, Time));
-                }
-            }
+            SongManager.HistorySongData = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, 25);
             #endregion
 
             Console.Clear();
