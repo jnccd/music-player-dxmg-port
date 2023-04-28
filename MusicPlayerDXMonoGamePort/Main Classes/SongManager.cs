@@ -753,7 +753,7 @@ namespace MusicPlayerDXMonoGamePort
         private static void SaveCurrentSongToHistoryFile(float ScoreChange)
         {
             try { string s = currentlyPlayingSongName; } catch { return; }
-            if (HistorySongData.Count > 0 && currentlyPlayingSongName == HistorySongData[HistorySongData.Count - 1].Name)
+            if (HistorySongData.Count > 0 && currentlyPlayingSongName == HistorySongData[0].Name)
                 return;
 
             HistorySongData.Add(new HistorySong(Path.GetFileNameWithoutExtension(currentlyPlayingSongName), ScoreChange, DateTime.Now.ToBinary()));
