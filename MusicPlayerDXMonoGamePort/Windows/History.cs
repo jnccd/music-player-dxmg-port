@@ -30,10 +30,12 @@ namespace MusicPlayerDXMonoGamePort
             int RowIndex = dataGridView1.FirstDisplayedScrollingRowIndex;
             dataGridView1.Rows.Clear();
 
-            for (int i = 0; i < SongManager.HistorySongData.Count; i++)
+            var historyList = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, int.MaxValue);
+
+            for (int i = 0; i < historyList.Count; i++)
             {
-                dataGridView1.Rows.Add(new object[] { SongManager.HistorySongData[i].Name, DateTime.FromBinary(SongManager.HistorySongData[i].Date), SongManager.HistorySongData[i].Change });
-                if (!Config.Data.songDatabaseEntries.Select(x => x.Name).Contains(SongManager.HistorySongData[i].Name + ".mp3"))
+                dataGridView1.Rows.Add(new object[] { historyList[i].Name, DateTime.FromBinary(historyList[i].Date), historyList[i].Change });
+                if (!Config.Data.songDatabaseEntries.Select(x => x.Name).Contains(historyList[i].Name + ".mp3"))
                     dataGridView1.Rows[dataGridView1.Rows.Count - 1].DefaultCellStyle.BackColor = Color.Red;
             }
 
