@@ -23,6 +23,7 @@ using SharpDX.Direct2D1.Effects;
 using Configuration;
 using System.Reflection.Emit;
 using Keys = System.Windows.Forms.Keys;
+using RawInput_dll;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -127,6 +128,7 @@ namespace MusicPlayerDXMonoGamePort
         int ScrollWheelCooldown = 0;
         bool wasClickedOn = false;
         public static KeyboardHook keyHook = null;
+        private RawInput _rawinput = null;
 
         public OptionsMenu optionsMenu;
         public Statistics statistics;
@@ -1387,10 +1389,11 @@ namespace MusicPlayerDXMonoGamePort
         // Keyhook
         public void CreateGlobalKeyHooks()
         {
-            if (keyHook == null)
+            if (_rawinput == null)
             {
-                keyHook = new KeyboardHook(true);
-                keyHook.KeyDown += KeyHook_KeyDown;
+                _rawinput = new RawInput(gameWindowForm.Handle, false);
+                _rawinput.AddMessageFilter();
+                _rawinput.KeyPressed += OnRawKeyPressed;
             }
         }
         public void KeyHook_KeyDown(Keys key, bool Shift, bool Ctrl, bool Alt)
@@ -1413,10 +1416,15 @@ namespace MusicPlayerDXMonoGamePort
                     SongManager.IsCurrentSongUpvoted = !SongManager.IsCurrentSongUpvoted;
             }
         }
+        private void OnRawKeyPressed(object sender, RawInputEventArg e)
+        {
+            //Debug.WriteLine($"Event! {(Keys)e.KeyPressEvent.VKey}");
+            if (e.KeyPressEvent.KeyPressState == "MAKE")
+                KeyHook_KeyDown((Keys)e.KeyPressEvent.VKey, false, false, false);
+        }
         public void DisposeGlobalKeyHooks()
         {
-            keyHook.Dispose();
-            keyHook = null;
+            _rawinput.KeyPressed -= OnRawKeyPressed;
         }
 
         // Draw
