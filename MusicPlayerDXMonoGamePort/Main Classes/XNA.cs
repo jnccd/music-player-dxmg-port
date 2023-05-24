@@ -260,7 +260,6 @@ namespace MusicPlayerDXMonoGamePort
 
             KeepWindowInScreen();
             Shadow = new DropShadow(gameWindowForm, true);
-            Shadow.Show();
         }
 
         // Console Management
