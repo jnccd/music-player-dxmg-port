@@ -20,7 +20,7 @@ namespace MusicPlayerDXMonoGamePort
     {
         public static string[] args;
         public static XNA game;
-        public static bool Closing = false;
+        public static bool closing = false;
         public static FileSystemWatcher weightwatchers;
         public static FileSystemWatcher crackopenthebois;
 
@@ -29,34 +29,7 @@ namespace MusicPlayerDXMonoGamePort
         {
             Console.Title = "MusicPlayer Console";
 
-            #region Check for other program instances
-            Console.WriteLine("Checking for other MusicPlayer instances...");
-            try
-            {
-                foreach (Process p in Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName))
-                    if (p.Id != Process.GetCurrentProcess().Id && p.MainModule.FileName == Process.GetCurrentProcess().MainModule.FileName)
-                    {
-                        Console.WriteLine("Found another instance. \nSending data...");
-                        if (args.Length > 0)
-                        {
-                            RequestedSong.Default.RequestedSongString = args[0];
-                            RequestedSong.Default.Save();
-                        }
-                        Console.WriteLine("Data sent! Closing...");
-                        return;
-                    }
-            } catch {
-                Console.WriteLine("Please just start one instance of me at a time!");
-                Thread.Sleep(1000);
-                return;
-            }
-            // Also check for cheeky curious changes to the settings
-            if (Config.Data.MultiThreading == false)
-            {
-                MessageBox.Show("Dont mess with the settings file!\nLook this is an old option and it wont do much but possibly break the program so just activate it again.");
-                return;
-            }
-            #endregion
+            CheckForOtherInstances();
 
             // Smol settings
             Application.EnableVisualStyles();
@@ -64,24 +37,7 @@ namespace MusicPlayerDXMonoGamePort
             Values.DisableConsoleRezise();
             Values.RegisterUriScheme();
 
-            #region Song Data List initialization
-            // Legacy config support
-            if (config.Default.SongPaths != null && config.Default.SongScores != null && config.Default.SongUpvoteStreak != null && config.Default.SongTotalLikes != null &&
-                config.Default.SongTotalDislikes != null && config.Default.SongDate != null && config.Default.SongVolume != null &&
-                config.Default.SongScores.Length == config.Default.SongPaths.Length && config.Default.SongUpvoteStreak.Length == config.Default.SongPaths.Length &&
-                config.Default.SongTotalLikes.Length == config.Default.SongPaths.Length && config.Default.SongTotalDislikes.Length == config.Default.SongPaths.Length &&
-                config.Default.SongDate.Length == config.Default.SongPaths.Length && config.Default.SongVolume.Length == config.Default.SongPaths.Length)
-            {
-                Config.Data.songDatabaseEntries.Clear();
-                for (int i = 0; i < config.Default.SongPaths.Length; i++)
-                    Config.Data.songDatabaseEntries.Add(new UpvotedSong(config.Default.SongPaths[i], config.Default.SongScores[i], config.Default.SongUpvoteStreak[i],
-                            config.Default.SongTotalLikes[i], config.Default.SongTotalDislikes[i], config.Default.SongDate[i], config.Default.SongVolume[i]));
-                config.Default.SongPaths = null;
-                config.Default.Save();
-            }
-
-            SongManager.HistorySongData = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, 25);
-            #endregion
+            InitSongDataList();
 
             Console.Clear();
 
@@ -95,22 +51,70 @@ namespace MusicPlayerDXMonoGamePort
             if (Config.Data.DiscordRpcActive)
                 DiscordRPCWrapper.Initialize("460490126607384576");
 
-            #region clear old browser requests
-            if (Config.Data.BrowserDownloadFolderPath != "" && Config.Data.BrowserDownloadFolderPath != null)
-            {
-                string[] bois = Directory.GetFiles(Config.Data.BrowserDownloadFolderPath);
-                for (int i = 0; i < bois.Length; i++)
-                {
-                    string fileExtension = Path.GetExtension(bois[i]);
-                    if (fileExtension == ".PlayRequest")
-                        File.Delete(bois[i]);
-                    if (fileExtension == ".VideoDownloadRequest")
-                        File.Delete(bois[i]);
-                }
-            }
-            #endregion
+            ClearOldBrowserReqs();
 
-            #region Filewatcher
+            CreateFilewatchers();
+
+#if DEBUG
+            game = new XNA();
+            game.Run();
+#else
+            try
+            {
+                game = new XNA();
+                game.CreateGlobalKeyHooks();
+                game.Run();
+            }
+            catch (Exception ex)
+            {
+                HandleFatalProductionError(ex);
+            }
+#endif
+        }
+
+        public static void HandleFatalProductionError(Exception ex)
+        {
+            string strPath = Values.CurrentExecutablePath + @"\Log.txt";
+            if (!File.Exists(strPath))
+            {
+                File.Create(strPath).Dispose();
+            }
+            using (StreamWriter sw = File.AppendText(strPath))
+            {
+                sw.WriteLine();
+                sw.WriteLine("==========================Error Logging========================");
+                sw.WriteLine("============Start=============" + DateTime.Now);
+                sw.WriteLine("Error Message: " + ex.Message);
+                sw.WriteLine("Stack Trace: " + ex.StackTrace);
+                sw.WriteLine("=============End=============");
+            }
+
+            DiscordRPCWrapper.Shutdown();
+            game.DisposeGlobalKeyHooks();
+            SongManager.DisposeNAudioData();
+            if (game.optionsMenu != null)
+                game.optionsMenu.InvokeIfRequired(game.optionsMenu.Close);
+            if (game.statistics != null)
+                game.statistics.InvokeIfRequired(game.statistics.Close);
+            closing = true;
+
+            DialogResult D;
+            if (ex.Message.Contains("WindowsGameForm"))
+                D = MessageBox.Show("I got brutally murdered by another Program. Please restart me.", "Slaughtered by another program",
+                    MessageBoxButtons.RetryCancel);
+            else if (ex.Message == "CouldntFindWallpaperFile")
+                D = MessageBox.Show("You seem to have moved your Desktop Wallpaper file since you last set it as your Wallpaper.\n" +
+                    "Please set it as your wallpaper again and restart me so I can actually find its file.",
+                    "Couldn't find your wallpaper", MessageBoxButtons.RetryCancel);
+            else
+                D = MessageBox.Show("Error Message: " + ex.Message + "\n\nStack Trace: \n" + ex.StackTrace +
+                    "\n\nInner Error: " + ex.InnerException + "\n\nSource: " + ex.Source, "Error", MessageBoxButtons.RetryCancel);
+
+            if (D == DialogResult.Retry)
+                Restart();
+        }
+        public static void CreateFilewatchers()
+        {
             // SettingsPath
             weightwatchers = new FileSystemWatcher();
             try
@@ -129,7 +133,8 @@ namespace MusicPlayerDXMonoGamePort
                         try
                         {
                             game.CheckForRequestedSongs();
-                        } catch { }
+                        }
+                        catch { }
                     });
                     weightwatchers.EnableRaisingEvents = true;
                 }
@@ -162,62 +167,72 @@ namespace MusicPlayerDXMonoGamePort
                 }
                 catch (Exception ex) { MessageBox.Show("Couldn't set filewatcher! (ERROR: " + ex + ")"); }
             }
-            #endregion
+        }
+        public static void ClearOldBrowserReqs()
+        {
+            if (Config.Data.BrowserDownloadFolderPath != "" && Config.Data.BrowserDownloadFolderPath != null)
+            {
+                string[] bois = Directory.GetFiles(Config.Data.BrowserDownloadFolderPath);
+                for (int i = 0; i < bois.Length; i++)
+                {
+                    string fileExtension = Path.GetExtension(bois[i]);
+                    if (fileExtension == ".PlayRequest")
+                        File.Delete(bois[i]);
+                    if (fileExtension == ".VideoDownloadRequest")
+                        File.Delete(bois[i]);
+                }
+            }
+        }
+        public static void InitSongDataList()
+        {
+            // Legacy config support
+            if (config.Default.SongPaths != null && config.Default.SongScores != null && config.Default.SongUpvoteStreak != null && config.Default.SongTotalLikes != null &&
+                config.Default.SongTotalDislikes != null && config.Default.SongDate != null && config.Default.SongVolume != null &&
+                config.Default.SongScores.Length == config.Default.SongPaths.Length && config.Default.SongUpvoteStreak.Length == config.Default.SongPaths.Length &&
+                config.Default.SongTotalLikes.Length == config.Default.SongPaths.Length && config.Default.SongTotalDislikes.Length == config.Default.SongPaths.Length &&
+                config.Default.SongDate.Length == config.Default.SongPaths.Length && config.Default.SongVolume.Length == config.Default.SongPaths.Length)
+            {
+                Config.Data.songDatabaseEntries.Clear();
+                for (int i = 0; i < config.Default.SongPaths.Length; i++)
+                    Config.Data.songDatabaseEntries.Add(new UpvotedSong(config.Default.SongPaths[i], config.Default.SongScores[i], config.Default.SongUpvoteStreak[i],
+                            config.Default.SongTotalLikes[i], config.Default.SongTotalDislikes[i], config.Default.SongDate[i], config.Default.SongVolume[i]));
+                config.Default.SongPaths = null;
+                config.Default.Save();
+            }
 
-#if DEBUG
-            game = new XNA();
-            game.Run();
-#else
+            SongManager.HistorySongData = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, 25);
+        }
+        public static void CheckForOtherInstances()
+        {
+            Console.WriteLine("Checking for other MusicPlayer instances...");
             try
             {
-                game = new XNA();
-                game.CreateGlobalKeyHooks();
-                game.Run();
+                foreach (Process p in Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName))
+                    if (p.Id != Process.GetCurrentProcess().Id && p.MainModule.FileName == Process.GetCurrentProcess().MainModule.FileName)
+                    {
+                        Console.WriteLine("Found another instance. \nSending data...");
+                        if (args.Length > 0)
+                        {
+                            RequestedSong.Default.RequestedSongString = args[0];
+                            RequestedSong.Default.Save();
+                        }
+                        Console.WriteLine("Data sent! Closing...");
+                        return;
+                    }
             }
-            catch (Exception ex)
+            catch
             {
-                string strPath = Values.CurrentExecutablePath + @"\Log.txt";
-                if (!File.Exists(strPath))
-                {
-                    File.Create(strPath).Dispose();
-                }
-                using (StreamWriter sw = File.AppendText(strPath))
-                {
-                    sw.WriteLine();
-                    sw.WriteLine("==========================Error Logging========================");
-                    sw.WriteLine("============Start=============" + DateTime.Now);
-                    sw.WriteLine("Error Message: " + ex.Message);
-                    sw.WriteLine("Stack Trace: " + ex.StackTrace);
-                    sw.WriteLine("=============End=============");
-                }
-
-                DiscordRPCWrapper.Shutdown();
-                game.DisposeGlobalKeyHooks();
-                SongManager.DisposeNAudioData();
-                if (game.optionsMenu != null)
-                    game.optionsMenu.InvokeIfRequired(game.optionsMenu.Close);
-                if (game.statistics != null)
-                    game.statistics.InvokeIfRequired(game.statistics.Close);
-                Closing = true;
-
-                DialogResult D;
-                if (ex.Message.Contains("WindowsGameForm"))
-                    D = MessageBox.Show("I got brutally murdered by another Program. Please restart me.", "Slaughtered by another program", 
-                        MessageBoxButtons.RetryCancel);
-                else if (ex.Message == "CouldntFindWallpaperFile")
-                    D = MessageBox.Show("You seem to have moved your Desktop Wallpaper file since you last set it as your Wallpaper.\n" +
-                        "Please set it as your wallpaper again and restart me so I can actually find its file.", 
-                        "Couldn't find your wallpaper", MessageBoxButtons.RetryCancel);
-                else
-                    D = MessageBox.Show("Error Message: " + ex.Message + "\n\nStack Trace: \n" + ex.StackTrace + 
-                        "\n\nInner Error: " + ex.InnerException + "\n\nSource: " + ex.Source, "Error", MessageBoxButtons.RetryCancel);
-
-                if (D == DialogResult.Retry)
-                    Restart();
+                Console.WriteLine("Please just start one instance of me at a time!");
+                Thread.Sleep(1000);
+                return;
             }
-#endif
+            // Also check for cheeky curious changes to the settings
+            if (Config.Data.MultiThreading == false)
+            {
+                MessageBox.Show("Dont mess with the settings file!\nLook this is an old option and it wont do much but possibly break the program so just activate it again.");
+                return;
+            }
         }
-
         public static void Restart()
         {
             string RestartLocation = Values.CurrentExecutablePath + "\\Restart.bat";
