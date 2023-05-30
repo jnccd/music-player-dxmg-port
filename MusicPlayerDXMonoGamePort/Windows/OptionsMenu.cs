@@ -393,7 +393,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     if (MessageBox.Show("Do you really want to restart?", "Restart?", MessageBoxButtons.YesNo) == DialogResult.Yes)
                     {
-                        Program.Closing = true;
+                        Program.closing = true;
                         Program.game.gameWindowForm.InvokeIfRequired(Program.game.gameWindowForm.Close);
                         DiscordRPCWrapper.Shutdown();
                         Application.Exit();

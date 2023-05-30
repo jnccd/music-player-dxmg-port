@@ -203,7 +203,7 @@ namespace MusicPlayerDXMonoGamePort
         {
             gameWindowForm.FormClosing += (object sender, FormClosingEventArgs e) =>
             {
-                Program.Closing = true;
+                Program.closing = true;
                 DisposeGlobalKeyHooks();
                 SongManager.DisposeNAudioData();
                 SongManager.SaveUserSettings(true);
@@ -214,7 +214,7 @@ namespace MusicPlayerDXMonoGamePort
             };
             Console.CancelKeyPress += ((object o, ConsoleCancelEventArgs e) =>
             {
-                if (!Program.Closing)
+                if (!Program.closing)
                 {
                     e.Cancel = true;
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -291,7 +291,7 @@ namespace MusicPlayerDXMonoGamePort
                         
                         ConsoleKeyInfo e = Console.ReadKey();
 
-                        if (Program.Closing)
+                        if (Program.closing)
                             break;
 
                         if (PauseConsoleInputThread) { Console.CursorLeft = 0; }
@@ -867,7 +867,7 @@ namespace MusicPlayerDXMonoGamePort
                             {
                                 if (MessageBox.Show("Do you really want to close me? :<", "Quit!?", MessageBoxButtons.YesNo) == DialogResult.Yes)
                                 {
-                                    Program.Closing = true;
+                                    Program.closing = true;
                                     gameWindowForm.InvokeIfRequired(gameWindowForm.Close);
                                     DiscordRPCWrapper.Shutdown();
                                 }
@@ -994,7 +994,7 @@ namespace MusicPlayerDXMonoGamePort
                     {
                         if (MessageBox.Show("Do you really want to restart?", "Restart?", MessageBoxButtons.YesNo) == DialogResult.Yes)
                         {
-                            Program.Closing = true;
+                            Program.closing = true;
                             gameWindowForm.InvokeIfRequired(gameWindowForm.Close);
                             DiscordRPCWrapper.Shutdown();
                             Application.Exit();
@@ -1050,7 +1050,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     if (MessageBox.Show("Do you really want to close me? :<", "Quit!?", MessageBoxButtons.YesNo) == DialogResult.Yes)
                     {
-                        Program.Closing = true;
+                        Program.closing = true;
                         gameWindowForm.InvokeIfRequired(gameWindowForm.Close);
                         DiscordRPCWrapper.Shutdown();
                         Application.Exit();
