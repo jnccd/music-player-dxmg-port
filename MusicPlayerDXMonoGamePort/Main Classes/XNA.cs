@@ -260,6 +260,7 @@ namespace MusicPlayerDXMonoGamePort
 
             KeepWindowInScreen();
             Shadow = new DropShadow(gameWindowForm, true);
+            Shadow.Show();
         }
 
         // Console Management
@@ -523,12 +524,17 @@ namespace MusicPlayerDXMonoGamePort
                 }
             });
         }
-        public bool Download(string downloadInput)
+        /// <summary>
+        /// Downloads a song using ytdlp
+        /// </summary>
+        /// <param name="downloadInput"></param>
+        /// <returns>Number of songs that have been downloaded</returns>
+        public int Download(string downloadInput)
         {
             if (BackgroundOperationRunning || ConsoleBackgroundOperationRunning)
             {
                 MessageBox.Show("Multiple BackgroundOperations can not run at the same time!\nWait until the other operation is finished");
-                return false;
+                return 0;
             }
 
             try
@@ -539,62 +545,50 @@ namespace MusicPlayerDXMonoGamePort
 
                 PlaybackState PlayState = SongManager.output.PlaybackState;
                 
-                string downloadTargetFolder = Values.CurrentExecutablePath + "\\Downloads\\";
+                string downloadTargetFolder = $"{Values.CurrentExecutablePath}\\Downloads";
                 string download = downloadInput;
                 if (!download.StartsWith("https://"))
                     download = $"\"ytsearch: {downloadInput}\"";
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
 
-                string output = $"\"{downloadTargetFolder}%(title)s.%(ext)s\"";
-                if ((download.Contains("ytsearch") || download.Contains("https://www.youtube.com")) 
-                        && !downloadInput.GetYoutubeVideoTitle().Contains(" - "))
-                    output = $"\"{downloadTargetFolder}%(uploader)s - %(title)s.%(ext)s\"";
+                string output = $"\"%(title)s.%(ext)s\"";
+                if ((download.Contains("ytsearch") || 
+                    download.Contains("https://www.youtube.com")) && !downloadInput.GetYoutubeVideoTitle().Contains(" - "))
+                    output = $"\"%(uploader)s - %(title)s.%(ext)s\"";
 
                 // Download Video File
                 Process P = new Process();
-                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", download + $" -x --audio-format mp3 -o {output} --add-metadata --embed-thumbnail");
+                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", download + $" --split-chapters -x --audio-format mp3 -P \"{downloadTargetFolder}\" -o {output} --add-metadata --embed-thumbnail");
                 P.StartInfo.UseShellExecute = false;
                 P.Start();
                 P.WaitForExit();
 
-                // move file to lib
-                string musicFile = Path.GetFileName(Directory.GetFiles(downloadTargetFolder).Where(x => x.EndsWith(".mp3")).First());
-                string targetPath = Config.Data.MusicPath + "\\" + musicFile.Replace(" - Topic", "");
-                if (File.Exists(targetPath))
-                    File.Delete(targetPath);
-                File.Move(downloadTargetFolder + musicFile, targetPath);
+                // move files to lib
+                var downloadedSongsPaths = new List<string>();
+                foreach (string musicFilepath in Directory.GetFiles(downloadTargetFolder).Where(x => x.EndsWith(".mp3")))
+                {
+                    string musicFile = Path.GetFileName(musicFilepath);
+                    string targetPath = $"{Config.Data.MusicPath}\\{musicFile.Replace(" - Topic", "")}";
+                    // Override
+                    if (File.Exists(targetPath))
+                        File.Delete(targetPath);
+                    File.Move(musicFilepath, targetPath);
+
+                    SongManager.RegisterNewSong(targetPath);
+
+                    downloadedSongsPaths.Add(targetPath);
+                }
+
 
                 foreach (var file in Directory.GetFiles(downloadTargetFolder))
                     File.Delete(file);
 
-                // write thumbnail
-                try
-                {
-                    string videoID = musicFile.GetYoutubeVideoID();
-                    string thumbURL = videoID.GetYoutubeThumbnail();
-                    HttpWebRequest httpWebRequest = (HttpWebRequest)HttpWebRequest.Create(thumbURL);
-                    HttpWebResponse httpWebReponse = (HttpWebResponse)httpWebRequest.GetResponse();
-                    Stream stream = httpWebReponse.GetResponseStream();
-                    System.Drawing.Image im = System.Drawing.Image.FromStream(stream);
-                    TagLib.File file = TagLib.File.Create(targetPath);
-                    TagLib.Picture pic = new TagLib.Picture();
-                    pic.Type = TagLib.PictureType.FrontCover;
-                    pic.Description = "Cover";
-                    pic.MimeType = System.Net.Mime.MediaTypeNames.Image.Jpeg;
-                    MemoryStream ms = new MemoryStream();
-                    im.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
-                    ms.Position = 0;
-                    pic.Data = TagLib.ByteVector.FromStream(ms);
-                    file.Tag.Pictures = new TagLib.IPicture[] { pic };
-                    file.Save();
-                    ms.Close();
-                }
-                catch { Console.WriteLine("Failed to write yt thumbnail"); }
+                if (string.IsNullOrEmpty(downloadedSongsPaths.First()))
+                    return 0;
 
                 // Play it
-                SongManager.AddSongToListIfNotDoneSoFar(targetPath);
-                SongManager.PlayNewSong(targetPath);
+                SongManager.PlayNewSong(downloadedSongsPaths.First());
                 originY = Console.CursorTop;
 
                 if (PlayState == PlaybackState.Paused || PlayState == PlaybackState.Stopped)
@@ -603,7 +597,9 @@ namespace MusicPlayerDXMonoGamePort
                 ConsoleBackgroundOperationRunning = false;
                 PauseConsoleInputThread = false;
 
-                CreateGlobalKeyHooks();
+                //CreateGlobalKeyHooks();
+
+                return downloadedSongsPaths.Count;
             }
             catch (Exception e)
             {
@@ -611,9 +607,8 @@ namespace MusicPlayerDXMonoGamePort
                 PauseConsoleInputThread = false;
                 
                 MessageBox.Show(e.ToString());
-                return false;
+                return 0;
             }
-            return true;
         }
         public bool DownloadAsVideo(string url)
         {
@@ -1908,33 +1903,34 @@ namespace MusicPlayerDXMonoGamePort
                     spriteBatch.End();
 
                     // Title
-                    lock (TitleTarget)
-                    {
-                        if (!LongTitle)
+                    if (TitleTarget != null)
+                        lock (TitleTarget)
                         {
-                            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicClamp, DepthStencilState.Default, RasterizerState.CullNone);
-                            if (TitleTarget != null)
+                            if (!LongTitle)
                             {
-                                TempVector.X = 24;
-                                TempVector.Y = 13;
-                                spriteBatch.Draw(TitleTarget, TempVector, backgroundColor);
+                                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicClamp, DepthStencilState.Default, RasterizerState.CullNone);
+                                if (TitleTarget != null)
+                                {
+                                    TempVector.X = 24;
+                                    TempVector.Y = 13;
+                                    spriteBatch.Draw(TitleTarget, TempVector, backgroundColor);
+                                }
+                                spriteBatch.End();
                             }
-                            spriteBatch.End();
-                        }
-                        else
-                        {
-                            // Loooong loooooong title man
-                            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicClamp, DepthStencilState.Default,
-                                RasterizerState.CullNone, Assets.TitleFadeout);
-                            if (TitleTarget != null)
+                            else
                             {
-                                TempVector.X = 24;
-                                TempVector.Y = 13;
-                                spriteBatch.Draw(TitleTarget, TempVector, backgroundColor);
+                                // Loooong loooooong title man
+                                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicClamp, DepthStencilState.Default,
+                                    RasterizerState.CullNone, Assets.TitleFadeout);
+                                if (TitleTarget != null)
+                                {
+                                    TempVector.X = 24;
+                                    TempVector.Y = 13;
+                                    spriteBatch.Draw(TitleTarget, TempVector, backgroundColor);
+                                }
+                                spriteBatch.End();
                             }
-                            spriteBatch.End();
                         }
-                    }
                     #endregion
                 }
             }
