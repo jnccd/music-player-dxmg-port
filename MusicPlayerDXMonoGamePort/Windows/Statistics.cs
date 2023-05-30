@@ -379,13 +379,13 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        if (parent.BackgroundOperationRunning || parent.ConsoleBackgroundOperationRunning)
+                        if (ConsoleManager.BackgroundOperationRunning || ConsoleManager.ConsoleBackgroundOperationRunning)
                         {
                             MessageBox.Show("Multiple BackgroundOperations can not run at the same time!\nWait until the other operation is finished");
                             return;
                         }
 
-                        parent.BackgroundOperationRunning = true;
+                        ConsoleManager.BackgroundOperationRunning = true;
 
                         List<string> SongPaths = new List<string>();
                         for (int i = 0; i < dataGridView1.Rows.Count; i++)
@@ -398,7 +398,7 @@ namespace MusicPlayerDXMonoGamePort
                         else
                             MessageBox.Show("You havent selected anything!\nMake sure to select entire Rows");
 
-                        parent.BackgroundOperationRunning = false;
+                        ConsoleManager.BackgroundOperationRunning = false;
                     }
                     catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
                 })));

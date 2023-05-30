@@ -24,7 +24,6 @@ using Configuration;
 using System.Reflection.Emit;
 using Keys = System.Windows.Forms.Keys;
 using RawInput_dll;
-using MusicPlayerDXMonoGamePort.Main_Classes;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -120,8 +119,7 @@ namespace MusicPlayerDXMonoGamePort
         float X2;
         int ScrollWheelCooldown = 0;
         bool wasClickedOn = false;
-        public static KeyboardHook keyHook = null;
-        private RawInput _rawinput = null;
+        
 
         public OptionsMenu optionsMenu;
         public Statistics statistics;
@@ -197,7 +195,7 @@ namespace MusicPlayerDXMonoGamePort
             gameWindowForm.FormClosing += (object sender, FormClosingEventArgs e) =>
             {
                 Program.closing = true;
-                DisposeGlobalKeyHooks();
+                KeyHookManager.DisposeGlobalKeyHooks();
                 SongManager.DisposeNAudioData();
                 SongManager.SaveUserSettings(true);
                 if (optionsMenu != null)
@@ -236,13 +234,12 @@ namespace MusicPlayerDXMonoGamePort
 
             ShowSecondRowMessage("Found  " + SongManager.Playlist.Count + "  Songs!", 3);
 
+            KeyHookManager.CreateGlobalKeyHooks(Program.game.gameWindowForm.Handle);
+
             KeepWindowInScreen();
             Shadow = new DropShadow(gameWindowForm, true);
             Shadow.Show();
         }
-
-        // Console Management
-        
 
         // Update
         protected override void Update(GameTime gameTime)
@@ -384,7 +381,7 @@ namespace MusicPlayerDXMonoGamePort
                 !WasFocusedLastFrame && gameWindowForm.Focused &&
                 Control.GetMouseRect().Intersects(Values.WindowRect))
             {
-                CreateGlobalKeyHooks();
+                KeyHookManager.CreateGlobalKeyHooks(Program.game.gameWindowForm.Handle);
                 MouseClickedPos.X = Control.CurMS.X;
                 MouseClickedPos.Y = Control.CurMS.Y;
 
@@ -966,46 +963,6 @@ namespace MusicPlayerDXMonoGamePort
             UpvoteButtonShadow = new Rectangle(UpvoteButton.X + Config.Data.ShadowDistance, UpvoteButton.Y + Config.Data.ShadowDistance, UpvoteButton.Width, UpvoteButton.Height);
             CloseButtonShadow = new Rectangle(CloseButton.X + Config.Data.ShadowDistance, CloseButton.Y + Config.Data.ShadowDistance, CloseButton.Width, CloseButton.Height);
             OptionsButtonShadow = new Rectangle(OptionsButton.X + Config.Data.ShadowDistance, OptionsButton.Y + Config.Data.ShadowDistance, OptionsButton.Width, OptionsButton.Height);
-        }
-        // Keyhook
-        public void CreateGlobalKeyHooks()
-        {
-            if (_rawinput == null)
-            {
-                _rawinput = new RawInput(gameWindowForm.Handle, false);
-                _rawinput.AddMessageFilter();
-                _rawinput.KeyPressed += OnRawKeyPressed;
-            }
-        }
-        public void KeyHook_KeyDown(Keys key, bool Shift, bool Ctrl, bool Alt)
-        {
-            if (Values.Timer > SongManager.SongChangedTickTime + 30)
-            {
-                var k = key;
-
-                // Key Events
-                if (k == Keys.MediaPlayPause)
-                    SongManager.PlayPause();
-
-                if (k == Keys.MediaNextTrack)
-                    SongManager.GetNextSong(false, true);
-
-                if (k == Keys.MediaPreviousTrack)
-                    SongManager.GetPreviousSong();
-
-                if (k == Keys.MediaStop)
-                    SongManager.IsCurrentSongUpvoted = !SongManager.IsCurrentSongUpvoted;
-            }
-        }
-        private void OnRawKeyPressed(object sender, RawInputEventArg e)
-        {
-            //Debug.WriteLine($"Event! {(Keys)e.KeyPressEvent.VKey}");
-            if (e.KeyPressEvent.KeyPressState == "MAKE")
-                KeyHook_KeyDown((Keys)e.KeyPressEvent.VKey, false, false, false);
-        }
-        public void DisposeGlobalKeyHooks()
-        {
-            _rawinput.KeyPressed -= OnRawKeyPressed;
         }
 
         // Draw
