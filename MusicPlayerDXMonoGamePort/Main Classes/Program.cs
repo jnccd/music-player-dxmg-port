@@ -13,6 +13,7 @@ using System.Text;
 using System.Configuration;
 using Configuration;
 using System.Text.Encodings.Web;
+using MusicPlayerDXMonoGamePort.Main_Classes;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -289,7 +290,7 @@ start MusicPlayerDXMonoGamePort.exe");
                     File.Delete(bois[i]);
                     Values.ShowWindow(Values.GetConsoleWindow(), 0x09);
                     Values.SetForegroundWindow(Values.GetConsoleWindow());
-                    SendKeys.SendWait("Ԫ");
+                    SendKeys.SendWait(ConsoleManager.wakeUpChar);
                 }
             }
         }
