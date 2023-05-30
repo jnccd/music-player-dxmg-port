@@ -10,6 +10,7 @@ namespace MusicPlayerDXMonoGamePort
 {
     class DropShadow : Form
     {
+        bool FocusNextTime = true;
         Form parentForm;
 
         // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow
@@ -21,17 +22,20 @@ namespace MusicPlayerDXMonoGamePort
             parentForm.Closed += ParentForm_Closed; //Closes this when parent closes
             parentForm.Move += ParentForm_Move; //Follows movement of parent form
             this.GotFocus += DropShadow_GotFocus;
-            
+            this.Shown += DropShadow_Shown;
+            if (!ManualFocus)
+                parentForm.GotFocus += ParentForm_GotFocus;
+
             this.ShowInTaskbar = false;
             this.parentForm = parentForm;
             this.FormBorderStyle = FormBorderStyle.FixedToolWindow;
-
-            this.Load += DropShadow_Load;
         }
 
-        private void DropShadow_Load(object sender, EventArgs e)
+        private void DropShadow_Shown(object sender, EventArgs e)
         {
-            DropShadow_GotFocus(sender, e);
+            if (WindowState == FormWindowState.Minimized)
+                DropShadow_GotFocus(this, e);
+            UpdateSizeLocation();
         }
 
         public void UpdateSizeLocation()
@@ -42,9 +46,21 @@ namespace MusicPlayerDXMonoGamePort
 
         private void DropShadow_GotFocus(object sender, EventArgs e)
         {
-            this.Show();
+            ShowWindow(Handle, 4);
             if (parentForm != null)
-                ShowWindow(parentForm.Handle, 4);
+                ShowWindow(parentForm.Handle, 0x0010); // SW_SHOWNOACTIVATE
+            //parentForm.BringToFront();
+        }
+
+        private void ParentForm_GotFocus(object sender, EventArgs e)
+        {
+            if (FocusNextTime)
+            {
+                this.Activate();
+                if (parentForm != null)
+                    parentForm.BringToFront();
+            }
+            FocusNextTime = !FocusNextTime;
         }
 
         private void ParentForm_Closed(object sender, EventArgs e)
