@@ -620,6 +620,12 @@ namespace MusicPlayerDXMonoGamePort
             }
             IsCurrentSongUpvoted = false;
         }
+        public static void RegisterNewSong(string songPath)
+        {
+            Playlist.Add(songPath);
+            AddSongToListIfNotDoneSoFar(songPath);
+            UpdateSongDate(songPath);
+        }
         public static void AddSongToListIfNotDoneSoFar(string Song)
         {
             if (!Config.Data.songDatabaseEntries.Exists(x => x.Name == Song.Split('\\').Last()))

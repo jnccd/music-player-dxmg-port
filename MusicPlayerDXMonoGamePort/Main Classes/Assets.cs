@@ -189,9 +189,7 @@ namespace MusicPlayerDXMonoGamePort
             foreach (string s in Directory.GetFiles(StartDir))
                 if (s.EndsWith(".mp3"))
                 {
-                    SongManager.Playlist.Add(s);
-                    SongManager.AddSongToListIfNotDoneSoFar(s);
-                    SongManager.UpdateSongDate(s);
+                    SongManager.RegisterNewSong(s);
                     if (ConsoleOutput)
                     {
                         Console.CursorLeft = 0;
