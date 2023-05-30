@@ -8,7 +8,7 @@ using System.Windows.Forms;
 
 namespace MusicPlayerDXMonoGamePort
 {
-    class DropShadow : Form
+    public class DropShadow : Form
     {
         bool FocusNextTime = true;
         Form parentForm;

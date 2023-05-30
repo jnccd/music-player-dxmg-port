@@ -254,7 +254,7 @@ namespace MusicPlayerDXMonoGamePort
                 T.Wait();
             }
 
-            Program.game.SongTimeSkipped = 0;
+            XnaGuiManager.SongTimeSkipped = 0;
             Program.game.ForcedCoverBackgroundRedraw = true;
             Program.game.ForceTitleRedraw(true);
             if (Program.game.DG != null)
@@ -562,7 +562,7 @@ namespace MusicPlayerDXMonoGamePort
 
                 if (index > -1 && DownVoteCurrentSongForUserSkip && PlayerHistoryIndex == PlayerHistory.Count - 1 && !IsCurrentSongUpvoted)
                 {
-                    float percentage = (Channel32.Position - Program.game.SongTimeSkipped) / (float)Channel32.Length;
+                    float percentage = (Channel32.Position - XnaGuiManager.SongTimeSkipped) / (float)Channel32.Length;
 
                     if (Config.Data.songDatabaseEntries[index].Score > 120)
                         Config.Data.songDatabaseEntries[index].Score = 120;
@@ -598,7 +598,7 @@ namespace MusicPlayerDXMonoGamePort
                 if (Channel32 == null)
                     percentage = 1;
                 else
-                    percentage = (Channel32.Position - Program.game.SongTimeSkipped) / (double)Channel32.Length;
+                    percentage = (Channel32.Position - XnaGuiManager.SongTimeSkipped) / (double)Channel32.Length;
 
                 if (Config.Data.songDatabaseEntries[index].Score > 120)
                     Config.Data.songDatabaseEntries[index].Score = 120;
