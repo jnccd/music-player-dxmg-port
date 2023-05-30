@@ -184,14 +184,14 @@ namespace MusicPlayerDXMonoGamePort
                 Program.game.optionsMenu.InvokeIfRequired(() => { Download.Text = "Downloading..."; });
                 Program.game.optionsMenu.InvokeIfRequired(() => { Download.Enabled = false; });
                 Program.game.optionsMenu.InvokeIfRequired(() => { DownloadBox.Enabled = false; });
-                Program.game.PauseConsoleInputThread = true;
+                ConsoleManager.PauseConsoleInputThread = true;
                 Task T = Task.Factory.StartNew(() => {
-                    Program.game.Download(download);
+                    ConsoleManager.Download(download);
                 });
                 Thread.Sleep(200);
                 Values.ShowWindow(Values.GetConsoleWindow(), 0x09);
                 Values.SetForegroundWindow(Values.GetConsoleWindow());
-                SendKeys.SendWait("SUCCCCC");
+                SendKeys.SendWait(ConsoleManager.wakeUpChar);
                 T.Wait();
                 Program.game.optionsMenu.InvokeIfRequired(() => { Download.Text = "Start"; });
                 Program.game.optionsMenu.InvokeIfRequired(() => { Download.Enabled = true; });
@@ -208,7 +208,7 @@ namespace MusicPlayerDXMonoGamePort
                 Download.Enabled = true;
                 DownloadBox.Enabled = true;
                 DownloadFinished = false;
-                Program.game.PauseConsoleInputThread = false;
+                ConsoleManager.PauseConsoleInputThread = false;
             }
         }
 
@@ -224,11 +224,9 @@ namespace MusicPlayerDXMonoGamePort
 
         private void bConsoleThreadRestart_Click(object sender, EventArgs e)
         {
-            Program.game.PauseConsoleInputThread = false;
-            if (Program.game.ConsoleManager.IsCanceled || Program.game.ConsoleManager.IsCompleted || Program.game.ConsoleManager.IsFaulted)
-            {
-                Program.game.StartSongInputLoop();
-            }
+            ConsoleManager.PauseConsoleInputThread = false;
+            if (ConsoleManager.IsTaskClosed())
+                ConsoleManager.StartSongInputLoop();
         }
 
         private void tSmoothness_Scroll(object sender, EventArgs e)
@@ -260,19 +258,19 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        if (parent.BackgroundOperationRunning ||parent.ConsoleBackgroundOperationRunning)
+                        if (ConsoleManager.BackgroundOperationRunning || ConsoleManager.ConsoleBackgroundOperationRunning)
                         {
                             MessageBox.Show("Multiple BackgroundOperations can not run at the same time!\nWait until the other operation is finished");
                             return;
                         }
-                        parent.BackgroundOperationRunning = true;
+                        ConsoleManager.BackgroundOperationRunning = true;
 
                         UpdateExports updat = new UpdateExports(Chooser.Output, choose.SelectedPath);
                         updat.ShowDialog();
 
-                        parent.BackgroundOperationRunning = false;
+                        ConsoleManager.BackgroundOperationRunning = false;
                     }
-                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); parent.BackgroundOperationRunning = false; }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); ConsoleManager.BackgroundOperationRunning = false; }
                 }
             }
         }
@@ -446,9 +444,9 @@ namespace MusicPlayerDXMonoGamePort
         private void bKeyhook_Click(object sender, EventArgs e)
         {
             if (keyhookActivated)
-                Program.game.DisposeGlobalKeyHooks();
+                KeyHookManager.DisposeGlobalKeyHooks();
             else
-                Program.game.CreateGlobalKeyHooks();
+                KeyHookManager.CreateGlobalKeyHooks(Program.game.gameWindowForm.Handle);
             keyhookActivated = !keyhookActivated;
         }
     }

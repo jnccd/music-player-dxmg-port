@@ -13,7 +13,6 @@ using System.Text;
 using System.Configuration;
 using Configuration;
 using System.Text.Encodings.Web;
-using MusicPlayerDXMonoGamePort.Main_Classes;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -63,7 +62,6 @@ namespace MusicPlayerDXMonoGamePort
             try
             {
                 game = new XNA();
-                game.CreateGlobalKeyHooks();
                 game.Run();
             }
             catch (Exception ex)
@@ -91,7 +89,7 @@ namespace MusicPlayerDXMonoGamePort
             }
 
             DiscordRPCWrapper.Shutdown();
-            game.DisposeGlobalKeyHooks();
+            KeyHookManager.DisposeGlobalKeyHooks();
             SongManager.DisposeNAudioData();
             if (game.optionsMenu != null)
                 game.optionsMenu.InvokeIfRequired(game.optionsMenu.Close);
@@ -271,20 +269,20 @@ start MusicPlayerDXMonoGamePort.exe");
                     {
                         lock (crackLock)
                         {
-                            while (game.BackgroundOperationRunning || game.ConsoleBackgroundOperationRunning)
+                            while (ConsoleManager.BackgroundOperationRunning || ConsoleManager.ConsoleBackgroundOperationRunning)
                                 Thread.Sleep(250);
                             
                             if (fileName == "MusicPlayer.PlayRequest")
                             {
                                 string[] split = crackedOpenBoi.Split('±');
-                                if (game.Download(split[0]) == 1 && split.Length > 1)
+                                if (ConsoleManager.Download(split[0]) == 1 && split.Length > 1)
                                 {
                                     long secondspassed = Convert.ToInt64(split[1].Split('.')[0]);
                                     SongManager.Channel32.Position = secondspassed * SongManager.Channel32.WaveFormat.AverageBytesPerSecond;
                                 }
                             }
                             if (fileName == "MusicPlayer.VideoDownloadRequest")
-                                game.DownloadAsVideo(crackedOpenBoi);
+                                ConsoleManager.DownloadAsVideo(crackedOpenBoi);
                         }
                     });
                     File.Delete(bois[i]);

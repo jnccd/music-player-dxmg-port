@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MusicPlayerDXMonoGamePort.Main_Classes
+namespace MusicPlayerDXMonoGamePort
 {
     public static class ConsoleManager
     {
@@ -301,6 +301,9 @@ namespace MusicPlayerDXMonoGamePort.Main_Classes
                 originY = Console.CursorTop;
             }
         }
+        public static bool IsTaskClosed()
+            => ConsoleManagerTask.IsCanceled || ConsoleManagerTask.IsCompleted || ConsoleManagerTask.IsFaulted;
+
         /// <summary>
         /// Downloads a song using ytdlp
         /// </summary>
@@ -421,7 +424,7 @@ namespace MusicPlayerDXMonoGamePort.Main_Classes
                 ConsoleBackgroundOperationRunning = false;
                 PauseConsoleInputThread = false;
 
-                CreateGlobalKeyHooks();
+                KeyHookManager.CreateGlobalKeyHooks(Program.game.gameWindowForm.Handle);
             }
             catch (Exception e)
             {
