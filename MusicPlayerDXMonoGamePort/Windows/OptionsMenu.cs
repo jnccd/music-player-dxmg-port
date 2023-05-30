@@ -420,9 +420,9 @@ namespace MusicPlayerDXMonoGamePort
         private void trackBar2_Scroll(object sender, EventArgs e)
         {
             Config.Data.ShadowDistance = trackBar2.Value;
-            Program.game.UpdateRectangles();
+            XnaGuiManager.UpdateRectangles();
+            XnaGuiManager.UpdateShadowRects();
             Program.game.ForceTitleRedraw(false);
-            Program.game.UpdateShadowRects();
         }
 
         private void DownloadBox_TextChanged(object sender, EventArgs e)
