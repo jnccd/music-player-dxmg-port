@@ -261,7 +261,7 @@ start MusicPlayerDXMonoGamePort.exe");
                             if (fileName == "MusicPlayer.PlayRequest")
                             {
                                 string[] split = crackedOpenBoi.Split('±');
-                                if (game.Download(split[0]) && split.Length > 1)
+                                if (game.Download(split[0]) == 1 && split.Length > 1)
                                 {
                                     long secondspassed = Convert.ToInt64(split[1].Split('.')[0]);
                                     SongManager.Channel32.Position = secondspassed * SongManager.Channel32.WaveFormat.AverageBytesPerSecond;
