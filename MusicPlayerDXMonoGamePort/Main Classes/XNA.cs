@@ -109,8 +109,6 @@ namespace MusicPlayerDXMonoGamePort
         
         public XNA()
         {
-            XnaGuiManager.Init(gameWindowForm);
-
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             graphics.PreferredBackBufferWidth = Values.WindowSize.X;
@@ -122,6 +120,7 @@ namespace MusicPlayerDXMonoGamePort
             {
                 gameWindowForm.Location = new System.Drawing.Point(Config.Data.WindowPos.X, Config.Data.WindowPos.Y);
             });
+            XnaGuiManager.Init(gameWindowForm);
             //this.TargetElapsedTime = TimeSpan.FromSeconds(1.0f / 120.0f);
             //graphics.SynchronizeWithVerticalRetrace = false;
             //IsFixedTimeStep = false;
