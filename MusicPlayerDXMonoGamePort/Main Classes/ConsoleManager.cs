@@ -339,7 +339,7 @@ namespace MusicPlayerDXMonoGamePort
 
                 // Download Video File
                 Process P = new Process();
-                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", download + $" --split-chapters -x --audio-format mp3 -P \"{downloadTargetFolder}\" -o {output} --add-metadata --embed-thumbnail");
+                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", download + $" --split-chapters -x --audio-format mp3 -P \"{downloadTargetFolder}\" -o {output} --add-metadata --embed-thumbnail --no-playlist");
                 P.StartInfo.UseShellExecute = false;
                 P.Start();
                 P.WaitForExit();
