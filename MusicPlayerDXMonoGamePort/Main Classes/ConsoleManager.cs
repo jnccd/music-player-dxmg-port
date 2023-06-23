@@ -332,14 +332,14 @@ namespace MusicPlayerDXMonoGamePort
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
 
-                string output = $"\"%(title)s.%(ext)s\"";
+                string output = $"-o \"%(title)s.%(ext)s\" -o \"chapter:%(title)s - %(section_title)s.%(ext)s\"";
                 if ((download.Contains("ytsearch") ||
                     download.Contains("https://www.youtube.com")) && !downloadInput.GetYoutubeVideoTitle().Contains(" - "))
-                    output = $"\"%(uploader)s - %(title)s.%(ext)s\"";
+                    output = $"-o \"%(uploader)s - %(title)s.%(ext)s\" -o \"chapter:%(section_title)s.%(ext)s\"";
 
                 // Download Video File
                 Process P = new Process();
-                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", download + $" --split-chapters -x --audio-format mp3 -P \"{downloadTargetFolder}\" -o {output} --add-metadata --embed-thumbnail --no-playlist");
+                P.StartInfo = new ProcessStartInfo("yt-dlp.exe", download + $" -x --audio-format mp3 -P \"{downloadTargetFolder}\" --split-chapters {output} --add-metadata --embed-thumbnail --no-playlist");
                 P.StartInfo.UseShellExecute = false;
                 P.Start();
                 P.WaitForExit();
@@ -352,14 +352,16 @@ namespace MusicPlayerDXMonoGamePort
                     string targetPath = $"{Config.Data.MusicPath}\\{musicFile.Replace(" - Topic", "")}";
                     // Override
                     if (File.Exists(targetPath))
+                    {
+                        Console.WriteLine($"Song override at {targetPath}");
                         File.Delete(targetPath);
+                    }
                     File.Move(musicFilepath, targetPath);
 
                     SongManager.RegisterNewSong(targetPath);
 
                     downloadedSongsPaths.Add(targetPath);
                 }
-
 
                 foreach (var file in Directory.GetFiles(downloadTargetFolder))
                     File.Delete(file);
