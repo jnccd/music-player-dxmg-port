@@ -275,7 +275,7 @@ namespace MusicPlayerDXMonoGamePort
             output = new DirectSoundOut();
             output.Init(Channel32);
 
-            if (Config.Data.Preload)
+            if (Config.Data.Preload || Config.Data.songDatabaseEntries[index].Volume == -1)
             {
                 if (Config.Data.MultiThreading)
                     T = Task.Factory.StartNew(SongVisualization.UpdateEntireSongBuffers);
