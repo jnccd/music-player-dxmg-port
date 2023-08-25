@@ -346,7 +346,8 @@ namespace MusicPlayerDXMonoGamePort
 
                 // move files to lib
                 var downloadedSongsPaths = new List<string>();
-                foreach (string musicFilepath in Directory.GetFiles(downloadTargetFolder).Where(x => x.EndsWith(".mp3")))
+                var files = Directory.GetFiles(downloadTargetFolder).Where(x => x.EndsWith(".mp3"));
+                foreach (string musicFilepath in files)
                 {
                     string musicFile = Path.GetFileName(musicFilepath);
                     string targetPath = $"{Config.Data.MusicPath}\\{musicFile.Replace(" - Topic", "")}";
