@@ -1,4 +1,6 @@
-﻿using Configuration;
+﻿using MusicPlayerDXMonoGamePort.Persistence.Database;
+using Persistence;
+using Persistence.Database;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,8 +15,8 @@ namespace MusicPlayerDXMonoGamePort
 {
     public partial class ExportsChooser : Form
     {
-        public List<UpvotedSong> SelectedSongs = new List<UpvotedSong>();
-        public List<UpvotedSong> SongsToChooseFrom = new List<UpvotedSong>();
+        public List<UpvotedSong> SelectedSongs = [];
+        public List<UpvotedSong> SongsToChooseFrom = [];
         public float[] ChanceAmounts;
         public string[] Output;
 
@@ -31,7 +33,7 @@ namespace MusicPlayerDXMonoGamePort
 
         private void ExportsChooser_Load(object sender, EventArgs e)
         {
-            foreach (UpvotedSong s in Config.Data.songDatabaseEntries)
+            foreach (UpvotedSong s in DbHolder.DbContext.UpvotedSongs)
                 if (File.Exists(s.Path))
                     SongsToChooseFrom.Add(s);
 
@@ -46,9 +48,9 @@ namespace MusicPlayerDXMonoGamePort
 
             int sum = 0;
             ChanceAmounts = new float[SongsToChooseFrom.Count];
-            for (int i = 0; i < SongsToChooseFrom.Count; i++)
+            foreach (var (i, upvotedSong) in Enumerable.Range(0, SongsToChooseFrom.Count).Zip(SongsToChooseFrom))
             {
-                int amount = (int)SongManager.GetSongChoosingAmount(i) + 1;
+                int amount = (int)SongManager.GetSongChoosingAmount(upvotedSong) + 1;
                 sum += amount;
                 ChanceAmounts[i] = amount;
             }

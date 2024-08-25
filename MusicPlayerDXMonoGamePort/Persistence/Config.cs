@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace Configuration
+namespace Persistence
 {
     public static class Config
     {
-        static readonly object lockject = new object();
+        static readonly object lockject = new();
         public static readonly string exePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
         static readonly string configPath = exePath + "config.json";
         static readonly string configBackupPath = exePath + "config_backup.json";
@@ -29,7 +29,7 @@ namespace Configuration
                 data = value;
             }
         }
-        private static ConfigData data = new ConfigData();
+        private static ConfigData data = new();
 
         static Config()
         {

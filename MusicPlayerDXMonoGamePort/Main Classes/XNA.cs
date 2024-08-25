@@ -20,7 +20,7 @@ using MediaToolkit;
 using System.Runtime;
 using MessageBox = System.Windows.Forms.MessageBox;
 using SharpDX.Direct2D1.Effects;
-using Configuration;
+using Persistence;
 using System.Reflection.Emit;
 using Keys = System.Windows.Forms.Keys;
 using RawInput_dll;
