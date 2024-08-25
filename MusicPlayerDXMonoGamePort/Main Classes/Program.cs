@@ -1,18 +1,13 @@
-﻿using Microsoft.Win32;
+﻿using MusicPlayerDXMonoGamePort.Persistence.Database;
+using Persistence;
+using Persistence.Database;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
-using Microsoft.Win32.SafeHandles;
-using System.Text;
-using System.Configuration;
-using Configuration;
-using System.Text.Encodings.Web;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -92,9 +87,9 @@ namespace MusicPlayerDXMonoGamePort
             KeyHookManager.DisposeGlobalKeyHooks();
             SongManager.DisposeNAudioData();
             if (game.optionsMenu != null)
-                game.optionsMenu.InvokeIfRequired(game.optionsMenu.Close);
+                game.optionsMenu.InvokeIfRequired(() => game.optionsMenu.Close());
             if (game.statistics != null)
-                game.statistics.InvokeIfRequired(game.statistics.Close);
+                game.statistics.InvokeIfRequired(() => game.statistics.Close());
             closing = true;
 
             DialogResult D;
@@ -199,6 +194,18 @@ namespace MusicPlayerDXMonoGamePort
                 config.Default.Save();
             }
 
+            // Migrate to SqlLite Database
+            if (Config.Data.songDatabaseEntries.Count > 0)
+            {
+                if (DbHolder.DbContext.UpvotedSongs.FirstOrDefault() == null) // IsEmpty for the poor
+                {
+                    DbHolder.DbContext.AddRange(Config.Data.songDatabaseEntries);
+                    DbHolder.DbContext.SaveChanges();
+                }
+                Config.Data.songDatabaseEntries.Clear();
+                Config.Save();
+            }
+
             SongManager.HistorySongData = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, 25);
         }
         public static void CheckForOtherInstances()
@@ -207,7 +214,7 @@ namespace MusicPlayerDXMonoGamePort
             try
             {
                 foreach (Process p in Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName))
-                    if (p.Id != Process.GetCurrentProcess().Id && p.MainModule.FileName == Process.GetCurrentProcess().MainModule.FileName)
+                    if (p.Id != Environment.ProcessId && p.MainModule.FileName == Environment.ProcessPath)
                     {
                         Console.WriteLine("Found another instance. \nSending data...");
                         if (args.Length > 0)

@@ -1,4 +1,4 @@
-﻿using Configuration;
+﻿using Persistence;
 using Microsoft.Win32;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using MusicPlayerDXMonoGamePort.Persistence.Database;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -271,9 +272,9 @@ namespace MusicPlayerDXMonoGamePort
             else
                 Program.game.ShowSecondRowMessage("Applied Volume multiplier of: very large", 1);
 
-            int index = Config.Data.songDatabaseEntries.FindIndex(x => x.Name == SongManager.currentlyPlayingSongName);
+            var upvotedSong = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongManager.currentlyPlayingSongName);
             Values.VolumeMultiplier = mult;
-            Config.Data.songDatabaseEntries[index].Volume = sn;
+            upvotedSong.Volume = sn;
 
             Debug.WriteLine("---------------------------------------------------------------------------------------------------------");
             Debug.WriteLine("RMS Volume for " + SongManager.currentlyPlayingSongName + " = " + sn);

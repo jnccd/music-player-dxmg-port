@@ -1,4 +1,5 @@
-﻿using Configuration;
+﻿using MusicPlayerDXMonoGamePort.Persistence.Database;
+using Persistence;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -35,8 +36,8 @@ namespace MusicPlayerDXMonoGamePort
             for (int i = 0; i < historyList.Count; i++)
             {
                 dataGridView1.Rows.Add(new object[] { historyList[i].Name, DateTime.FromBinary(historyList[i].Date), historyList[i].Change });
-                if (!Config.Data.songDatabaseEntries.Select(x => x.Name).Contains(historyList[i].Name + ".mp3"))
-                    dataGridView1.Rows[dataGridView1.Rows.Count - 1].DefaultCellStyle.BackColor = Color.Red;
+                if (!DbHolder.DbContext.UpvotedSongs.Select(x => x.Name).Contains(historyList[i].Name + ".mp3"))
+                    dataGridView1.Rows[^1].DefaultCellStyle.BackColor = Color.Red;
             }
 
             if (RowIndex > 0)

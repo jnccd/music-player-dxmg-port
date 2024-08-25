@@ -19,7 +19,7 @@ using NAudio.CoreAudioApi;
 using NAudio.Dsp;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Configuration;
+using Persistence;
 using MessageBox = System.Windows.Forms.MessageBox;
 using static System.Net.Mime.MediaTypeNames;
 
