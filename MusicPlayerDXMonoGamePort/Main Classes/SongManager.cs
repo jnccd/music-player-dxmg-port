@@ -645,7 +645,7 @@ namespace MusicPlayerDXMonoGamePort
                 LastScoreChange = 0;
             }
 
-            DbHolder.DbContext.UpvotedSongs.OrderByDescending(x => x.Score);
+            DbHolder.DbContext.SaveChanges();
 
             Task.Run(() =>
             {
@@ -660,7 +660,6 @@ namespace MusicPlayerDXMonoGamePort
                         Config.Data.Col = System.Drawing.Color.FromArgb(Program.game.primaryColor.R, Program.game.primaryColor.G, Program.game.primaryColor.B);
                         Config.Data.firstStart = false;
                         Config.Save();
-                        DbHolder.DbContext.SaveChanges();
                     }
 
                     SavingToFileRightNow = false;
@@ -711,6 +710,8 @@ namespace MusicPlayerDXMonoGamePort
         {
             string songName = SongPath.Split('\\').LastOrDefault();
             var upvotedSong = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(predicate: x => x.Name == songName);
+            if (upvotedSong == null)
+                return;
             long OriginalSongBinary = upvotedSong.AddingDates;
             DateTime OriginalSongCreationDate = DateTime.FromBinary(OriginalSongBinary);
             if (OriginalSongBinary == 0 || File.Exists(SongPath) && DateTime.Compare(OriginalSongCreationDate, File.GetCreationTime(SongPath)) > 0)
@@ -733,7 +734,7 @@ namespace MusicPlayerDXMonoGamePort
             int songsAmount = DbHolder.DbContext.UpvotedSongs.Count();
             object[,] SongInformationArray = new object[songsAmount, 7];
 
-            foreach (var item in Enumerable.Range(0, songsAmount).Zip(DbHolder.DbContext.UpvotedSongs))
+            foreach (var item in Enumerable.Range(0, songsAmount).Zip(DbHolder.DbContext.UpvotedSongs.OrderByDescending(x => x.Score)))
             {
                 var (i, curSong) = item;
 

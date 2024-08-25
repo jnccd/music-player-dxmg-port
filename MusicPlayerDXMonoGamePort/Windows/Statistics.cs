@@ -1,5 +1,6 @@
 ﻿using MusicPlayerDXMonoGamePort.Persistence.Database;
 using Persistence;
+using Persistence.Database;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -343,9 +344,18 @@ namespace MusicPlayerDXMonoGamePort
                         {
                             try
                             {
-                                string dest = path.Split('\\').Reverse().Skip(1).Reverse().Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";
-                                File.Move(path, dest);
+                                // Update database entry - Cant just easily rename the primary key tho, need to create a new entry
+                                DbHolder.DbContext.SaveChanges();
+                                DbHolder.DbContext.UpvotedSongs.Remove(upvotedSong);
+                                DbHolder.DbContext.SaveChanges();
+                                var replacement = new UpvotedSong(Dia.result + ".mp3", upvotedSong.Score, upvotedSong.Streak, upvotedSong.TotalLikes, upvotedSong.TotalDislikes, upvotedSong.AddingDates, upvotedSong.Volume)
+                                {
+                                    Path = upvotedSong.Path
+                                };
+                                DbHolder.DbContext.UpvotedSongs.Add(replacement);
+                                SongManager.SaveUserSettings(false);
 
+                                // Update histroy
                                 string historyPath = SongManager.historyFilePath;
                                 if (File.Exists(historyPath))
                                 {
@@ -363,8 +373,9 @@ namespace MusicPlayerDXMonoGamePort
                                     File.WriteAllLines(historyPath, historyContent);
                                 }
 
-                                upvotedSong.Name = Dia.result + ".mp3";
-                                SongManager.SaveUserSettings(false);
+                                // Update file
+                                string dest = path.Split('\\').SkipLast(1).Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";
+                                File.Move(path, dest);
 
                                 SongManager.Playlist[PlaylistIndex] = dest;
 
@@ -445,12 +456,12 @@ namespace MusicPlayerDXMonoGamePort
                     try
                     {
                         var upvotedSongToRemove = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3");
-                        if (upvotedSongToRemove != null)
-                            DbHolder.DbContext.UpvotedSongs.Remove(upvotedSongToRemove);
+                        DbHolder.DbContext.UpvotedSongs.Remove(upvotedSongToRemove);
+                        DbHolder.DbContext.SaveChanges();
 
                         bRefresh_Click(null, EventArgs.Empty);
                     }
-                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                    catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!", e.ToString()); }
                 })));
 
                 currentMouseOverRow = e.RowIndex;
