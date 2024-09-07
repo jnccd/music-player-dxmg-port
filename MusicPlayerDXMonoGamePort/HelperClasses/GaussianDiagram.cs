@@ -17,7 +17,7 @@ namespace MusicPlayerDXMonoGamePort
 
         public static float GetGaussian(int n)
         {
-            if (n > -theta && n < theta)
+            if (n > -(int)theta && n < (int)theta)
                 return Gaussian[n + (int)theta];
             else
                 return 0;
