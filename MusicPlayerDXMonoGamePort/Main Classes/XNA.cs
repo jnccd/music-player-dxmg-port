@@ -178,13 +178,14 @@ namespace MusicPlayerDXMonoGamePort
 
             BlurredTex = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
             TempBlur = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
+            TempBlur2 = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
             Assets.gaussianBlur.Parameters["InvTexsize"].SetValue(new Vector2(1 / (float)BlurredTex.Width, 1 / (float)BlurredTex.Height));
             backgroundColor = Config.Data.BackgroundColor.ToXNAColor();
 
             //InactiveSleepTime = new TimeSpan(0);
 
-            DG = new DynamicGrid(new Rectangle(35, (int)(Values.WindowSize.Y / 1.25f) - 60, Values.WindowSize.X - 70, 70), 4, 0.96f, 2.5f);
-            
+            DG = new DynamicGrid(new Rectangle(35, (int)(Values.WindowSize.Y / 1.25f) - (int)(60 * UiScaling.scaleMult), Values.WindowSize.X - (int)(70 * UiScaling.scaleMult), (int)(70 * UiScaling.scaleMult)), (int)(4 * UiScaling.scaleMult), 0.96f, 2.5f);
+
             Console.WriteLine("Finished Loading!");
             ConsoleManager.StartSongInputLoop();
 
@@ -584,7 +585,6 @@ namespace MusicPlayerDXMonoGamePort
             DiscordRPCWrapper.UpdatePresence(details, state, startTime, endTime, bigimagekey, "https://github.com/jnccd/music-player-dxmg-port", smolimagekey, smolimagetext, ElapsedTime);
         }
 
-
         // Draw
         protected override void Draw(GameTime gameTime)
         {
@@ -724,7 +724,11 @@ namespace MusicPlayerDXMonoGamePort
                 GraphicsDevice.Clear(Color.Transparent);
 
                 if (BgModes == BackGroundModes.Blur || BgModes == BackGroundModes.BlurTeint || BgModes == BackGroundModes.BlurVignette)
+                {
+                    for (int i = 1; i < (int)UiScaling.scaleMult; i++)
+                        DoubleBlurOnBlurredTex();
                     DrawBlurredTex();
+                }
 
                 spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicWrap, DepthStencilState.Default, RasterizerState.CullNone);
 
@@ -1139,8 +1143,28 @@ namespace MusicPlayerDXMonoGamePort
             spriteBatch.Draw(TempBlur, Vector2.Zero, Color.White);
             spriteBatch.End();
         }
+        void DoubleBlurOnBlurredTex()
+        {
+            TempVector.X = 0;
+            TempVector.Y = 0;
+
+            GraphicsDevice.SetRenderTarget(TempBlur);
+            Assets.gaussianBlur.Parameters["BlurWeights"].SetValue(SongVisualization.hBlurWeights);
+            Assets.gaussianBlur.Parameters["horz"].SetValue(true);
+            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlur);
+            spriteBatch.Draw(BlurredTex, TempVector, Color.White);
+            spriteBatch.End();
+
+            GraphicsDevice.SetRenderTarget(BlurredTex);
+            Assets.gaussianBlur.Parameters["BlurWeights"].SetValue(SongVisualization.vBlurWeights);
+            Assets.gaussianBlur.Parameters["horz"].SetValue(false);
+            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, Assets.gaussianBlur);
+            spriteBatch.Draw(TempBlur, TempVector, Color.White);
+            spriteBatch.End();
+        }
         void DrawBlurredTex()
         {
+            GraphicsDevice.SetRenderTarget(null);
             TempVector.X = -50;
             TempVector.Y = -50;
             Assets.gaussianBlur.Parameters["BlurWeights"].SetValue(SongVisualization.hBlurWeights);
