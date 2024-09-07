@@ -8,6 +8,6 @@ namespace MusicPlayerDXMonoGamePort.HelperClasses
 {
     public static class UiScaling
     {
-        public const float scaleMult = 2.8125f;
+        public const float scaleMult = 2.5f;
     }
 }
