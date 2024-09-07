@@ -14,14 +14,15 @@ using Microsoft.Win32;
 using System.Reflection;
 using MethodInvoker = System.Windows.Forms.MethodInvoker;
 using Persistence;
+using MusicPlayerDXMonoGamePort.HelperClasses;
 
 namespace MusicPlayerDXMonoGamePort
 {
     public static class Values
     {
-        public static Random RDM = new Random();
+        public static Random RDM = new();
 
-        public static Point WindowSize = new Point(500, 300); // 500, 300 default; 1360, 768 - 40 fullscreen left
+        public static Point WindowSize = new((int)(500 * UiScaling.scaleMult), (int)(300 * UiScaling.scaleMult)); // 500, 300 default; 1360, 768 - 40 fullscreen left
         public static Rectangle WindowRect
         {
             get

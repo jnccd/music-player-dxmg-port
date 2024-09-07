@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using MusicPlayerDXMonoGamePort.HelperClasses;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -54,6 +55,7 @@ namespace MusicPlayerDXMonoGamePort
         SpriteBatch SB;
         GraphicsDevice GD;
         public float DiagramSize;
+        private readonly int shadowDistance = (int)(Config.Data.ShadowDistance * UiScaling.scaleMult);
 
         //List<long> DebugTimes = new List<long>();
         //long DebugTime;
@@ -234,35 +236,16 @@ namespace MusicPlayerDXMonoGamePort
             {
                 for (int i = 0; i < Diagram.Length; i++)
                 {
-                    if (i > 0)
-                        Diagram[i] += (Diagram[i - 1] - Diagram[i]) * 1;
-                    if (i < Diagram.Length - 1)
-                        Diagram[i] += (Diagram[i + 1] - Diagram[i]) * 1 / (1 + 1);
+                    int maxSamples = (int)(6 * UiScaling.scaleMult);
+                    for (int j = 0; j < maxSamples;  j++)
+                    {
+                        var mult = (float)Math.Pow(2, -j / UiScaling.scaleMult);
 
-                    if (i > 1)
-                        Diagram[i] += (Diagram[i - 2] - Diagram[i]) * 0.5f;
-                    if (i < Diagram.Length - 2)
-                        Diagram[i] += (Diagram[i + 2] - Diagram[i]) * 0.5f / (0.5f + 1);
-
-                    if (i > 2)
-                        Diagram[i] += (Diagram[i - 3] - Diagram[i]) * 0.25f;
-                    if (i < Diagram.Length - 3)
-                        Diagram[i] += (Diagram[i + 3] - Diagram[i]) * 0.25f / (0.25f + 1);
-
-                    if (i > 3)
-                        Diagram[i] += (Diagram[i - 4] - Diagram[i]) * 0.125f;
-                    if (i < Diagram.Length - 4)
-                        Diagram[i] += (Diagram[i + 4] - Diagram[i]) * 0.125f / (0.125f + 1);
-
-                    if (i > 4)
-                        Diagram[i] += (Diagram[i - 5] - Diagram[i]) * 0.0625f;
-                    if (i < Diagram.Length - 5)
-                        Diagram[i] += (Diagram[i + 5] - Diagram[i]) * 0.0625f / (0.0625f + 1);
-
-                    if (i > 5)
-                        Diagram[i] += (Diagram[i - 6] - Diagram[i]) * 0.03125f;
-                    if (i < Diagram.Length - 6)
-                        Diagram[i] += (Diagram[i + 6] - Diagram[i]) * 0.03125f / (0.03125f + 1);
+                        if (i > j)
+                            Diagram[i] += (Diagram[i - 1 - j] - Diagram[i]) * mult;
+                        if (i < Diagram.Length - 1 - j)
+                            Diagram[i] += (Diagram[i + 1 + j] - Diagram[i]) * mult / (mult + 1);
+                    }
                 }
             }
         }
@@ -451,16 +434,16 @@ namespace MusicPlayerDXMonoGamePort
                 DiagramSize = 0;
 
                 // Shadow
-                DrawRect.X = P.X + Config.Data.ShadowDistance;
-                DrawRect.Y = P.Y + Config.Data.ShadowDistance;
+                DrawRect.X = P.X + shadowDistance;
+                DrawRect.Y = P.Y + shadowDistance;
                 DrawRect.Width = (int)((Length / 2) * (Values.Timer / 40f));
                 DrawRect.Height = 8;
                 spriteBatch.Draw(Assets.White, DrawRect, Color.Black * 0.6f);
 
                 DrawRect.Width = (int)((Length / 2) * (Values.Timer / 40f));
                 DrawRect.Height = 8;
-                DrawRect.X = P.X + Length - DrawRect.Width + Config.Data.ShadowDistance;
-                DrawRect.Y = P.Y + Config.Data.ShadowDistance;
+                DrawRect.X = P.X + Length - DrawRect.Width + shadowDistance;
+                DrawRect.Y = P.Y + shadowDistance;
                 spriteBatch.Draw(Assets.White, DrawRect, Color.Black * 0.6f);
 
 
@@ -485,8 +468,8 @@ namespace MusicPlayerDXMonoGamePort
                 Height = (int)(TargetHeight * Values.AnimationFunction(((Values.Timer - 50) / 50f)));
 
                 // Shadow
-                DrawRect.X = P.X + Config.Data.ShadowDistance;
-                DrawRect.Y = P.Y + Config.Data.ShadowDistance;
+                DrawRect.X = P.X + shadowDistance;
+                DrawRect.Y = P.Y + shadowDistance;
                 DrawRect.Width = Length - 1;
                 DrawRect.Height = 8;
                 spriteBatch.Draw(Assets.White, DrawRect, Color.Black * 0.6f);
@@ -502,8 +485,8 @@ namespace MusicPlayerDXMonoGamePort
             // Drawing the Target
             if (WithShadow)
             {
-                DrawRect.X = (int)(Values.WindowSize.X / 2 + (Config.Data.ShadowDistance - Values.WindowSize.X / 2) * DiagramSize);
-                DrawRect.Y = (int)(Values.WindowSize.Y / 2 + (Config.Data.ShadowDistance - Values.WindowSize.Y / 2) * DiagramSize);
+                DrawRect.X = (int)(Values.WindowSize.X / 2 + (shadowDistance - Values.WindowSize.X / 2) * DiagramSize);
+                DrawRect.Y = (int)(Values.WindowSize.Y / 2 + (shadowDistance - Values.WindowSize.Y / 2) * DiagramSize);
                 DrawRect.Width = (int)(Values.WindowSize.X * DiagramSize);
                 DrawRect.Height = (int)(Values.WindowSize.Y * DiagramSize);
                 spriteBatch.Draw(ShadowTarget, DrawRect, Color.Black * 0.6f);
@@ -528,8 +511,8 @@ namespace MusicPlayerDXMonoGamePort
                         int H = (int)GetMaximum((int)(i * Width), (int)((i + 1) * Width));
 
                         for (int j = 0; j < (int)(Width / 1.2f); j++)
-                            SongVisualization.DrawLine(new Vector2(i * Width + j + P.X + Config.Data.ShadowDistance, P.Y - H + Config.Data.ShadowDistance),
-                                            new Vector2(i * Width + j + P.X + Config.Data.ShadowDistance, P.Y + (int)(Width / 1.2f) + Config.Data.ShadowDistance),
+                            SongVisualization.DrawLine(new Vector2(i * Width + j + P.X + shadowDistance, P.Y - H + shadowDistance),
+                                            new Vector2(i * Width + j + P.X + shadowDistance, P.Y + (int)(Width / 1.2f) + shadowDistance),
                                             1, Color.Black * 0.6f, spriteBatch);
                     }
                 }
@@ -558,8 +541,8 @@ namespace MusicPlayerDXMonoGamePort
                         if (value > 1)
                             value = 1;
 
-                        SongVisualization.DrawLine(new Vector2(i + P.X + Config.Data.ShadowDistance, P.Y - (int)(value * Height) + Config.Data.ShadowDistance),
-                                        new Vector2(i + P.X + Config.Data.ShadowDistance, P.Y + 10 + Config.Data.ShadowDistance),
+                        SongVisualization.DrawLine(new Vector2(i + P.X + shadowDistance, P.Y - (int)(value * Height) + shadowDistance),
+                                        new Vector2(i + P.X + shadowDistance, P.Y + 10 + shadowDistance),
                                         1, Color.Black * 0.6f, spriteBatch);
                     }
                 }

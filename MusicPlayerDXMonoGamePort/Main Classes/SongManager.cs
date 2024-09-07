@@ -380,7 +380,7 @@ namespace MusicPlayerDXMonoGamePort
                 SongChoosingList.Add(Playlist[i]);
 
                 string SongName = Playlist[i].Split('\\').Last();
-                float amount = GetSongChoosingAmount(DbHolder.DbContext.UpvotedSongs.First(x => x.Name == SongName)) + 1;
+                float amount = GetSongChoosingAmount(DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongName)) + 1;
 
                 for (int k = 0; k < amount; k++)
                     SongChoosingList.Add(Playlist[i]);

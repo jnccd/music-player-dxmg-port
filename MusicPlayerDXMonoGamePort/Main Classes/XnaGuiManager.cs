@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using MusicPlayerDXMonoGamePort.HelperClasses;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -46,18 +47,19 @@ namespace MusicPlayerDXMonoGamePort
         public static bool WasFocusedLastFrame = true;
         static bool wasClickedOn = false;
         public const float MaxVolume = 1f;
+        private static readonly int shadowDistance = (int)(Config.Data.ShadowDistance * UiScaling.scaleMult);
 
         // Draw
-        public static Rectangle DurationBar = new Rectangle(51, Values.WindowSize.Y - 28, Values.WindowSize.X - 157, 3);
-        public static Rectangle VolumeIcon = new Rectangle(Values.WindowSize.X - 132, 16, 24, 24);
-        public static Rectangle VolumeBar = new Rectangle(Values.WindowSize.X - 100, 24, 75, 8);
-        public static Rectangle PlayPauseButton = new Rectangle(24, Values.WindowSize.Y - 34, 16, 16);
-        public static Rectangle Upvote = new Rectangle(24, 43, 20, 20);
+        public static Rectangle DurationBar = new Rectangle((int)(51 * UiScaling.scaleMult), Values.WindowSize.Y - (int)(28 * UiScaling.scaleMult), Values.WindowSize.X - (int)(157 * UiScaling.scaleMult), (int)(3 * UiScaling.scaleMult));
+        public static Rectangle VolumeIcon = new Rectangle(Values.WindowSize.X - (int)(132 * UiScaling.scaleMult), (int)(16 * UiScaling.scaleMult), (int)(24 * UiScaling.scaleMult), (int)(24 * UiScaling.scaleMult));
+        public static Rectangle VolumeBar = new Rectangle(Values.WindowSize.X - (int)(100 * UiScaling.scaleMult), (int)(24 * UiScaling.scaleMult), (int)(75 * UiScaling.scaleMult), (int)(8 * UiScaling.scaleMult));
+        public static Rectangle PlayPauseButton = new Rectangle((int)(24 * UiScaling.scaleMult), Values.WindowSize.Y - (int)(34 * UiScaling.scaleMult), (int)(16 * UiScaling.scaleMult), (int)(16 * UiScaling.scaleMult));
+        public static Rectangle Upvote = new Rectangle((int)(24 * UiScaling.scaleMult), (int)(43 * UiScaling.scaleMult), (int)(20 * UiScaling.scaleMult), (int)(20 * UiScaling.scaleMult));
         public static Rectangle TargetVolumeBar = new Rectangle(); // needs Updates
         public static Rectangle ActualVolumeBar = new Rectangle(); // needs Updates
-        public static Rectangle UpvoteButton = new Rectangle(Values.WindowSize.X - 98, Values.WindowSize.Y - 35, 19, 19);
-        public static Rectangle CloseButton = new Rectangle(Values.WindowSize.X - 43, Values.WindowSize.Y - 34, 18, 18);
-        public static Rectangle OptionsButton = new Rectangle(Values.WindowSize.X - 71, Values.WindowSize.Y - 34, 19, 19);
+        public static Rectangle UpvoteButton = new Rectangle(Values.WindowSize.X - (int)(98 * UiScaling.scaleMult), Values.WindowSize.Y - (int)(35 * UiScaling.scaleMult), (int)(19 * UiScaling.scaleMult), (int)(19 * UiScaling.scaleMult));
+        public static Rectangle CloseButton = new Rectangle(Values.WindowSize.X - (int)(43 * UiScaling.scaleMult), Values.WindowSize.Y - (int)(34 * UiScaling.scaleMult), (int)(18 * UiScaling.scaleMult), (int)(18 * UiScaling.scaleMult));
+        public static Rectangle OptionsButton = new Rectangle(Values.WindowSize.X - (int)(71 * UiScaling.scaleMult), Values.WindowSize.Y - (int)(34 * UiScaling.scaleMult), (int)(19 * UiScaling.scaleMult), (int)(19 * UiScaling.scaleMult));
 
         // Shadows
         public static Rectangle DurationBarShadow;
@@ -82,9 +84,9 @@ namespace MusicPlayerDXMonoGamePort
             UpdateShadowRects();
 
             DurationBarHitbox = new Rectangle(DurationBar.X, DurationBar.Y - 10, DurationBar.Width, 23);
-            VolumeBarHitbox = new Rectangle(Values.WindowSize.X - 100, 20, 110, 16);
-            PlayPauseButtonHitbox = new Rectangle(14, Values.WindowSize.Y - 39, 26, 26);
-            UpvoteButtonHitbox = new Rectangle(UpvoteButton.X, UpvoteButton.Y, 20, 20);
+            VolumeBarHitbox = new Rectangle(Values.WindowSize.X - (int)(100 * UiScaling.scaleMult), (int)(20 * UiScaling.scaleMult), (int)(110 * UiScaling.scaleMult), (int)(16 * UiScaling.scaleMult));
+            PlayPauseButtonHitbox = new Rectangle(14, Values.WindowSize.Y - (int)(39 * UiScaling.scaleMult), (int)(26 * UiScaling.scaleMult), (int)(26 * UiScaling.scaleMult));
+            UpvoteButtonHitbox = new Rectangle(UpvoteButton.X, UpvoteButton.Y, (int)(20 * UiScaling.scaleMult), (int)(20 * UiScaling.scaleMult));
         }
 
         public static void ComputeControls()
@@ -401,31 +403,32 @@ namespace MusicPlayerDXMonoGamePort
 
         public static void UpdateRectangles()
         {
-            TargetVolumeBar.X = Values.WindowSize.X - 100;
-            TargetVolumeBar.Y = 24 + 0;
-            TargetVolumeBar.Width = (int)(75 * Values.TargetVolume / MaxVolume);
-            TargetVolumeBar.Height = 8;
+            TargetVolumeBar.X = Values.WindowSize.X - (int)(100 * UiScaling.scaleMult);
+            TargetVolumeBar.Y = (int)(24 * UiScaling.scaleMult);
+            TargetVolumeBar.Width = (int)(75 * UiScaling.scaleMult * Values.TargetVolume / MaxVolume);
+            TargetVolumeBar.Height = (int)(8 * UiScaling.scaleMult);
 
             if (SongManager.Channel32 != null)
             {
-                ActualVolumeBar.X = Values.WindowSize.X - 25 - 75;
-                ActualVolumeBar.Y = 24;
-                ActualVolumeBar.Width = (int)(75 * SongManager.Channel32.Volume / Values.VolumeMultiplier / MaxVolume);
-                if (ActualVolumeBar.Width > 75)
-                    ActualVolumeBar.Width = 75;
-                ActualVolumeBar.Height = 8;
+                ActualVolumeBar.X = Values.WindowSize.X - (int)(100 * UiScaling.scaleMult);
+                ActualVolumeBar.Y = (int)(24 * UiScaling.scaleMult);
+                ActualVolumeBar.Width = (int)(75 * UiScaling.scaleMult * SongManager.Channel32.Volume / Values.VolumeMultiplier / MaxVolume);
+                int maxWidth = (int)(75 * UiScaling.scaleMult);
+                if (ActualVolumeBar.Width > maxWidth)
+                    ActualVolumeBar.Width = maxWidth;
+                ActualVolumeBar.Height = (int)(8 * UiScaling.scaleMult);
             }
         }
         public static void UpdateShadowRects()
         {
-            DurationBarShadow = new Rectangle(DurationBar.X + Config.Data.ShadowDistance, DurationBar.Y + Config.Data.ShadowDistance, DurationBar.Width, DurationBar.Height);
-            VolumeIconShadow = new Rectangle(VolumeIcon.X + Config.Data.ShadowDistance, VolumeIcon.Y + Config.Data.ShadowDistance, VolumeIcon.Width, VolumeIcon.Height);
-            VolumeBarShadow = new Rectangle(VolumeBar.X + Config.Data.ShadowDistance, VolumeBar.Y + Config.Data.ShadowDistance, VolumeBar.Width, VolumeBar.Height);
-            PlayPauseButtonShadow = new Rectangle(PlayPauseButton.X + Config.Data.ShadowDistance, PlayPauseButton.Y + Config.Data.ShadowDistance, PlayPauseButton.Width, PlayPauseButton.Height);
-            UpvoteShadow = new Rectangle(Upvote.X + Config.Data.ShadowDistance, Upvote.Y + Config.Data.ShadowDistance, Upvote.Width, Upvote.Height);
-            UpvoteButtonShadow = new Rectangle(UpvoteButton.X + Config.Data.ShadowDistance, UpvoteButton.Y + Config.Data.ShadowDistance, UpvoteButton.Width, UpvoteButton.Height);
-            CloseButtonShadow = new Rectangle(CloseButton.X + Config.Data.ShadowDistance, CloseButton.Y + Config.Data.ShadowDistance, CloseButton.Width, CloseButton.Height);
-            OptionsButtonShadow = new Rectangle(OptionsButton.X + Config.Data.ShadowDistance, OptionsButton.Y + Config.Data.ShadowDistance, OptionsButton.Width, OptionsButton.Height);
+            DurationBarShadow = new Rectangle(DurationBar.X + shadowDistance, DurationBar.Y + shadowDistance, DurationBar.Width, DurationBar.Height);
+            VolumeIconShadow = new Rectangle(VolumeIcon.X + shadowDistance, VolumeIcon.Y + shadowDistance, VolumeIcon.Width, VolumeIcon.Height);
+            VolumeBarShadow = new Rectangle(VolumeBar.X + shadowDistance, VolumeBar.Y + shadowDistance, VolumeBar.Width, VolumeBar.Height);
+            PlayPauseButtonShadow = new Rectangle(PlayPauseButton.X + shadowDistance, PlayPauseButton.Y + shadowDistance, PlayPauseButton.Width, PlayPauseButton.Height);
+            UpvoteShadow = new Rectangle(Upvote.X + shadowDistance, Upvote.Y + shadowDistance, Upvote.Width, Upvote.Height);
+            UpvoteButtonShadow = new Rectangle(UpvoteButton.X + shadowDistance, UpvoteButton.Y + shadowDistance, UpvoteButton.Width, UpvoteButton.Height);
+            CloseButtonShadow = new Rectangle(CloseButton.X + shadowDistance, CloseButton.Y + shadowDistance, CloseButton.Width, CloseButton.Height);
+            OptionsButtonShadow = new Rectangle(OptionsButton.X + shadowDistance, OptionsButton.Y + shadowDistance, OptionsButton.Width, OptionsButton.Height);
         }
     }
 }
