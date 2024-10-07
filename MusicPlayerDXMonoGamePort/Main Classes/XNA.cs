@@ -2,28 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
-using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Media;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.Threading.Tasks;
 using System.Threading;
 using NAudio.Wave;
-using NAudio.Dsp;
 using System.IO;
-using System.Net;
-using MediaToolkit.Model;
-using MediaToolkit;
-using System.Runtime;
 using MessageBox = System.Windows.Forms.MessageBox;
-using SharpDX.Direct2D1.Effects;
 using Persistence;
-using System.Reflection.Emit;
-using Keys = System.Windows.Forms.Keys;
-using RawInput_dll;
 using MusicPlayerDXMonoGamePort.HelperClasses;
 
 namespace MusicPlayerDXMonoGamePort
@@ -73,8 +60,10 @@ namespace MusicPlayerDXMonoGamePort
         public DropShadow Shadow;
         bool LongTitle;
         static RenderTarget2D TitleTarget;
+        static Texture2D TitleTextTarget;
         static RenderTarget2D BackgroundTarget;
         private readonly int shadowDistance = (int)(Config.Data.ShadowDistance * UiScaling.scaleMult);
+        private CpuFontRenderer titleFontRenderer = new(new System.Drawing.Font("BigNoodleTitling", 20 * UiScaling.scaleMult));
 
         // Temp
         static Vector2 TempVector = new Vector2(0, 0);
@@ -598,66 +587,62 @@ namespace MusicPlayerDXMonoGamePort
                 while (Title.EndsWith(".mp3"))
                     Title = Title.Remove(Title.Length - 4);
 
-                char[] arr = Title.ToCharArray();
-                for (int i = 0; i < arr.Length; i++)
-                {
-                    if (arr[i] >= 32 && arr[i] <= 216
-                            || arr[i] >= 8192 && arr[i] <= 10239
-                            || arr[i] >= 12288 && arr[i] <= 12352
-                            || arr[i] >= 65280 && arr[i] <= 65519)
-                        arr[i] = arr[i];
-                    else
-                        arr[i] = (char)10060;
-                }
-                Title = new string(arr);
-
-                int length = 0;
+                int length = (int)(titleFontRenderer.MeasureString(Title).Width);
                 if (TitleTarget == null)
                 {
-                    TitleTarget = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X - (int)(166 * UiScaling.scaleMult), (int)Assets.Title.MeasureString("III()()()III").Y);
-                    length = (int)Assets.Title.MeasureString(Title).X;
+                    TitleTarget = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X - (int)(166 * UiScaling.scaleMult), (int)Assets.Title.MeasureString("I()I").Y);
                     X1 = startX;
                     X2 = X1 + length + abstand;
+
+                    TitleTextTarget?.Dispose();
+                    TitleTextTarget = new Texture2D(GraphicsDevice, length, (int)Assets.Title.MeasureString("I()I").Y);
+                    titleFontRenderer.RenderToTexture(TitleTextTarget, Title);
                 }
 
-                if (length == 0)
-                    length = (int)Assets.Title.MeasureString(Title).X;
-                if (length > TitleTarget.Bounds.Width)
+                try
                 {
-                    LongTitle = true;
-                    X1 -= speed;
-                    X2 -= speed;
+                    if (length > TitleTarget.Bounds.Width)
+                    {
+                        LongTitle = true;
+                        X1 -= speed;
+                        X2 -= speed;
 
-                    if (X1 < -length)
-                        X1 = X2 + length + abstand;
-                    if (X2 < -length)
-                        X2 = X1 + length + abstand;
+                        if (X1 < -length)
+                            X1 = X2 + length + abstand;
+                        if (X2 < -length)
+                            X2 = X1 + length + abstand;
 
-                    GraphicsDevice.SetRenderTarget(TitleTarget);
-                    GraphicsDevice.Clear(Color.Transparent);
-                    spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicWrap, DepthStencilState.Default, RasterizerState.CullNone);
-                    
-                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(X1 + shadowDistance, shadowDistance), Color.Black * 0.6f); } catch { }
-                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(X1, 0), backgroundColor); } catch { }
+                        GraphicsDevice.SetRenderTarget(TitleTarget);
+                        GraphicsDevice.Clear(Color.Transparent);
+                        spriteBatch.Begin();
 
-                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(X2 + shadowDistance, shadowDistance), Color.Black * 0.6f); } catch { }
-                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(X2, 0), backgroundColor); } catch { }
-                }
-                else
+                        spriteBatch.Draw(TitleTextTarget, new Vector2(X1 + shadowDistance, shadowDistance), Color.Black * 0.6f);
+                        spriteBatch.Draw(TitleTextTarget, new Vector2(X1, 0), backgroundColor);
+
+                        spriteBatch.Draw(TitleTextTarget, new Vector2(X2 + shadowDistance, shadowDistance), Color.Black * 0.6f);
+                        spriteBatch.Draw(TitleTextTarget, new Vector2(X2, 0), backgroundColor);
+                    }
+                    else
+                    {
+                        LongTitle = false;
+
+                        GraphicsDevice.SetRenderTarget(TitleTarget);
+                        GraphicsDevice.Clear(Color.Transparent);
+                        spriteBatch.Begin();
+
+                        spriteBatch.Draw(TitleTextTarget, new Vector2(shadowDistance), Color.Black * 0.6f);
+                        spriteBatch.Draw(TitleTextTarget, Vector2.Zero, Color.White);
+                    }
+
+                    ForcedTitleRedraw = false;
+
+                    spriteBatch.End();
+                } 
+                catch
                 {
-                    LongTitle = false;
-
-                    GraphicsDevice.SetRenderTarget(TitleTarget);
-                    GraphicsDevice.Clear(Color.Transparent);
-                    spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicWrap, DepthStencilState.Default, RasterizerState.CullNone);
-
-                    try { spriteBatch.DrawString(Assets.Title, Title, new Vector2(shadowDistance), Color.Black * 0.6f); } catch { }
-                    try { spriteBatch.DrawString(Assets.Title, Title, Vector2.Zero, Color.White); } catch { }
+                    try { spriteBatch.End(); } catch { }
+                    //ForceTitleRedraw(true);
                 }
-
-                ForcedTitleRedraw = false;
-
-                spriteBatch.End();
             }
 
             // FFT Diagram
@@ -824,8 +809,8 @@ namespace MusicPlayerDXMonoGamePort
                     }
                     else if (SecondRowMessageAlpha > 0)
                     {
-                        TempVector.X = 24 + shadowDistance;
-                        TempVector.Y = 45 + shadowDistance;
+                        TempVector.X = (int)(24 * UiScaling.scaleMult) + shadowDistance;
+                        TempVector.Y = (int)(45 * UiScaling.scaleMult) + shadowDistance;
                         if (SecondRowMessageAlpha > 1)
                             spriteBatch.DrawString(Assets.Font, SecondRowMessageText, TempVector, Color.Black * 0.6f);
                         else
