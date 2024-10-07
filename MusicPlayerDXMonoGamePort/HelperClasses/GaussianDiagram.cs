@@ -234,12 +234,14 @@ namespace MusicPlayerDXMonoGamePort
         {
             if (Diagram != null)
             {
+                int maxSamples = (int)(6 * UiScaling.scaleMult);
+                var pow2s = Enumerable.Range(0, maxSamples+1).Select(j => (float)Math.Pow(2, -j / UiScaling.scaleMult)).ToArray();
+
                 for (int i = 0; i < Diagram.Length; i++)
                 {
-                    int maxSamples = (int)(6 * UiScaling.scaleMult);
                     for (int j = 0; j < maxSamples;  j++)
                     {
-                        var mult = (float)Math.Pow(2, -j / UiScaling.scaleMult);
+                        var mult = pow2s[j];
 
                         if (i > j)
                             Diagram[i] += (Diagram[i - 1 - j] - Diagram[i]) * mult;
