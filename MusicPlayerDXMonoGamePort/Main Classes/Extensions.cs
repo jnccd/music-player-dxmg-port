@@ -23,6 +23,8 @@ namespace MusicPlayerDXMonoGamePort
                 y = f(y, x);
             return y;
         }
+        public static IEnumerable<(T item, int index)> WithIndex<T>(this IEnumerable<T> self) =>
+            self.Select((item, index) => (item, index));
         public static bool ContainsAny<a>(this IEnumerable<a> xs, IEnumerable<a> ys)
         {
             foreach (a y in ys)
