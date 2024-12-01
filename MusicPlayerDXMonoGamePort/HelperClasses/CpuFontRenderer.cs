@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace MusicPlayerDXMonoGamePort.HelperClasses
@@ -20,10 +21,11 @@ namespace MusicPlayerDXMonoGamePort.HelperClasses
             tmpTextBitmap?.Dispose();
             tmpTextBitmap = new Bitmap(tex.Width * superResoultion, tex.Height * superResoultion, PixelFormat.Format64bppArgb);
             using Graphics g = Graphics.FromImage(tmpTextBitmap);
+            float dpiScalar = 96 / g.DpiX;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-            using Font tmpFont = new(font.FontFamily, font.Size * superResoultion * (96 / g.DpiX));
+            using Font tmpFont = new(font.FontFamily, font.Size * superResoultion * dpiScalar);
             g.DrawString(textToDraw, tmpFont, color, startPosX * superResoultion, startPosY * superResoultion);
             g.Flush();
             textBitmap?.Dispose();
@@ -36,7 +38,9 @@ namespace MusicPlayerDXMonoGamePort.HelperClasses
         {
             using Bitmap tmp = new(1, 1);
             using Graphics g = Graphics.FromImage(tmp);
-            var size = g.MeasureString(textToMeasure, font);
+            float dpiScalar = 96 / g.DpiX;
+            using Font tmpFont = new(font.FontFamily, font.Size * superResoultion * dpiScalar);
+            var size = g.MeasureString(textToMeasure, tmpFont);
             return new SizeF(size.Width / superResoultion, size.Height / superResoultion);
         }
 
