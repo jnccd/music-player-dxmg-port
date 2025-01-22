@@ -303,20 +303,23 @@ namespace MusicPlayerDXMonoGamePort
             CurrentDebugTime = Stopwatch.GetTimestamp();
 
             double random = Values.RDM.NextDouble();
-            if (random < 0.3)
+            if (random < 0.45)
             {
                 // Just get a song from the Choosing List
                 PlaySongFromTheChoosingList();
             }
-            else if (random < 0.85)
+            else if (random < 0.8)
             {
                 // Play a song that hasnt been played yet
-                var upvotedSongsList = DbHolder.DbContext.UpvotedSongs.ToList();
-                int index = upvotedSongsList.FindIndex(x => x.Streak == 0);
-                if (index != -1)
+                var notPlayedSongNames = DbHolder.DbContext.UpvotedSongs
+                    .Where(x => x.Streak == 0)
+                    .ToList()
+                    .Select(x => Tuple.Create(x, GetSongPathFromSongName(x.Name)))
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Item2));
+                if (notPlayedSongNames.Any())
                 {
                     // If there is one play it
-                    PlayerHistory.Add(GetSongPathFromSongName(upvotedSongsList[index].Name));
+                    PlayerHistory.Add(GetSongPathFromSongName(notPlayedSongNames.GetRandomValue().Item1.Name));
                     PlayerHistoryIndex = PlayerHistory.Count - 1;
                     PlaySongByPath(PlayerHistory[PlayerHistoryIndex]);
                 }
