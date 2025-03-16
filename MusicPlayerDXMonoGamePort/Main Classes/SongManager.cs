@@ -243,7 +243,7 @@ namespace MusicPlayerDXMonoGamePort
             if (index != -1 && upvotedSongsList[index].Volume != -1)
             {
                 float mult = Values.BaseVolume / upvotedSongsList[index].Volume;
-                Values.VolumeMultiplier = mult;
+                Values.VolumeMultiplier = mult > 3 ? 3 : mult;
                 //Program.game.ShowSecondRowMessage("Applied Volume multiplier of: " + Math.Round(mult, 2), 1);
             }
             else if (Values.VolumeMultiplier > 2 || Values.VolumeMultiplier < 0.1f)
