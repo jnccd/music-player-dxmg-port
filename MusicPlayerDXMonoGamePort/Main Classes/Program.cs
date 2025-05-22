@@ -24,7 +24,7 @@ namespace MusicPlayerDXMonoGamePort
         {
             Console.Title = "MusicPlayer Console";
 
-            CheckForOtherInstances();
+            if (CheckForOtherInstances(args)) return;
 
             // Smol settings
             Application.EnableVisualStyles();
@@ -113,12 +113,13 @@ namespace MusicPlayerDXMonoGamePort
             weightwatchers = new FileSystemWatcher();
             try
             {
-                string[] P = Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\MusicPlayer");
+                string[] P = Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\MusicPlayerDXMonoGamePort");
 #if DEBUG
                 string SettingsPath = P[1] + @"\1.0.0.0";
 #else
                 string SettingsPath = P[0] + @"\1.0.0.0";
 #endif
+                //Console.WriteLine(SettingsPath);
                 if (Directory.Exists(SettingsPath))
                 {
                     weightwatchers.Path = SettingsPath;
@@ -208,7 +209,7 @@ namespace MusicPlayerDXMonoGamePort
 
             SongManager.HistorySongData = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, 25);
         }
-        public static void CheckForOtherInstances()
+        public static bool CheckForOtherInstances(string[] args)
         {
             Console.WriteLine("Checking for other MusicPlayer instances...");
             try
@@ -217,27 +218,36 @@ namespace MusicPlayerDXMonoGamePort
                     if (p.Id != Environment.ProcessId && p.MainModule.FileName == Environment.ProcessPath)
                     {
                         Console.WriteLine("Found another instance. \nSending data...");
-                        if (args.Length > 0)
+                        if (args?.Length > 0)
                         {
                             RequestedSong.Default.RequestedSongString = args[0];
                             RequestedSong.Default.Save();
+                            Console.WriteLine("Data sent! Closing...");
                         }
-                        Console.WriteLine("Data sent! Closing...");
-                        return;
+                        else
+                        {
+                            Console.WriteLine("No data to send! Closing...");
+                        }
+                        Application.Exit();
+                        Thread.Sleep(3000);
+                        return true;
                     }
             }
-            catch
+            catch (Exception e)
             {
-                Console.WriteLine("Please just start one instance of me at a time!");
+                Console.WriteLine($"Please just start one instance of me at a time!\n{e}");
                 Thread.Sleep(1000);
-                return;
+                Application.Exit();
+                return true;
             }
             // Also check for cheeky curious changes to the settings
             if (Config.Data.MultiThreading == false)
             {
                 MessageBox.Show("Dont mess with the settings file!\nLook this is an old option and it wont do much but possibly break the program so just activate it again.");
-                return;
+                Application.Exit();
+                return true;
             }
+            return false;
         }
         public static void Restart()
         {
