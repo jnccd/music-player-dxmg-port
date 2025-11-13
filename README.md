@@ -1,0 +1,6 @@
+# MusicPlayer
+
+## What does it looks like?
+
+Like this (Click on it to see the video)
+[![Watch the video](https://github.com/user-attachments/assets/8744b273-88a3-49df-bf44-8db909c63c50)](https://github.com/user-attachments/assets/8d8fc9f9-6623-4f2d-8095-8cf6143dd4eb)
