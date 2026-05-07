@@ -1,4 +1,5 @@
-﻿using MusicPlayerDXMonoGamePort.Persistence.Database;
+﻿using Microsoft.Xna.Framework.Media;
+using MusicPlayerDXMonoGamePort.Persistence.Database;
 using Persistence;
 using Persistence.Database;
 using System;
@@ -207,6 +208,8 @@ namespace MusicPlayerDXMonoGamePort
                 Config.Save();
             }
 
+            // See AddArtistAndAlbumInDB() in XNA.cs
+
             SongManager.HistorySongData = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, 25);
         }
         public static bool CheckForOtherInstances(string[] args)
@@ -288,7 +291,7 @@ start MusicPlayerDXMonoGamePort.exe");
                         {
                             while (ConsoleManager.BackgroundOperationRunning || ConsoleManager.ConsoleBackgroundOperationRunning)
                                 Thread.Sleep(250);
-                            
+
                             if (fileName == "MusicPlayer.PlayRequest")
                             {
                                 string[] split = crackedOpenBoi.Split('±');

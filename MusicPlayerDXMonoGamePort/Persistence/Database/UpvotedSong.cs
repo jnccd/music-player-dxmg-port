@@ -8,10 +8,13 @@ using System.Threading.Tasks;
 
 namespace Persistence.Database
 {
-    public class UpvotedSong(string Name, float Score, int Streak, int TotalLikes, int TotalDislikes, long AddingDates, float Volume)
+    public class UpvotedSong(string Name, float Score, int Streak, int TotalLikes, int TotalDislikes, long AddingDates, float Volume, string Artist = "", string Album = "")
     {
         [Key]
         public string Name { get; set; } = Name;
+        public string Artist { get; set; } = Artist;
+        public string Album { get; set; } = Album;
+
         public float Score { get; set; } = Score;
         public int Streak { get; set; } = Streak;
         public int TotalLikes { get; set; } = TotalLikes;

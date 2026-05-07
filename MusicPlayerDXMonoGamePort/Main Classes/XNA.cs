@@ -12,6 +12,7 @@ using System.IO;
 using MessageBox = System.Windows.Forms.MessageBox;
 using Persistence;
 using MusicPlayerDXMonoGamePort.HelperClasses;
+using MusicPlayerDXMonoGamePort.Persistence.Database;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -92,12 +93,12 @@ namespace MusicPlayerDXMonoGamePort
         float X1;
         float X2;
         int ScrollWheelCooldown = 0;
-        
+
         // Forms
         public OptionsMenu optionsMenu;
         public Statistics statistics;
         public History history;
-        
+
         public XNA()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -153,17 +154,18 @@ namespace MusicPlayerDXMonoGamePort
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             Preload = Config.Data.Preload;
-            
+
             Assets.LoadLoadingScreen(Content, GraphicsDevice);
 
             Console.WriteLine("Updating youtube-dl...");
-            Task.Factory.StartNew(() => 
-                "yt-dlp -U".RunAsConsoleCommand(360, () => { }, (string o, string err) => 
-                { 
-                    Console.Write(o + err); 
+            Task.Factory.StartNew(() =>
+                "yt-dlp -U".RunAsConsoleCommand(360, () => { }, (string o, string err) =>
+                {
+                    Console.Write(o + err);
                 }));
 
             Assets.Load(Content, GraphicsDevice);
+            AddArtistAndAlbumInDB();
 
             BlurredTex = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
             TempBlur = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X + 100, Values.WindowSize.Y + 100);
@@ -184,6 +186,32 @@ namespace MusicPlayerDXMonoGamePort
             KeepWindowInScreen();
             Shadow = new DropShadow(gameWindowForm, true);
             Shadow.Show();
+        }
+        private void AddArtistAndAlbumInDB()
+        {
+            // In the SqlLite Database, add artist and album if empty
+            if (DbHolder.DbContext.UpvotedSongs.All(x => string.IsNullOrWhiteSpace(x.Artist)))
+            {
+                Console.WriteLine("Empty artist fields detected, updating database...");
+
+                foreach (var song in DbHolder.DbContext.UpvotedSongs)
+                {
+                    try
+                    {
+                        TagLib.File file = TagLib.File.Create(song.Path);
+                        song.Album = file.Tag.Album;
+                        song.Artist = file.Tag.AlbumArtists.Length == 0 ? "" : file.Tag.AlbumArtists.Aggregate((x, y) => x + " + " + y);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Warn: Error during migration of song database on song {song.Name}\n{e}");
+                        song.Album = "";
+                        song.Artist = "";
+                    }
+                }
+                Console.WriteLine("Writing migration...");
+                DbHolder.DbContext.SaveChanges();
+            }
         }
 
         // Update
@@ -209,7 +237,8 @@ namespace MusicPlayerDXMonoGamePort
                 }
             }
 
-            if (SongManager.IsCurrentSongUpvoted) {
+            if (SongManager.IsCurrentSongUpvoted)
+            {
                 if (UpvoteIconAlpha < 1)
                     UpvoteIconAlpha += 0.05f;
             }
@@ -317,7 +346,7 @@ namespace MusicPlayerDXMonoGamePort
                 });
             }
         }
-        
+
         public void ShowColorDialog()
         {
             Task.Factory.StartNew(() =>
@@ -408,7 +437,7 @@ namespace MusicPlayerDXMonoGamePort
                 //Debug.WriteLine("New Smooth " + (Stopwatch.GetTimestamp() - CurrentDebugTime));
             }
         }
-        
+
         public void KeepWindowInScreen()
         {
             TempRect.X = Config.Data.WindowPos.X;
@@ -637,7 +666,7 @@ namespace MusicPlayerDXMonoGamePort
                     ForcedTitleRedraw = false;
 
                     spriteBatch.End();
-                } 
+                }
                 catch
                 {
                     try { spriteBatch.End(); } catch { }
@@ -701,7 +730,7 @@ namespace MusicPlayerDXMonoGamePort
                     spriteBatch.End();
                     EndBlur();
                 }
-                
+
                 if (BackgroundTarget == null)
                     BackgroundTarget = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X, Values.WindowSize.Y);
                 GraphicsDevice.SetRenderTarget(BackgroundTarget);
@@ -797,7 +826,7 @@ namespace MusicPlayerDXMonoGamePort
                         spriteBatch.Begin();
                         spriteBatch.Draw(BackgroundTarget, Values.WindowRect, Color.White);
                     }
-                    
+
                     #region Second Row HUD Shadows
                     if (UpvoteSavedAlpha > 0)
                     {
@@ -899,7 +928,7 @@ namespace MusicPlayerDXMonoGamePort
                     if (VisSetting == Visualizations.trumpetboy && SongManager.Channel32 != null && SongVisualization.FFToutput != null)
                     {
                         float size = (float)Approximate.Sqrt(Values.OutputVolume * 100 * Values.TargetVolume);
-                        
+
                         spriteBatch.Draw(Assets.White, new Rectangle(35 + shadowDistance, 50 + shadowDistance, Values.WindowSize.X - 70, Values.WindowSize.Y - 100), Color.Black * 0.6f);
                         spriteBatch.Draw(Assets.TrumpetBoyBackground, new Rectangle(35, 50, Values.WindowSize.X - 70, Values.WindowSize.Y - 100), Color.White);
 
@@ -909,7 +938,7 @@ namespace MusicPlayerDXMonoGamePort
                         int height = (int)(450 * (Values.WindowSize.Y - 100) / 720 * 1.05f);
                         int yOrigin = (int)(60 * height / 450f);
                         spriteBatch.Draw(Assets.TrumpetBoy, new Rectangle(x, y, width, height), Color.White);
-                        spriteBatch.Draw(Assets.TrumpetBoyTrumpet, new Rectangle((int)(x + width / 2f - width / 2f * size), 
+                        spriteBatch.Draw(Assets.TrumpetBoyTrumpet, new Rectangle((int)(x + width / 2f - width / 2f * size),
                             (int)(y + yOrigin - yOrigin * size), (int)(width * size), (int)(height * size)), Color.White);
                     }
                     #endregion

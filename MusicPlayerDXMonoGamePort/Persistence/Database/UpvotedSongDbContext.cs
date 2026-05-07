@@ -13,7 +13,7 @@ namespace Persistence.Database
     {
         public DbSet<UpvotedSong> UpvotedSongs { get; set; }
         private static readonly string exePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
-        private static readonly string dbPath = exePath + "song.db";
+        private static readonly string dbPath = Environment.GetEnvironmentVariable("MUSIC_PLAYER_SQLITE_DB_PATH") ?? exePath + "song.db";
 
         // The following configures EF to create a Sqlite database file in the
         // special "local" folder for your platform.
