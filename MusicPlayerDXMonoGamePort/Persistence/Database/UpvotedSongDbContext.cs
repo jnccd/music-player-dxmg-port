@@ -19,5 +19,12 @@ namespace Persistence.Database
         // special "local" folder for your platform.
         protected override void OnConfiguring(DbContextOptionsBuilder options)
             => options.UseSqlite($"Data Source={dbPath}");
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Configure composite primary key
+            modelBuilder.Entity<UpvotedSong>()
+                .HasKey(s => new { s.Name, s.Artist, s.Album });
+        }
     }
 }
