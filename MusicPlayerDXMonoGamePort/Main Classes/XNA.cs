@@ -13,6 +13,7 @@ using MessageBox = System.Windows.Forms.MessageBox;
 using Persistence;
 using MusicPlayerDXMonoGamePort.HelperClasses;
 using MusicPlayerDXMonoGamePort.Persistence.Database;
+using Persistence.Database;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -196,21 +197,28 @@ namespace MusicPlayerDXMonoGamePort
 
                 foreach (var song in DbHolder.DbContext.UpvotedSongs)
                 {
-                    try
-                    {
-                        TagLib.File file = TagLib.File.Create(song.Path);
-                        song.Album = file.Tag.Album;
-                        song.Artist = file.Tag.AlbumArtists.Length == 0 ? "" : file.Tag.AlbumArtists.Aggregate((x, y) => x + " + " + y);
-                    }
-                    catch (Exception e)
+                    AddAlbumAndArtistMetadataToUpvotedSong(song, (s, e) =>
                     {
                         Console.WriteLine($"Warn: Error during migration of song database on song {song.Name}\n{e}");
                         song.Album = "";
                         song.Artist = "";
-                    }
+                    });
                 }
                 Console.WriteLine("Writing migration...");
                 DbHolder.DbContext.SaveChanges();
+            }
+        }
+        public void AddAlbumAndArtistMetadataToUpvotedSong(UpvotedSong song, Action<UpvotedSong, Exception> onError = null)
+        {
+            try
+            {
+                TagLib.File file = TagLib.File.Create(song.Path);
+                song.Album = file.Tag.Album;
+                song.Artist = file.Tag.AlbumArtists.Length == 0 ? "" : file.Tag.AlbumArtists.Aggregate((x, y) => x + " + " + y);
+            }
+            catch (Exception e)
+            {
+                onError?.Invoke(song, e);
             }
         }
 

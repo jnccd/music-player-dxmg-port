@@ -637,7 +637,14 @@ namespace MusicPlayerDXMonoGamePort
         {
             var songName = Song.Split('\\').Last();
             if (DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == songName) == null)
-                DbHolder.DbContext.UpvotedSongs.Add(new UpvotedSong(Song.Split('\\').Last(), 0, 0, 0, 0, GetSongFileCreationDate(Song), -1));
+            {
+                var newSong = new UpvotedSong(Song.Split('\\').Last(), 0, 0, 0, 0, GetSongFileCreationDate(Song), -1);
+                Program.game.AddAlbumAndArtistMetadataToUpvotedSong(newSong, (s, e) =>
+                {
+                    Console.WriteLine($"Error getting metadata for song {s.Name}.\n{e}");
+                });
+                DbHolder.DbContext.UpvotedSongs.Add(newSong);
+            }
         }
         public static void SaveUserSettings(bool SongSwap)
         {

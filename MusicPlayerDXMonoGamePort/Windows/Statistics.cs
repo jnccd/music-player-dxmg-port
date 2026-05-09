@@ -50,7 +50,7 @@ namespace MusicPlayerDXMonoGamePort
         {
             bRefresh_Click(this, EventArgs.Empty);
         }
-        
+
         // Button Events
         private void bRefresh_Click(object sender, EventArgs e)
         {
@@ -265,8 +265,10 @@ namespace MusicPlayerDXMonoGamePort
                             }
                         }.Start();
                     }
-                    catch (Exception ex) { 
-                        MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!");
+                    }
                 })));
                 if (dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongName)))
                     m.Items.Add(new ToolStripMenuItem("Open in Browser with timestamp", null, ((object s, EventArgs ev) =>
@@ -348,7 +350,7 @@ namespace MusicPlayerDXMonoGamePort
                                 DbHolder.DbContext.SaveChanges();
                                 DbHolder.DbContext.UpvotedSongs.Remove(upvotedSong);
                                 DbHolder.DbContext.SaveChanges();
-                                var replacement = new UpvotedSong(Dia.result + ".mp3", upvotedSong.Score, upvotedSong.Streak, upvotedSong.TotalLikes, upvotedSong.TotalDislikes, upvotedSong.AddingDates, upvotedSong.Volume)
+                                var replacement = new UpvotedSong(Dia.result + ".mp3", upvotedSong.Score, upvotedSong.Streak, upvotedSong.TotalLikes, upvotedSong.TotalDislikes, upvotedSong.AddingDates, upvotedSong.Volume, upvotedSong.Artist, upvotedSong.Album, upvotedSong.UserId)
                                 {
                                     Path = upvotedSong.Path
                                 };
@@ -437,8 +439,10 @@ namespace MusicPlayerDXMonoGamePort
                         }
                         ms.Close();
                     }
-                    catch (Exception e) { 
-                        MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!\n"+ e.ToString()); }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!\n" + e.ToString());
+                    }
                 })));
                 m.Items.Add(new ToolStripMenuItem("Filter for...", null, ((object s, EventArgs ev) =>
                 {

@@ -24,7 +24,7 @@ namespace Persistence.Database
         {
             // Configure composite primary key
             modelBuilder.Entity<UpvotedSong>()
-                .HasKey(s => new { s.Name, s.Artist, s.Album });
+                .HasKey(s => new { s.UserId, s.Name, s.Artist, s.Album });
         }
     }
 }
