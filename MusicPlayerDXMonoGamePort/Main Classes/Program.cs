@@ -35,7 +35,7 @@ namespace MusicPlayerDXMonoGamePort
 
             InitSongDataList();
 
-            Console.Clear();
+            try { Console.Clear(); } catch { }
 
             // Actual start
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -196,7 +196,7 @@ namespace MusicPlayerDXMonoGamePort
                 config.Default.Save();
             }
 
-            // Migrate to SqlLite Database
+            // Migrate UpvotedSongs to SqlLite Database
             if (Config.Data.songDatabaseEntries.Count > 0)
             {
                 if (DbHolder.DbContext.UpvotedSongs.FirstOrDefault() == null) // IsEmpty for the poor
@@ -210,7 +210,20 @@ namespace MusicPlayerDXMonoGamePort
 
             // See AddArtistAndAlbumInDB() in XNA.cs
 
-            SongManager.HistorySongData = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, 25);
+            // Migrate History to SqlLite Database
+            if (File.Exists(SongManager.historyFilePath))
+            {
+#pragma warning disable CS0618 // Type or member is obsolete
+                var historyList = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, int.MaxValue)
+                    .Select(entry => new SongHistoryEntry(entry.Name, entry.Change, DateTime.FromBinary(entry.Date)));
+#pragma warning restore CS0618 // Type or member is obsolete
+
+                DbHolder.DbContext.SongHistoryEntries.AddRange(historyList);
+                DbHolder.DbContext.SaveChanges();
+                File.Delete(SongManager.historyFilePath);
+            }
+
+            SongManager.HistorySongData = DbHolder.DbContext.SongHistoryEntries.ToList().TakeLast(25).ToList();
         }
         public static bool CheckForOtherInstances(string[] args)
         {

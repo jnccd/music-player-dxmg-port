@@ -83,7 +83,7 @@ namespace MusicPlayerDXMonoGamePort
             basicEffect.View = Matrix.CreateLookAt(new Vector3(0, 0, 1), Vector3.Zero, Vector3.Up);
             basicEffect.Projection = Matrix.CreateOrthographicOffCenter(0, GD.Viewport.Width, GD.Viewport.Height, 0, 1.0f, 1000.0f);
             basicEffect.VertexColorEnabled = true;
-            
+
             Console.WriteLine("Loading Textures...");
             Color[] Col = new Color[1];
             int res = 8;
@@ -135,7 +135,7 @@ namespace MusicPlayerDXMonoGamePort
                 int argbColorRefresh = (int)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM", "ColorizationColor", null);
                 System.Drawing.Color tempRefresh = System.Drawing.Color.FromArgb(argbColorRefresh);
                 SystemDefaultColor = Color.FromNonPremultiplied(tempRefresh.R, tempRefresh.G, tempRefresh.B, tempRefresh.A);
-                
+
                 Program.game.KeepWindowInScreen();
             });
             // System Default Color
@@ -192,7 +192,7 @@ namespace MusicPlayerDXMonoGamePort
                     SongManager.RegisterNewSong(s);
                     if (ConsoleOutput)
                     {
-                        Console.CursorLeft = 0;
+                        try { Console.CursorLeft = 0; } catch { }
                         Console.Write("Found " + SongManager.Playlist.Count.ToString() + " Songs!");
                     }
                 }

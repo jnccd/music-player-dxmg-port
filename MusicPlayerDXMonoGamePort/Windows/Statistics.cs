@@ -358,22 +358,11 @@ namespace MusicPlayerDXMonoGamePort
                                 SongManager.SaveUserSettings(false);
 
                                 // Update histroy
-                                string historyPath = SongManager.historyFilePath;
-                                if (File.Exists(historyPath))
+                                DbHolder.DbContext.SongHistoryEntries.Where(x => x.SongName == upvotedSong.Name).ToList().ForEach(x =>
                                 {
-                                    string[] historyContent = File.ReadAllLines(historyPath);
-                                    for (int i = 0; i < historyContent.Length; i++)
-                                    {
-                                        string[] split = historyContent[i].Split(':');
-                                        if (split[0] == upvotedSong.Name)
-                                        {
-                                            split[0] = Dia.result + ".mp3";
-                                            historyContent[i] = split.Aggregate((y, j) => y + ":" + j);
-                                        }
-                                    }
-                                    File.Delete(historyPath);
-                                    File.WriteAllLines(historyPath, historyContent);
-                                }
+                                    x.SongName = Dia.result + ".mp3";
+                                });
+                                DbHolder.DbContext.SaveChanges();
 
                                 // Update file
                                 string dest = path.Split('\\').SkipLast(1).Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";

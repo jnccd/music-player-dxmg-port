@@ -9,9 +9,11 @@ using System.Threading.Tasks;
 
 namespace Persistence.Database
 {
-    public class UpvotedSongDbContext : DbContext
+    public class SongDbContext : DbContext
     {
         public DbSet<UpvotedSong> UpvotedSongs { get; set; }
+        public DbSet<SongHistoryEntry> SongHistoryEntries { get; set; }
+
         private static readonly string exePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
         private static readonly string dbPath = Environment.GetEnvironmentVariable("MUSIC_PLAYER_SQLITE_DB_PATH") ?? exePath + "song.db";
 
@@ -25,6 +27,9 @@ namespace Persistence.Database
             // Configure composite primary key
             modelBuilder.Entity<UpvotedSong>()
                 .HasKey(s => new { s.UserId, s.Name, s.Artist, s.Album });
+
+            modelBuilder.Entity<SongHistoryEntry>()
+                .HasKey(s => new { s.UserId, s.SongName, s.Date });
         }
     }
 }

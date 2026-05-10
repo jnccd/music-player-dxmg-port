@@ -58,7 +58,7 @@ namespace MusicPlayerDXMonoGamePort
 
         // History Data
         public static readonly string historyFilePath = Values.CurrentExecutablePath + "\\History.txt";
-        public static List<HistorySong> HistorySongData = new List<HistorySong>();
+        public static List<SongHistoryEntry> HistorySongData = new();
 
         // Song Data
         public static UpvotedSong currentlyPlayingSongData;
@@ -115,24 +115,6 @@ namespace MusicPlayerDXMonoGamePort
             {
                 if (Program.args.Length > 0)
                     PlayNewSong(Program.args[0]);
-                else if (false && File.Exists(historyFilePath))
-                {
-                    try
-                    {
-                        string songName = File.ReadLines(historyFilePath).Last();
-
-                        if (!songName.EndsWith(".mp3"))
-                            songName += ".mp3";
-
-                        PlayPlaylistSong(songName);
-                    }
-                    catch
-                    {
-                        int PlaylistIndex = Values.RDM.Next(Playlist.Count);
-                        GetNextSong(true, false);
-                        PlayerHistory.Add(Playlist[PlaylistIndex]);
-                    }
-                }
                 else
                 {
                     int PlaylistIndex = Values.RDM.Next(Playlist.Count);
@@ -335,13 +317,13 @@ namespace MusicPlayerDXMonoGamePort
                 List<string> RecentlyPlayedChoosingList = new List<string>();
                 for (int i = 4; i < 10; i++)
                 {
-                    if (HistorySongData.Count > i && HistorySongData[HistorySongData.Count - 1 - i].Change > 0)
+                    if (HistorySongData.Count > i && HistorySongData[HistorySongData.Count - 1 - i].ScoreChange > 0)
                     {
-                        UpvotedSong S = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(X => X.Name == HistorySongData[i].Name + ".mp3");
+                        UpvotedSong S = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(X => X.Name == HistorySongData[i].SongName + ".mp3");
                         if (S != null && S.Score < 120)
                         {
-                            for (int j = 0; j < HistorySongData[i].Change * 50; j++)
-                                RecentlyPlayedChoosingList.Add(HistorySongData[i].Name);
+                            for (int j = 0; j < HistorySongData[i].ScoreChange * 50; j++)
+                                RecentlyPlayedChoosingList.Add(HistorySongData[i].SongName);
                         }
                     }
                 }
@@ -651,7 +633,7 @@ namespace MusicPlayerDXMonoGamePort
             if (SongSwap)
             {
                 UpvoteCurrentSongIfNeccesary();
-                SaveCurrentSongToHistoryFile(LastScoreChange);
+                SaveCurrentSongToHistory(LastScoreChange);
                 LastScoreChange = 0;
             }
 
@@ -682,6 +664,7 @@ namespace MusicPlayerDXMonoGamePort
                 return currentlyPlayingSongData.Volume == -1;
             return false;
         }
+        [Obsolete("This method is deprecated. Use the DbHolder.DbContext.SongHistoryEntries property.")]
         public static List<HistorySong> LoadSongHistoryFile(string path, int maxEntries)
         {
             if (!File.Exists(path))
@@ -774,17 +757,14 @@ namespace MusicPlayerDXMonoGamePort
                     return s;
             return "";
         }
-        private static void SaveCurrentSongToHistoryFile(float ScoreChange)
+        private static void SaveCurrentSongToHistory(float ScoreChange)
         {
             try { string s = currentlyPlayingSongName; } catch { return; }
-            if (HistorySongData.Count > 0 && currentlyPlayingSongName == HistorySongData[0].Name)
+            if (HistorySongData.Count > 0 && currentlyPlayingSongName == DbHolder.DbContext.SongHistoryEntries.AsEnumerable().LastOrDefault()?.SongName)
                 return;
 
-            HistorySongData.Add(new HistorySong(Path.GetFileNameWithoutExtension(currentlyPlayingSongName), ScoreChange, DateTime.Now.ToBinary()));
-            var newEntry = HistorySongData.Last();
-            File.AppendAllText(SongManager.historyFilePath, $"{newEntry.Date}\t:{newEntry.Change}\t\t\t:{Uri.EscapeDataString(newEntry.Name)}\n");
-
-            //HistorySongData = HistorySongData.Where(x => !string.IsNullOrWhiteSpace(x.Name)).ToList();
+            DbHolder.DbContext.SongHistoryEntries.Add(new SongHistoryEntry(Path.GetFileNameWithoutExtension(currentlyPlayingSongName), ScoreChange, DateTime.Now));
+            DbHolder.DbContext.SaveChanges();
         }
         private static void TestChoosingListIntegrity()
         {

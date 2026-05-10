@@ -31,12 +31,12 @@ namespace MusicPlayerDXMonoGamePort
             int RowIndex = dataGridView1.FirstDisplayedScrollingRowIndex;
             dataGridView1.Rows.Clear();
 
-            var historyList = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, int.MaxValue);
+            var historyList = DbHolder.DbContext.SongHistoryEntries.ToList();
 
             for (int i = 0; i < historyList.Count; i++)
             {
-                dataGridView1.Rows.Add(new object[] { historyList[i].Name, DateTime.FromBinary(historyList[i].Date), historyList[i].Change });
-                if (!DbHolder.DbContext.UpvotedSongs.Select(x => x.Name).Contains(historyList[i].Name + ".mp3"))
+                dataGridView1.Rows.Add(new object[] { historyList[i].SongName, historyList[i].Date, historyList[i].ScoreChange });
+                if (!DbHolder.DbContext.UpvotedSongs.Select(x => x.Name).Contains(historyList[i].SongName + ".mp3"))
                     dataGridView1.Rows[^1].DefaultCellStyle.BackColor = Color.Red;
             }
 
@@ -52,7 +52,7 @@ namespace MusicPlayerDXMonoGamePort
                     MessageBox.Show("This entry isnt linked to a mp3 file!");
             }
         }
-        
+
         // ContextMenu
         private void dataGridView1_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {

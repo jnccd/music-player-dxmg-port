@@ -9,7 +9,7 @@ using Persistence.Database;
 
 namespace MusicPlayerDXMonoGamePort.Migrations
 {
-    [DbContext(typeof(UpvotedSongDbContext))]
+    [DbContext(typeof(SongDbContext))]
     [Migration("20240825133342_InitialCreate")]
     partial class InitialCreate
     {

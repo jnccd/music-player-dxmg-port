@@ -9,7 +9,7 @@ using Persistence.Database;
 
 namespace MusicPlayerDXMonoGamePort.Migrations
 {
-    [DbContext(typeof(UpvotedSongDbContext))]
+    [DbContext(typeof(SongDbContext))]
     [Migration("20260507133156_AddArtistAndAlbumToUpvotedSong")]
     partial class AddArtistAndAlbumToUpvotedSong
     {

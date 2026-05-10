@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Database;
 
@@ -10,9 +11,11 @@ using Persistence.Database;
 namespace MusicPlayerDXMonoGamePort.Migrations
 {
     [DbContext(typeof(SongDbContext))]
-    partial class UpvotedSongDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260510192956_AddSongHistoryEntry")]
+    partial class AddSongHistoryEntry
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");

@@ -12,7 +12,7 @@ namespace MusicPlayerDXMonoGamePort.Persistence.Database
     public static class DbHolder
     {
         static readonly object lockject = new();
-        public static UpvotedSongDbContext DbContext
+        public static SongDbContext DbContext
         {
             get
             {
@@ -26,6 +26,6 @@ namespace MusicPlayerDXMonoGamePort.Persistence.Database
                 context = value;
             }
         }
-        private static UpvotedSongDbContext context = new();
+        private static SongDbContext context = new();
     }
 }
