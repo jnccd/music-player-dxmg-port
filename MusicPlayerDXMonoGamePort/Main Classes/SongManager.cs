@@ -760,7 +760,7 @@ namespace MusicPlayerDXMonoGamePort
         private static void SaveCurrentSongToHistory(float ScoreChange)
         {
             try { string s = currentlyPlayingSongName; } catch { return; }
-            if (HistorySongData.Count > 0 && currentlyPlayingSongName == DbHolder.DbContext.SongHistoryEntries.AsEnumerable().LastOrDefault()?.SongName)
+            if (HistorySongData.Count > 0 && currentlyPlayingSongName == DbHolder.DbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).FirstOrDefault()?.SongName)
                 return;
 
             DbHolder.DbContext.SongHistoryEntries.Add(new SongHistoryEntry(Path.GetFileNameWithoutExtension(currentlyPlayingSongName), ScoreChange, DateTime.Now));
