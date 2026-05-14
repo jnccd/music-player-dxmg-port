@@ -35,16 +35,16 @@ namespace MusicPlayerDXMonoGamePort
                 while (true)
                 {
                     string Path = "";
-                    try { originY = Console.CursorTop; } catch { originY = 0; }
+                    try { originY = Console.CursorTop; } catch { break; }
                     while (!Path.Contains(".mp3\""))
                     {
                         Path = Path.Replace(wakeUpChar, "");
 
                         //Thread.Sleep(5);
-                        Console.SetCursorPosition(0, originY);
+                        try { Console.SetCursorPosition(0, originY); } catch { }
                         for (int i = 0; i < Path.Length / 65 + 4; i++)
                             Console.Write("                                                                    ");
-                        Console.SetCursorPosition(0, originY);
+                        try { Console.SetCursorPosition(0, originY); } catch { }
                         Console.ForegroundColor = ConsoleColor.White;
                         Console.Write("Play Song: ");
                         Console.ForegroundColor = ConsoleColor.Magenta;

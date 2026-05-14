@@ -319,11 +319,11 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     if (HistorySongData.Count > i && HistorySongData[HistorySongData.Count - 1 - i].ScoreChange > 0)
                     {
-                        UpvotedSong S = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(X => X.Name == HistorySongData[i].SongName + ".mp3");
+                        UpvotedSong S = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(X => X.SongId == HistorySongData[i].SongId);
                         if (S != null && S.Score < 120)
                         {
                             for (int j = 0; j < HistorySongData[i].ScoreChange * 50; j++)
-                                RecentlyPlayedChoosingList.Add(HistorySongData[i].SongName);
+                                RecentlyPlayedChoosingList.Add(Path.GetFileNameWithoutExtension(S.Name));
                         }
                     }
                 }
@@ -760,7 +760,8 @@ namespace MusicPlayerDXMonoGamePort
         private static void SaveCurrentSongToHistory(float ScoreChange)
         {
             try { string s = currentlyPlayingSongName; } catch { return; }
-            if (HistorySongData.Count > 0 && currentlyPlayingSongName == DbHolder.DbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).FirstOrDefault()?.SongName)
+            var currentNewestHistoryEntry = DbHolder.DbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).FirstOrDefault();
+            if (HistorySongData.Count > 0 && currentlyPlayingSongName == DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.SongId == currentNewestHistoryEntry.SongId)?.Name)
                 return;
 
             DbHolder.DbContext.SongHistoryEntries.Add(new SongHistoryEntry(currentlyPlayingSongData.SongId, ScoreChange, DateTime.Now));

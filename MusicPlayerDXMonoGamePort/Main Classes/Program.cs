@@ -238,21 +238,47 @@ namespace MusicPlayerDXMonoGamePort
             }
 
             // Fix SongHistoryEntries with null SongId
-            if (DbHolder.DbContext.SongHistoryEntries.Any(x => x.SongId == null))
+            // if (DbHolder.DbContext.SongHistoryEntries.Any(x => x.SongId == null))
+            // {
+            //     Console.WriteLine("Found SongHistoryEntries with null SongId, fixing...");
+            //     foreach (var entry in DbHolder.DbContext.SongHistoryEntries.Where(x => x.SongId == null))
+            //     {
+            //         entry.SongId = DbHolder.DbContext.UpvotedSongs
+            //             .AsEnumerable()
+            //             .FirstOrDefault(s => s.Name == entry.SongName
+            //                 || Path.GetFileNameWithoutExtension(s.Name) == Path.GetFileNameWithoutExtension(entry.SongName))?
+            //             .SongId;
+            //     }
+            //     DbHolder.SaveChanges();
+            // }
+
+            // Prune SongHistoryEntries that are repeated
+            // {
+            //     var entries = DbHolder.DbContext.SongHistoryEntries.AsEnumerable().OrderBy(x => x.Date).ToList();
+            //     for (int i = 1; i < entries.Count; i++)
+            //     {
+            //         if (entries[i].SongId == entries[i - 1].SongId && entries[i].ScoreChange == 0)
+            //         {
+            //             Console.WriteLine($"Found repeated SongHistoryEntry {entries[i].SongName} on {entries[i].Date}, fixing...");
+            //             DbHolder.DbContext.SongHistoryEntries.Remove(entries[i]);
+            //         }
+            //     }
+            //     DbHolder.SaveChanges();
+            // }
+
+            // Prune UpvotedSongs bad metadata
             {
-                Console.WriteLine("Found SongHistoryEntries with null SongId, fixing...");
-                foreach (var entry in DbHolder.DbContext.SongHistoryEntries.Where(x => x.SongId == null))
+                foreach (var song in DbHolder.DbContext.UpvotedSongs.AsEnumerable())
                 {
-                    entry.SongId = DbHolder.DbContext.UpvotedSongs
-                        .AsEnumerable()
-                        .FirstOrDefault(s => s.Name == entry.SongName
-                            || Path.GetFileNameWithoutExtension(s.Name) == Path.GetFileNameWithoutExtension(entry.SongName))?
-                        .SongId;
+                    if (song.Artist.ToLower() == "unknown" || song.Name.Contains(song.Artist))
+                        song.Artist = "";
+                    if (song.Album == "MusicPlayer Songs" || song.Name.Contains(song.Album))
+                        song.Album = "";
                 }
                 DbHolder.SaveChanges();
             }
 
-            SongManager.HistorySongData = DbHolder.DbContext.SongHistoryEntries.ToList().TakeLast(25).ToList();
+            SongManager.HistorySongData = DbHolder.DbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).TakeLast(25).ToList();
         }
         public static bool CheckForOtherInstances(string[] args)
         {

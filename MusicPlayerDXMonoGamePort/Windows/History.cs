@@ -34,7 +34,7 @@ namespace MusicPlayerDXMonoGamePort
             var historyListRows = DbHolder.DbContext.SongHistoryEntries
                 .ToList()
                 .OrderByDescending(x => x.Date)
-                .Select(x => new DataGridViewRow() { Cells = { new DataGridViewTextBoxCell() { Value = x.SongName }, new DataGridViewTextBoxCell() { Value = x.Date }, new DataGridViewTextBoxCell() { Value = x.ScoreChange } } })
+                .Select(x => new DataGridViewRow() { Cells = { new DataGridViewTextBoxCell() { Value = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(s => s.SongId == x.SongId)?.Name }, new DataGridViewTextBoxCell() { Value = x.Date }, new DataGridViewTextBoxCell() { Value = x.ScoreChange } } })
                 .ToArray();
             dataGridView1.Rows.AddRange(historyListRows);
 

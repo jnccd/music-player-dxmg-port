@@ -11,7 +11,6 @@ namespace Persistence.Database
         public Guid? SongId { get; set; } = SongId;
         [ForeignKey("SongId")]
         public UpvotedSong? UpvotedSong { get; set; } = null;
-        public string SongName { get; set; } = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(s => s.SongId == SongId)?.Name ?? "";
         public DateTimeOffset Date { get; set; } = Date;
         public float ScoreChange { get; set; } = ScoreChange;
     }

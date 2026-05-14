@@ -355,13 +355,6 @@ namespace MusicPlayerDXMonoGamePort
                                 DbHolder.DbContext.UpvotedSongs.Add(replacement);
                                 SongManager.SaveUserSettings(false);
 
-                                // Update histroy
-                                DbHolder.DbContext.SongHistoryEntries.Where(x => x.SongName == upvotedSong.Name).ToList().ForEach(x =>
-                                {
-                                    x.SongName = Dia.result + ".mp3";
-                                });
-                                DbHolder.SaveChanges();
-
                                 // Update file
                                 string dest = path.Split('\\').SkipLast(1).Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";
                                 File.Move(path, dest);

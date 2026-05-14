@@ -29,7 +29,7 @@ namespace Persistence.Database
                 .IsUnique();
 
             modelBuilder.Entity<SongHistoryEntry>()
-                .HasKey(s => new { s.UserId, s.SongName, s.Date });
+                .HasKey(s => new { s.UserId, s.SongId, s.Date });
             modelBuilder.Entity<SongHistoryEntry>()
                 .HasOne(s => s.UpvotedSong)
                 .WithMany() // No navigation property back to SongHistoryEntry
