@@ -15,16 +15,13 @@ namespace Persistence.Database
         public DbSet<SongHistoryEntry> SongHistoryEntries { get; set; }
 
         private static readonly string exePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
-        private static readonly string dbPath = Environment.GetEnvironmentVariable("MUSIC_PLAYER_SQLITE_DB_PATH") ?? exePath + "song.db";
+        private static readonly string dbPath = (Environment.GetEnvironmentVariable("MUSIC_PLAYER_SQLITE_DB_PATH") ?? exePath) + "song.db";
 
-        // The following configures EF to create a Sqlite database file in the
-        // special "local" folder for your platform.
         protected override void OnConfiguring(DbContextOptionsBuilder options)
             => options.UseSqlite($"Data Source={dbPath}");
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configure composite primary key
             modelBuilder.Entity<UpvotedSong>()
                 .HasKey(s => new { s.UserId, s.Name, s.Artist, s.Album });
 

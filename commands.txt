@@ -1,0 +1,1 @@
+MUSIC_PLAYER_SQLITE_DB_PATH=./bin/Debug/net8.0-windows7.0/ dotnet ef database update && MUSIC_PLAYER_SQLITE_DB_PATH=./bin/Release/net8.0-windows7.0/ dotnet ef database update
