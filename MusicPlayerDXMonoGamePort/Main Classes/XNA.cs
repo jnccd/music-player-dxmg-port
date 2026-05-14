@@ -205,7 +205,7 @@ namespace MusicPlayerDXMonoGamePort
                     });
                 }
                 Console.WriteLine("Writing migration...");
-                DbHolder.DbContext.SaveChanges();
+                DbHolder.SaveChanges();
             }
         }
         public void AddAlbumAndArtistMetadataToUpvotedSong(UpvotedSong song, Action<UpvotedSong, Exception> onError = null)

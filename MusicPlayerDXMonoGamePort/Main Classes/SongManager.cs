@@ -637,7 +637,7 @@ namespace MusicPlayerDXMonoGamePort
                 LastScoreChange = 0;
             }
 
-            DbHolder.DbContext.SaveChanges();
+            DbHolder.SaveChanges();
 
             Task.Run(() =>
             {
@@ -764,7 +764,7 @@ namespace MusicPlayerDXMonoGamePort
                 return;
 
             DbHolder.DbContext.SongHistoryEntries.Add(new SongHistoryEntry(Path.GetFileNameWithoutExtension(currentlyPlayingSongName), ScoreChange, DateTime.Now));
-            DbHolder.DbContext.SaveChanges();
+            DbHolder.SaveChanges();
         }
         private static void TestChoosingListIntegrity()
         {

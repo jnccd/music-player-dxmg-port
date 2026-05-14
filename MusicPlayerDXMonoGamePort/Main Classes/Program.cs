@@ -202,7 +202,7 @@ namespace MusicPlayerDXMonoGamePort
                 if (DbHolder.DbContext.UpvotedSongs.FirstOrDefault() == null) // IsEmpty for the poor
                 {
                     DbHolder.DbContext.AddRange(Config.Data.songDatabaseEntries);
-                    DbHolder.DbContext.SaveChanges();
+                    DbHolder.SaveChanges();
                 }
                 Config.Data.songDatabaseEntries.Clear();
                 Config.Save();
@@ -219,7 +219,7 @@ namespace MusicPlayerDXMonoGamePort
 #pragma warning restore CS0618 // Type or member is obsolete
 
                 DbHolder.DbContext.SongHistoryEntries.AddRange(historyList);
-                DbHolder.DbContext.SaveChanges();
+                DbHolder.SaveChanges();
                 File.Delete(SongManager.historyFilePath);
             }
 

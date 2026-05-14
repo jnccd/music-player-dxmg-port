@@ -347,9 +347,7 @@ namespace MusicPlayerDXMonoGamePort
                             try
                             {
                                 // Update database entry - Cant just easily rename the primary key tho, need to create a new entry
-                                DbHolder.DbContext.SaveChanges();
                                 DbHolder.DbContext.UpvotedSongs.Remove(upvotedSong);
-                                DbHolder.DbContext.SaveChanges();
                                 var replacement = new UpvotedSong(Dia.result + ".mp3", upvotedSong.Score, upvotedSong.Streak, upvotedSong.TotalLikes, upvotedSong.TotalDislikes, upvotedSong.AddingDates, upvotedSong.Volume, upvotedSong.Artist, upvotedSong.Album, upvotedSong.UserId)
                                 {
                                     Path = upvotedSong.Path
@@ -362,7 +360,7 @@ namespace MusicPlayerDXMonoGamePort
                                 {
                                     x.SongName = Dia.result + ".mp3";
                                 });
-                                DbHolder.DbContext.SaveChanges();
+                                DbHolder.SaveChanges();
 
                                 // Update file
                                 string dest = path.Split('\\').SkipLast(1).Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";
@@ -450,7 +448,7 @@ namespace MusicPlayerDXMonoGamePort
                     {
                         var upvotedSongToRemove = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3");
                         DbHolder.DbContext.UpvotedSongs.Remove(upvotedSongToRemove);
-                        DbHolder.DbContext.SaveChanges();
+                        DbHolder.SaveChanges();
 
                         bRefresh_Click(null, EventArgs.Empty);
                     }
