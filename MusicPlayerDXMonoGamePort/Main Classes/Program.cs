@@ -179,6 +179,9 @@ namespace MusicPlayerDXMonoGamePort
                 }
             }
         }
+        /// <summary>
+        /// Basically the migrations
+        /// </summary>
         public static void InitSongDataList()
         {
             // Legacy config support
@@ -221,6 +224,17 @@ namespace MusicPlayerDXMonoGamePort
                 DbHolder.DbContext.SongHistoryEntries.AddRange(historyList);
                 DbHolder.SaveChanges();
                 File.Delete(SongManager.historyFilePath);
+            }
+
+            // Fix entries with null SongId
+            if (DbHolder.DbContext.UpvotedSongs.Any(x => x.SongId == null))
+            {
+                Console.WriteLine("Found entries with null SongId, fixing...");
+                foreach (var song in DbHolder.DbContext.UpvotedSongs.Where(x => x.SongId == null))
+                {
+                    song.SongId = Guid.NewGuid();
+                }
+                DbHolder.SaveChanges();
             }
 
             SongManager.HistorySongData = DbHolder.DbContext.SongHistoryEntries.ToList().TakeLast(25).ToList();

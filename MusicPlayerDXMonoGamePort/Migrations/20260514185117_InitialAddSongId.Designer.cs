@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Database;
 
@@ -10,9 +11,11 @@ using Persistence.Database;
 namespace MusicPlayerDXMonoGamePort.Migrations
 {
     [DbContext(typeof(SongDbContext))]
-    partial class UpvotedSongDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260514185117_InitialAddSongId")]
+    partial class InitialAddSongId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
@@ -38,24 +41,26 @@ namespace MusicPlayerDXMonoGamePort.Migrations
 
             modelBuilder.Entity("Persistence.Database.UpvotedSong", b =>
                 {
-                    b.Property<Guid>("SongId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("AddingDates")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Album")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Artist")
+                    b.Property<string>("UserId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Artist")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Album")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("AddingDates")
+                        .HasColumnType("INTEGER");
+
                     b.Property<float>("Score")
                         .HasColumnType("REAL");
+
+                    b.Property<Guid?>("SongId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Streak")
                         .HasColumnType("INTEGER");
@@ -66,16 +71,10 @@ namespace MusicPlayerDXMonoGamePort.Migrations
                     b.Property<int>("TotalLikes")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
                     b.Property<float>("Volume")
                         .HasColumnType("REAL");
 
-                    b.HasKey("SongId");
-
-                    b.HasIndex("UserId", "Name", "Artist", "Album")
-                        .IsUnique();
+                    b.HasKey("UserId", "Name", "Artist", "Album");
 
                     b.ToTable("UpvotedSongs");
                 });

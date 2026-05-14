@@ -23,7 +23,10 @@ namespace Persistence.Database
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<UpvotedSong>()
-                .HasKey(s => new { s.UserId, s.Name, s.Artist, s.Album });
+                .HasKey(s => s.SongId);
+            modelBuilder.Entity<UpvotedSong>()
+                .HasIndex(s => new { s.UserId, s.Name, s.Artist, s.Album })
+                .IsUnique();
 
             modelBuilder.Entity<SongHistoryEntry>()
                 .HasKey(s => new { s.UserId, s.SongName, s.Date });

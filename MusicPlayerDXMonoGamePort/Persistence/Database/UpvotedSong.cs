@@ -10,6 +10,8 @@ namespace Persistence.Database
 {
     public class UpvotedSong(string Name, float Score, int Streak, int TotalLikes, int TotalDislikes, long AddingDates, float Volume, string Artist = "", string Album = "", string UserId = "")
     {
+        public Guid SongId { get; set; } = Guid.NewGuid();
+
         public string UserId { get; set; } = UserId;
         public string Name { get; set; } = Name;
         public string Artist { get; set; } = Artist;
