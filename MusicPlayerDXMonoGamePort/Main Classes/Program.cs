@@ -218,7 +218,7 @@ namespace MusicPlayerDXMonoGamePort
             {
 #pragma warning disable CS0618 // Type or member is obsolete
                 var historyList = SongManager.LoadSongHistoryFile(SongManager.historyFilePath, int.MaxValue)
-                    .Select(entry => new SongHistoryEntry(entry.Name, entry.Change, DateTime.FromBinary(entry.Date)));
+                    .Select(entry => new SongHistoryEntry(DbHolder.DbContext.UpvotedSongs.FirstOrDefault(s => s.Name == entry.Name).SongId, entry.Change, DateTime.FromBinary(entry.Date)));
 #pragma warning restore CS0618 // Type or member is obsolete
 
                 DbHolder.DbContext.SongHistoryEntries.AddRange(historyList);
@@ -226,13 +226,28 @@ namespace MusicPlayerDXMonoGamePort
                 File.Delete(SongManager.historyFilePath);
             }
 
-            // Fix entries with null SongId
+            // Fix UpvotedSongs with null SongId
             if (DbHolder.DbContext.UpvotedSongs.Any(x => x.SongId == null))
             {
-                Console.WriteLine("Found entries with null SongId, fixing...");
+                Console.WriteLine("Found UpvotedSongs with null SongId, fixing...");
                 foreach (var song in DbHolder.DbContext.UpvotedSongs.Where(x => x.SongId == null))
                 {
                     song.SongId = Guid.NewGuid();
+                }
+                DbHolder.SaveChanges();
+            }
+
+            // Fix SongHistoryEntries with null SongId
+            if (DbHolder.DbContext.SongHistoryEntries.Any(x => x.SongId == null))
+            {
+                Console.WriteLine("Found SongHistoryEntries with null SongId, fixing...");
+                foreach (var entry in DbHolder.DbContext.SongHistoryEntries.Where(x => x.SongId == null))
+                {
+                    entry.SongId = DbHolder.DbContext.UpvotedSongs
+                        .AsEnumerable()
+                        .FirstOrDefault(s => s.Name == entry.SongName
+                            || Path.GetFileNameWithoutExtension(s.Name) == Path.GetFileNameWithoutExtension(entry.SongName))?
+                        .SongId;
                 }
                 DbHolder.SaveChanges();
             }

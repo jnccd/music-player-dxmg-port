@@ -30,6 +30,10 @@ namespace Persistence.Database
 
             modelBuilder.Entity<SongHistoryEntry>()
                 .HasKey(s => new { s.UserId, s.SongName, s.Date });
+            modelBuilder.Entity<SongHistoryEntry>()
+                .HasOne(s => s.UpvotedSong)
+                .WithMany() // No navigation property back to SongHistoryEntry
+                .HasForeignKey(s => s.SongId);
         }
     }
 }

@@ -35,7 +35,7 @@ namespace MusicPlayerDXMonoGamePort
                 while (true)
                 {
                     string Path = "";
-                    originY = Console.CursorTop;
+                    try { originY = Console.CursorTop; } catch { originY = 0; }
                     while (!Path.Contains(".mp3\""))
                     {
                         Path = Path.Replace(wakeUpChar, "");

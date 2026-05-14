@@ -763,7 +763,7 @@ namespace MusicPlayerDXMonoGamePort
             if (HistorySongData.Count > 0 && currentlyPlayingSongName == DbHolder.DbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).FirstOrDefault()?.SongName)
                 return;
 
-            DbHolder.DbContext.SongHistoryEntries.Add(new SongHistoryEntry(Path.GetFileNameWithoutExtension(currentlyPlayingSongName), ScoreChange, DateTime.Now));
+            DbHolder.DbContext.SongHistoryEntries.Add(new SongHistoryEntry(currentlyPlayingSongData.SongId, ScoreChange, DateTime.Now));
             DbHolder.SaveChanges();
         }
         private static void TestChoosingListIntegrity()
