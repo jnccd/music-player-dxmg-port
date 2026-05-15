@@ -15,10 +15,23 @@ namespace Persistence.Database
         public DbSet<SongHistoryEntry> SongHistoryEntries { get; set; }
 
         private static readonly string exePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
-        private static readonly string dbPath = (Environment.GetEnvironmentVariable("MUSIC_PLAYER_SQLITE_DB_PATH") ?? exePath) + "song.db";
+        private static readonly string sqlitePath = (Environment.GetEnvironmentVariable("MUSIC_PLAYER_SQLITE_DB_PATH") ?? exePath) + "song.db";
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite($"Data Source={dbPath}");
+        {
+            if (Environment.GetEnvironmentVariable("DB_PROVIDER") == "sqlite")
+            {
+                options.UseSqlite($"Data Source={sqlitePath}");
+            }
+            else if (Environment.GetEnvironmentVariable("DB_PROVIDER") == "postgres")
+            {
+                options.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRES_DB_ACCESS"));
+            }
+            else
+            {
+                throw new InvalidOperationException("No valid DB_PROVIDER environment variable set. Use 'sqlite' or 'postgres'.");
+            }
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
