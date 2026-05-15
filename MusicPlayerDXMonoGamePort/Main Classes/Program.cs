@@ -279,18 +279,18 @@ namespace MusicPlayerDXMonoGamePort
             }
 
             // Fill DateAdded fields from old AddingDates fields if they are null
-            if (DbHolder.DbContext.UpvotedSongs.Any(x => x.DateAdded == null))
-            {
-                Console.WriteLine("Found UpvotedSongs with null DateAdded, fixing...");
-                foreach (var song in DbHolder.DbContext.UpvotedSongs.AsEnumerable())
-                {
-                    if (song.DateAdded == null)
-                    {
-                        song.DateAdded = DateTime.FromBinary(song.AddingDates);
-                    }
-                }
-                DbHolder.SaveChanges();
-            }
+            // if (DbHolder.DbContext.UpvotedSongs.Any(x => x.DateAdded == null))
+            // {
+            //     Console.WriteLine("Found UpvotedSongs with null DateAdded, fixing...");
+            //     foreach (var song in DbHolder.DbContext.UpvotedSongs.AsEnumerable())
+            //     {
+            //         if (song.DateAdded == null)
+            //         {
+            //             song.DateAdded = DateTime.FromBinary(song.AddingDates);
+            //         }
+            //     }
+            //     DbHolder.SaveChanges();
+            // }
 
             SongManager.HistorySongData = DbHolder.DbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).TakeLast(25).ToList();
         }

@@ -705,14 +705,13 @@ namespace MusicPlayerDXMonoGamePort
             var upvotedSong = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(predicate: x => x.Name == songName);
             if (upvotedSong == null)
                 return;
-            long OriginalSongBinary = upvotedSong.AddingDates;
-            DateTime OriginalSongCreationDate = DateTime.FromBinary(OriginalSongBinary);
-            if (OriginalSongBinary == 0 || File.Exists(SongPath) && DateTime.Compare(OriginalSongCreationDate, File.GetCreationTime(SongPath)) > 0)
-                upvotedSong.AddingDates = File.GetCreationTime(SongPath).ToBinary();
+            DateTime? OriginalSongCreationDate = upvotedSong.DateAdded?.DateTime;
+            if (OriginalSongCreationDate == null || File.Exists(SongPath) && DateTime.Compare(OriginalSongCreationDate!.Value, File.GetCreationTime(SongPath)) > 0)
+                upvotedSong.DateAdded = File.GetCreationTime(SongPath);
         }
         private static float SongAge(UpvotedSong upvotedSong)
         {
-            return (float)Math.Round(DateTime.Today.Subtract(DateTime.FromBinary(upvotedSong.AddingDates)).TotalHours / 24.0, 4) + 1f;
+            return (float)Math.Round(DateTime.Today.Subtract(upvotedSong.DateAdded?.DateTime ?? DateTime.MinValue).TotalHours / 24.0, 4) + 1f;
         }
         public static float SongAge(string SongPath)
         {

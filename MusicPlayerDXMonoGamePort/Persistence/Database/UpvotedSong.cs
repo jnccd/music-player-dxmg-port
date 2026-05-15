@@ -21,7 +21,6 @@ namespace Persistence.Database
         public int Streak { get; set; } = Streak;
         public int TotalLikes { get; set; } = TotalLikes;
         public int TotalDislikes { get; set; } = TotalDislikes;
-        public long AddingDates { get; set; } = DateAdded?.DateTime.ToBinary() ?? 0;
         public DateTimeOffset? DateAdded { get; set; } = DateAdded;
         public float Volume { get; set; } = Volume;
 
