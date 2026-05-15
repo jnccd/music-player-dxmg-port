@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Persistence.Database
 {
-    public class UpvotedSong(string Name, float Score, int Streak, int TotalLikes, int TotalDislikes, long AddingDates, float Volume, string Artist = "", string Album = "", string UserId = "")
+    public class UpvotedSong(string Name, float Score, int Streak, int TotalLikes, int TotalDislikes, DateTimeOffset? DateAdded, float Volume, string Artist = "", string Album = "", string UserId = "")
     {
         public Guid SongId { get; set; } = Guid.NewGuid();
 
@@ -21,7 +21,8 @@ namespace Persistence.Database
         public int Streak { get; set; } = Streak;
         public int TotalLikes { get; set; } = TotalLikes;
         public int TotalDislikes { get; set; } = TotalDislikes;
-        public long AddingDates { get; set; } = AddingDates;
+        public long AddingDates { get; set; } = DateAdded?.DateTime.ToBinary() ?? 0;
+        public DateTimeOffset? DateAdded { get; set; } = DateAdded;
         public float Volume { get; set; } = Volume;
 
         [NotMapped]

@@ -194,7 +194,7 @@ namespace MusicPlayerDXMonoGamePort
                 Config.Data.songDatabaseEntries.Clear();
                 for (int i = 0; i < config.Default.SongPaths.Length; i++)
                     Config.Data.songDatabaseEntries.Add(new UpvotedSong(config.Default.SongPaths[i], config.Default.SongScores[i], config.Default.SongUpvoteStreak[i],
-                            config.Default.SongTotalLikes[i], config.Default.SongTotalDislikes[i], config.Default.SongDate[i], config.Default.SongVolume[i]));
+                            config.Default.SongTotalLikes[i], config.Default.SongTotalDislikes[i], DateTime.FromBinary(config.Default.SongDate[i]), config.Default.SongVolume[i]));
                 config.Default.SongPaths = null;
                 config.Default.Save();
             }
@@ -274,6 +274,20 @@ namespace MusicPlayerDXMonoGamePort
                         song.Artist = "";
                     if (song.Album == "MusicPlayer Songs" || song.Name.Contains(song.Album))
                         song.Album = "";
+                }
+                DbHolder.SaveChanges();
+            }
+
+            // Fill DateAdded fields from old AddingDates fields if they are null
+            if (DbHolder.DbContext.UpvotedSongs.Any(x => x.DateAdded == null))
+            {
+                Console.WriteLine("Found UpvotedSongs with null DateAdded, fixing...");
+                foreach (var song in DbHolder.DbContext.UpvotedSongs.AsEnumerable())
+                {
+                    if (song.DateAdded == null)
+                    {
+                        song.DateAdded = DateTime.FromBinary(song.AddingDates);
+                    }
                 }
                 DbHolder.SaveChanges();
             }

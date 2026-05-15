@@ -348,7 +348,7 @@ namespace MusicPlayerDXMonoGamePort
                             {
                                 // Update database entry - Cant just easily rename the primary key tho, need to create a new entry
                                 DbHolder.DbContext.UpvotedSongs.Remove(upvotedSong);
-                                var replacement = new UpvotedSong(Dia.result + ".mp3", upvotedSong.Score, upvotedSong.Streak, upvotedSong.TotalLikes, upvotedSong.TotalDislikes, upvotedSong.AddingDates, upvotedSong.Volume, upvotedSong.Artist, upvotedSong.Album, upvotedSong.UserId)
+                                var replacement = new UpvotedSong(Dia.result + ".mp3", upvotedSong.Score, upvotedSong.Streak, upvotedSong.TotalLikes, upvotedSong.TotalDislikes, upvotedSong.DateAdded, upvotedSong.Volume, upvotedSong.Artist, upvotedSong.Album, upvotedSong.UserId)
                                 {
                                     Path = upvotedSong.Path
                                 };

@@ -692,12 +692,12 @@ namespace MusicPlayerDXMonoGamePort
         }
 
         // For Statistics
-        public static long GetSongFileCreationDate(string SongPath)
+        public static DateTimeOffset? GetSongFileCreationDate(string SongPath)
         {
             if (File.Exists(SongPath))
-                return File.GetCreationTime(SongPath).ToBinary();
+                return File.GetCreationTime(SongPath);
             else
-                return 0;
+                return null;
         }
         public static void UpdateSongDate(string SongPath)
         {
