@@ -1,0 +1,3 @@
+[submodule "MusicPlayerSyncInterface"]
+	path = MusicPlayerSyncInterface
+	url = https://github.com/jnccd/music-player-sync-interface
