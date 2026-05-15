@@ -615,12 +615,12 @@ namespace MusicPlayerDXMonoGamePort
             AddSongToListIfNotDoneSoFar(songPath);
             UpdateSongDate(songPath);
         }
-        public static void AddSongToListIfNotDoneSoFar(string Song)
+        public static void AddSongToListIfNotDoneSoFar(string SongPath)
         {
-            var songName = Song.Split('\\').Last();
+            var songName = SongPath.Split('\\').Last();
             if (DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == songName) == null)
             {
-                var newSong = new UpvotedSong(Song.Split('\\').Last(), 0, 0, 0, 0, GetSongFileCreationDate(Song), -1);
+                var newSong = new UpvotedSong(songName, 0, 0, 0, 0, GetSongFileCreationDate(SongPath), -1) { Path = SongPath };
                 Program.game.AddAlbumAndArtistMetadataToUpvotedSong(newSong, (s, e) =>
                 {
                     Console.WriteLine($"Error getting metadata for song {s.Name}.\n{e}");
