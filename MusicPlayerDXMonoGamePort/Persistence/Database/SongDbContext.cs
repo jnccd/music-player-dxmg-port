@@ -14,18 +14,18 @@ namespace Persistence.Database
         public DbSet<UpvotedSong> UpvotedSongs { get; set; }
         public DbSet<SongHistoryEntry> SongHistoryEntries { get; set; }
 
-        private static readonly string exePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
-        private static readonly string sqlitePath = (Environment.GetEnvironmentVariable("MUSIC_PLAYER_SQLITE_DB_PATH") ?? exePath) + "song.db";
-
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
-            if (Environment.GetEnvironmentVariable("DB_PROVIDER") == "sqlite")
-            {
-                options.UseSqlite($"Data Source={sqlitePath}");
-            }
-            else if (Environment.GetEnvironmentVariable("DB_PROVIDER") == "postgres")
+            if (Environment.GetEnvironmentVariable("DB_PROVIDER") == "postgres")
             {
                 options.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRES_DB_ACCESS"));
+            }
+            else if (Environment.GetEnvironmentVariable("DB_PROVIDER") == "sqlite" || string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DB_PROVIDER")))
+            {
+                var exePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + Path.DirectorySeparatorChar;
+                var sqlitePath = (Environment.GetEnvironmentVariable("MUSIC_PLAYER_SQLITE_DB_PATH") ?? exePath) + "song.db";
+
+                options.UseSqlite($"Data Source={sqlitePath}");
             }
             else
             {
