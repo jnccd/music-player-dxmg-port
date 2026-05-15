@@ -315,15 +315,19 @@ namespace MusicPlayerDXMonoGamePort
             {
                 // Play a song that has been upvoted recently
                 List<string> RecentlyPlayedChoosingList = new List<string>();
-                for (int i = 4; i < 10; i++)
+                List<Guid> traversedSongs = HistorySongData.Take(3).Where(x => x.ScoreChange < 0 && x.SongId != null).Select(x => x.SongId.Value).ToList(); // Even on the songs before the 3 to 9 high replay chance window, skip those who were downvoted
+                foreach (var song in HistorySongData.Skip(3).Take(6))
                 {
-                    if (HistorySongData.Count > i && HistorySongData[HistorySongData.Count - 1 - i].ScoreChange > 0)
+                    if (song.SongId != null && !traversedSongs.Contains(song.SongId.Value))
                     {
-                        UpvotedSong S = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(X => X.SongId == HistorySongData[i].SongId);
-                        if (S != null && S.Score < 120)
+                        traversedSongs.Add(song.SongId.Value);
+                        if (song.ScoreChange > 0)
                         {
-                            for (int j = 0; j < HistorySongData[i].ScoreChange * 50; j++)
-                                RecentlyPlayedChoosingList.Add(Path.GetFileNameWithoutExtension(S.Name));
+                            if (song.UpvotedSong != null && song.UpvotedSong.Score < 120)
+                            {
+                                for (int j = 0; j < song.ScoreChange * 50; j++)
+                                    RecentlyPlayedChoosingList.Add(Path.GetFileNameWithoutExtension(song.UpvotedSong.Name));
+                            }
                         }
                     }
                 }
@@ -711,7 +715,7 @@ namespace MusicPlayerDXMonoGamePort
         }
         private static float SongAge(UpvotedSong upvotedSong)
         {
-            return (float)Math.Round(DateTime.Today.Subtract(upvotedSong.DateAdded?.DateTime ?? DateTime.MinValue).TotalHours / 24.0, 4) + 1f;
+            return (float)Math.Round(DateTime.Now.Subtract(upvotedSong.DateAdded?.DateTime ?? DateTime.MinValue).TotalHours / 24.0, 3);
         }
         public static float SongAge(string SongPath)
         {

@@ -272,7 +272,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     if (song.Artist.ToLower() == "unknown" || song.Name.Contains(song.Artist))
                         song.Artist = "";
-                    if (song.Album == "MusicPlayer Songs" || song.Name.Contains(song.Album))
+                    if (song.Album == null || song.Album == "MusicPlayer Songs" || song.Name.Contains(song.Album))
                         song.Album = "";
                 }
                 DbHolder.SaveChanges();
