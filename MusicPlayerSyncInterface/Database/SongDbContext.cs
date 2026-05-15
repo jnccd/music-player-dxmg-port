@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using MusicPlayerSyncInterface.DTOs;
 
 namespace MusicPlayerSyncInterface.Database;
 

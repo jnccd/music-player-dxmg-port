@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
-namespace MusicPlayerSyncInterface.Database;
+namespace MusicPlayerSyncInterface.DTOs;
 
 public class UpvotedSong(string Name, float Score, int Streak, int TotalLikes, int TotalDislikes, DateTimeOffset? DateAdded, float Volume, string Artist = "", string Album = "", string UserId = "")
 {
@@ -21,6 +22,6 @@ public class UpvotedSong(string Name, float Score, int Streak, int TotalLikes, i
     public DateTimeOffset? DateAdded { get; set; } = DateAdded;
     public float Volume { get; set; } = Volume;
 
-    [NotMapped]
+    [NotMapped, JsonIgnore]
     public string? Path;
 }

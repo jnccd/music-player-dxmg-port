@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using MusicPlayerSyncInterface.Database;
+using MusicPlayerSyncInterface.DTOs;
 
 namespace MusicPlayerDXMonoGamePort
 {

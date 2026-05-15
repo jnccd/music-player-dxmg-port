@@ -1,4 +1,4 @@
-﻿using MusicPlayerSyncInterface.Database;
+﻿using MusicPlayerSyncInterface.DTOs;
 using System.Collections.Generic;
 using System.Drawing;
 
