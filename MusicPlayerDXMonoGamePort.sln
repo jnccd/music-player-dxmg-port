@@ -5,8 +5,6 @@ VisualStudioVersion = 17.3.32804.467
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicPlayerDXMonoGamePort", "MusicPlayerDXMonoGamePort\MusicPlayerDXMonoGamePort.csproj", "{01E1F274-62E5-47A5-B398-7B7B85201061}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicPlayerSyncInterface", "MusicPlayerSyncInterface\MusicPlayerSyncInterface.csproj", "{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,18 +27,6 @@ Global
 		{01E1F274-62E5-47A5-B398-7B7B85201061}.Release|x64.Build.0 = Release|Any CPU
 		{01E1F274-62E5-47A5-B398-7B7B85201061}.Release|x86.ActiveCfg = Release|Any CPU
 		{01E1F274-62E5-47A5-B398-7B7B85201061}.Release|x86.Build.0 = Release|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Debug|x64.Build.0 = Debug|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Debug|x86.Build.0 = Debug|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Release|x64.ActiveCfg = Release|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Release|x64.Build.0 = Release|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Release|x86.ActiveCfg = Release|Any CPU
-		{0BEB7989-6427-4E7A-BE33-0C6F68ACF5FC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
