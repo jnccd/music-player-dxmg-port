@@ -25,6 +25,6 @@ namespace Persistence.Database
         public float Volume { get; set; } = Volume;
 
         [NotMapped]
-        public string Path; // Only used in ExportChooser.cs
+        public string Path;
     }
 }
