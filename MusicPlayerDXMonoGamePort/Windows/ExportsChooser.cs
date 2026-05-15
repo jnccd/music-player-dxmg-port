@@ -1,14 +1,9 @@
-﻿using MusicPlayerDXMonoGamePort.Persistence.Database;
-using Persistence;
-using Persistence.Database;
+﻿using MusicPlayerSyncInterface.Database;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 
 namespace MusicPlayerDXMonoGamePort
@@ -59,7 +54,7 @@ namespace MusicPlayerDXMonoGamePort
 
             tChance.Minimum = 0;
             tChance.Maximum = (int)(ChanceAmounts.Max() * 1000);
-            
+
             UpdateSelectedSongs();
         }
 
@@ -70,8 +65,8 @@ namespace MusicPlayerDXMonoGamePort
             {
                 UpvotedSong s = SongsToChooseFrom[i];
                 int ratio = s.TotalDislikes == 0 ? int.MaxValue : s.TotalLikes / s.TotalDislikes;
-                if (s.Score >= tScore.Value && 
-                    s.Streak >= tTrend.Value && 
+                if (s.Score >= tScore.Value &&
+                    s.Streak >= tTrend.Value &&
                     (ratio) >= tRatio.Value &&
                     ChanceAmounts[i] > tChance.Value / 1000f)
                     SelectedSongs.Add(s);

@@ -3,15 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Persistence.Database;
+using MusicPlayerSyncInterface.Database;
 
 #nullable disable
 
 namespace MusicPlayerDXMonoGamePort.Migrations
 {
     [DbContext(typeof(SongDbContext))]
-    [Migration("20260509175453_AddUserId")]
-    partial class AddUserId
+    [Migration("20260507133156_AddArtistAndAlbumToUpvotedSong")]
+    partial class AddArtistAndAlbumToUpvotedSong
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,20 +21,17 @@ namespace MusicPlayerDXMonoGamePort.Migrations
 
             modelBuilder.Entity("Persistence.Database.UpvotedSong", b =>
                 {
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Artist")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Album")
                         .HasColumnType("TEXT");
 
                     b.Property<long>("AddingDates")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Album")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Artist")
+                        .HasColumnType("TEXT");
 
                     b.Property<float>("Score")
                         .HasColumnType("REAL");
@@ -51,7 +48,7 @@ namespace MusicPlayerDXMonoGamePort.Migrations
                     b.Property<float>("Volume")
                         .HasColumnType("REAL");
 
-                    b.HasKey("UserId", "Name", "Artist", "Album");
+                    b.HasKey("Name");
 
                     b.ToTable("UpvotedSongs");
                 });

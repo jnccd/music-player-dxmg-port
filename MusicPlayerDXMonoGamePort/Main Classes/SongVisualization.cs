@@ -13,7 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using MusicPlayerDXMonoGamePort.Persistence.Database;
+using MusicPlayerSyncInterface.Database;
 
 namespace MusicPlayerDXMonoGamePort
 {

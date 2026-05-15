@@ -4,15 +4,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Persistence.Database;
+using MusicPlayerSyncInterface.Database;
 
 #nullable disable
 
 namespace MusicPlayerDXMonoGamePort.Migrations
 {
     [DbContext(typeof(SongDbContext))]
-    [Migration("20260515125711_AddUpvotedSongDateAdded")]
-    partial class AddUpvotedSongDateAdded
+    [Migration("20260515130713_RemoveUpvotedSongAddingDates")]
+    partial class RemoveUpvotedSongAddingDates
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -46,9 +46,6 @@ namespace MusicPlayerDXMonoGamePort.Migrations
                     b.Property<Guid>("SongId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
-
-                    b.Property<long>("AddingDates")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Album")
                         .HasColumnType("TEXT");

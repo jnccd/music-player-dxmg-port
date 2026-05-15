@@ -12,8 +12,7 @@ using System.IO;
 using MessageBox = System.Windows.Forms.MessageBox;
 using Persistence;
 using MusicPlayerDXMonoGamePort.HelperClasses;
-using MusicPlayerDXMonoGamePort.Persistence.Database;
-using Persistence.Database;
+using MusicPlayerSyncInterface.Database;
 
 namespace MusicPlayerDXMonoGamePort
 {

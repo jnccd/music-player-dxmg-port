@@ -1,7 +1,5 @@
-﻿using Microsoft.Xna.Framework.Media;
-using MusicPlayerDXMonoGamePort.Persistence.Database;
-using Persistence;
-using Persistence.Database;
+﻿using Persistence;
+using MusicPlayerSyncInterface.Database;
 using System;
 using System.Diagnostics;
 using System.IO;

@@ -4,15 +4,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Persistence.Database;
+using MusicPlayerSyncInterface.Database;
 
 #nullable disable
 
 namespace MusicPlayerDXMonoGamePort.Migrations
 {
     [DbContext(typeof(SongDbContext))]
-    [Migration("20260510192956_AddSongHistoryEntry")]
-    partial class AddSongHistoryEntry
+    [Migration("20260514200909_RemoveSongNameFromHistory")]
+    partial class RemoveSongNameFromHistory
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,7 @@ namespace MusicPlayerDXMonoGamePort.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("SongName")
+                    b.Property<Guid?>("SongId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("Date")
@@ -34,27 +34,30 @@ namespace MusicPlayerDXMonoGamePort.Migrations
                     b.Property<float>("ScoreChange")
                         .HasColumnType("REAL");
 
-                    b.HasKey("UserId", "SongName", "Date");
+                    b.HasKey("UserId", "SongId", "Date");
+
+                    b.HasIndex("SongId");
 
                     b.ToTable("SongHistoryEntries");
                 });
 
             modelBuilder.Entity("Persistence.Database.UpvotedSong", b =>
                 {
-                    b.Property<string>("UserId")
+                    b.Property<Guid>("SongId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Name")
+                    b.Property<long>("AddingDates")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Album")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Artist")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Album")
+                    b.Property<string>("Name")
                         .HasColumnType("TEXT");
-
-                    b.Property<long>("AddingDates")
-                        .HasColumnType("INTEGER");
 
                     b.Property<float>("Score")
                         .HasColumnType("REAL");
@@ -68,12 +71,29 @@ namespace MusicPlayerDXMonoGamePort.Migrations
                     b.Property<int>("TotalLikes")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.Property<float>("Volume")
                         .HasColumnType("REAL");
 
-                    b.HasKey("UserId", "Name", "Artist", "Album");
+                    b.HasKey("SongId");
+
+                    b.HasIndex("UserId", "Name", "Artist", "Album")
+                        .IsUnique();
 
                     b.ToTable("UpvotedSongs");
+                });
+
+            modelBuilder.Entity("Persistence.Database.SongHistoryEntry", b =>
+                {
+                    b.HasOne("Persistence.Database.UpvotedSong", "UpvotedSong")
+                        .WithMany()
+                        .HasForeignKey("SongId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UpvotedSong");
                 });
 #pragma warning restore 612, 618
         }

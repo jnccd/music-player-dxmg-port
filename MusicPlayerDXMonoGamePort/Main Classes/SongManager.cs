@@ -11,8 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Persistence.Database;
-using MusicPlayerDXMonoGamePort.Persistence.Database;
+using MusicPlayerSyncInterface.Database;
 
 namespace MusicPlayerDXMonoGamePort
 {
