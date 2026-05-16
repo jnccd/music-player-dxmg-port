@@ -54,7 +54,8 @@ namespace MusicPlayerDXMonoGamePort
             object[] o = new object[7];
             object[,] SongInfo = SongManager.GetSongInformationList();
 
-            for (int i = 0; i < DbHolder.DbContext.UpvotedSongs.Count(); i++)
+            using var songDbContext = new SongDbContext();
+            for (int i = 0; i < songDbContext.UpvotedSongs.Count(); i++)
             {
                 o[0] = SongInfo[i, 0];
                 o[1] = SongInfo[i, 1];
@@ -304,7 +305,8 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        var upvotedSong = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
+                        using var songDbContext = new SongDbContext();
+                        var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
                         if (upvotedSong != null)
                         {
                             upvotedSong.Volume = -1;
@@ -319,7 +321,8 @@ namespace MusicPlayerDXMonoGamePort
                     try
                     {
                         string path = SongManager.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
-                        var upvotedSong = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
+                        using var songDbContext = new SongDbContext();
+                        var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
                         int PlaylistIndex = SongManager.Playlist.IndexOf(path);
 
                         if (!File.Exists(path))
@@ -342,12 +345,12 @@ namespace MusicPlayerDXMonoGamePort
                             try
                             {
                                 // Update database entry - Cant just easily rename the primary key tho, need to create a new entry
-                                DbHolder.DbContext.UpvotedSongs.Remove(upvotedSong);
+                                songDbContext.UpvotedSongs.Remove(upvotedSong);
                                 var replacement = new UpvotedSong(Dia.result + ".mp3", upvotedSong.Score, upvotedSong.Streak, upvotedSong.TotalLikes, upvotedSong.TotalDislikes, upvotedSong.DateAdded, upvotedSong.Volume, upvotedSong.Artist, upvotedSong.Album, upvotedSong.UserId)
                                 {
                                     Path = upvotedSong.Path
                                 };
-                                DbHolder.DbContext.UpvotedSongs.Add(replacement);
+                                songDbContext.UpvotedSongs.Add(replacement);
                                 SongManager.SaveUserSettings(false);
 
                                 // Update file
@@ -434,9 +437,10 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        var upvotedSongToRemove = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3");
-                        DbHolder.DbContext.UpvotedSongs.Remove(upvotedSongToRemove);
-                        DbHolder.SaveChanges();
+                        using var songDbContext = new SongDbContext();
+                        var upvotedSongToRemove = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3");
+                        songDbContext.UpvotedSongs.Remove(upvotedSongToRemove);
+                        songDbContext.SaveChanges();
 
                         bRefresh_Click(null, EventArgs.Empty);
                     }

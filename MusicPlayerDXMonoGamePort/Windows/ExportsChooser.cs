@@ -29,7 +29,8 @@ namespace MusicPlayerDXMonoGamePort
 
         private void ExportsChooser_Load(object sender, EventArgs e)
         {
-            foreach (UpvotedSong s in DbHolder.DbContext.UpvotedSongs)
+            using var songDbContext = new SongDbContext();
+            foreach (UpvotedSong s in songDbContext.UpvotedSongs)
                 if (File.Exists(s.Path))
                     SongsToChooseFrom.Add(s);
 

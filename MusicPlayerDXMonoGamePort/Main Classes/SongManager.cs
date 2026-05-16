@@ -107,9 +107,10 @@ namespace MusicPlayerDXMonoGamePort
         // Start Song
         public static void PlayFirstSong()
         {
-            foreach (UpvotedSong s in DbHolder.DbContext.UpvotedSongs)
+            using var songDbContext = new SongDbContext();
+            foreach (UpvotedSong s in songDbContext.UpvotedSongs)
                 s.Path = GetSongPathFromSongName(s.Name);
-            HighestSongRatioInR = DbHolder.DbContext.UpvotedSongs.ToList().Max(x => float.IsInfinity(x.TotalLikes / (float)x.TotalDislikes) ? int.MinValue : (int)(x.TotalLikes / (float)x.TotalDislikes));
+            HighestSongRatioInR = songDbContext.UpvotedSongs.ToList().Max(x => float.IsInfinity(x.TotalLikes / (float)x.TotalDislikes) ? int.MinValue : (int)(x.TotalLikes / (float)x.TotalDislikes));
             CreateSongChoosingList();
             if (Playlist.Count > 0)
             {
@@ -220,7 +221,8 @@ namespace MusicPlayerDXMonoGamePort
                 return;
             }
 
-            var upvotedSongsList = DbHolder.DbContext.UpvotedSongs.ToList();
+            using var songDbContext = new SongDbContext();
+            var upvotedSongsList = songDbContext.UpvotedSongs.ToList();
             int index = upvotedSongsList.FindIndex(x => x.Name == currentlyPlayingSongName);
             if (index != -1 && upvotedSongsList[index].Volume != -1)
             {
@@ -260,7 +262,7 @@ namespace MusicPlayerDXMonoGamePort
             output = new DirectSoundOut();
             output.Init(Channel32);
 
-            if (Config.Data.Preload || DbHolder.DbContext.UpvotedSongs.ElementAt(index).Volume == -1)
+            if (Config.Data.Preload || songDbContext.UpvotedSongs.ElementAt(index).Volume == -1)
             {
                 if (Config.Data.MultiThreading)
                     T = Task.Factory.StartNew(SongVisualization.UpdateEntireSongBuffers);
@@ -273,7 +275,7 @@ namespace MusicPlayerDXMonoGamePort
             SongStartTime = (int)Values.Timer;
             Channel32.Position = SongVisualization.bufferLength / 2;
 
-            currentlyPlayingSongData = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
+            currentlyPlayingSongData = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
             AddSongToListIfNotDoneSoFar(currentlyPlayingSongPath);
             //Program.game.UpdateDiscordRPC();
         }
@@ -293,7 +295,8 @@ namespace MusicPlayerDXMonoGamePort
             else if (random < 0.8)
             {
                 // Play a song that hasnt been played yet
-                var notPlayedSongNames = DbHolder.DbContext.UpvotedSongs
+                using var songDbContext = new SongDbContext();
+                var notPlayedSongNames = songDbContext.UpvotedSongs
                     .Where(x => x.Streak == 0)
                     .ToList()
                     .Select(x => Tuple.Create(x, GetSongPathFromSongName(x.Name)))
@@ -369,7 +372,8 @@ namespace MusicPlayerDXMonoGamePort
                 SongChoosingList.Add(Playlist[i]);
 
                 string SongName = Playlist[i].Split('\\').Last();
-                float amount = GetSongChoosingAmount(DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongName)) + 1;
+                using var songDbContext = new SongDbContext();
+                float amount = GetSongChoosingAmount(songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongName)) + 1;
 
                 for (int k = 0; k < amount; k++)
                     SongChoosingList.Add(Playlist[i]);
@@ -400,7 +404,8 @@ namespace MusicPlayerDXMonoGamePort
             int count = i - index;
 
             // Getting target Count
-            int amount = (int)GetSongChoosingAmount(DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongName)) + 1;
+            using var songDbContext = new SongDbContext();
+            int amount = (int)GetSongChoosingAmount(songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongName)) + 1;
 
             for (int j = 0; j < amount - count; j++)
                 SongChoosingList.Insert(index, SongPath);
@@ -549,9 +554,10 @@ namespace MusicPlayerDXMonoGamePort
         }
         private static void DownvoteCurrentSongIfNeccesary(bool DownVoteCurrentSongForUserSkip)
         {
+            using var songDbContext = new SongDbContext();
             if (PlayerHistoryIndex != -1)
             {
-                var upvotedSong = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
+                var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
 
                 if (upvotedSong != null && DownVoteCurrentSongForUserSkip && PlayerHistoryIndex == PlayerHistory.Count - 1 && !IsCurrentSongUpvoted)
                 {
@@ -586,7 +592,8 @@ namespace MusicPlayerDXMonoGamePort
 
                 AddSongToListIfNotDoneSoFar(currentlyPlayingSongPath);
 
-                var upvotedSong = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
+                using var songDbContext = new SongDbContext();
+                var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
                 double percentage;
                 if (Channel32 == null)
                     percentage = 1;
@@ -622,14 +629,15 @@ namespace MusicPlayerDXMonoGamePort
         public static void AddSongToListIfNotDoneSoFar(string SongPath)
         {
             var songName = SongPath.Split('\\').Last();
-            if (DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == songName) == null)
+            using var songDbContext = new SongDbContext();
+            if (songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == songName) == null)
             {
                 var newSong = new UpvotedSong(songName, 0, 0, 0, 0, GetSongFileCreationDate(SongPath), -1) { Path = SongPath };
                 Program.game.AddAlbumAndArtistMetadataToUpvotedSong(newSong, (s, e) =>
                 {
                     Console.WriteLine($"Error getting metadata for song {s.Name}.\n{e}");
                 });
-                DbHolder.DbContext.UpvotedSongs.Add(newSong);
+                songDbContext.UpvotedSongs.Add(newSong);
             }
         }
         public static void SaveUserSettings(bool SongSwap)
@@ -641,7 +649,8 @@ namespace MusicPlayerDXMonoGamePort
                 LastScoreChange = 0;
             }
 
-            DbHolder.SaveChanges();
+            using var songDbContext = new SongDbContext();
+            songDbContext.SaveChanges();
 
             Task.Run(() =>
             {
@@ -705,8 +714,10 @@ namespace MusicPlayerDXMonoGamePort
         }
         public static void UpdateSongDate(string SongPath)
         {
+            using var songDbContext = new SongDbContext();
+
             string songName = SongPath.Split('\\').LastOrDefault();
-            var upvotedSong = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(predicate: x => x.Name == songName);
+            var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(predicate: x => x.Name == songName);
             if (upvotedSong == null)
                 return;
             DateTime? OriginalSongCreationDate = upvotedSong.DateAdded?.DateTime;
@@ -719,18 +730,22 @@ namespace MusicPlayerDXMonoGamePort
         }
         public static float SongAge(string SongPath)
         {
+            using var songDbContext = new SongDbContext();
+
             string songName = SongPath.Split('\\').LastOrDefault();
             if (File.Exists(SongPath) && songName != null)
-                return SongAge(DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == songName));
+                return SongAge(songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == songName));
             else
                 return float.NaN;
         }
         public static object[,] GetSongInformationList()
         {
-            int songsAmount = DbHolder.DbContext.UpvotedSongs.Count();
+            using var songDbContext = new SongDbContext();
+
+            int songsAmount = songDbContext.UpvotedSongs.Count();
             object[,] SongInformationArray = new object[songsAmount, 7];
 
-            foreach (var item in Enumerable.Range(0, songsAmount).Zip(DbHolder.DbContext.UpvotedSongs.OrderByDescending(x => x.Score)))
+            foreach (var item in Enumerable.Range(0, songsAmount).Zip(songDbContext.UpvotedSongs.OrderByDescending(x => x.Score)))
             {
                 var (i, curSong) = item;
 
@@ -762,13 +777,15 @@ namespace MusicPlayerDXMonoGamePort
         }
         private static void SaveCurrentSongToHistory(float ScoreChange)
         {
+            using var songDbContext = new SongDbContext();
+
             try { string s = currentlyPlayingSongName; } catch { return; }
-            var currentNewestHistoryEntry = DbHolder.DbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).FirstOrDefault();
-            if (HistorySongData.Count > 0 && currentlyPlayingSongName == DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.SongId == currentNewestHistoryEntry.SongId)?.Name)
+            var currentNewestHistoryEntry = songDbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).FirstOrDefault();
+            if (HistorySongData.Count > 0 && currentlyPlayingSongName == songDbContext.UpvotedSongs.FirstOrDefault(x => x.SongId == currentNewestHistoryEntry.SongId)?.Name)
                 return;
 
-            DbHolder.DbContext.SongHistoryEntries.Add(new SongHistoryEntry(currentlyPlayingSongData.SongId, ScoreChange, DateTime.Now));
-            DbHolder.SaveChanges();
+            songDbContext.SongHistoryEntries.Add(new SongHistoryEntry(currentlyPlayingSongData.SongId, ScoreChange, DateTime.Now));
+            songDbContext.SaveChanges();
         }
         private static void TestChoosingListIntegrity()
         {

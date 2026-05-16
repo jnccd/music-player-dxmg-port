@@ -22,17 +22,18 @@ namespace MusicPlayerDXMonoGamePort
             int RowIndex = dataGridView1.FirstDisplayedScrollingRowIndex;
             dataGridView1.Rows.Clear();
 
-            var historyListRows = DbHolder.DbContext.SongHistoryEntries
+            using var songDbContext = new SongDbContext();
+            var historyListRows = songDbContext.SongHistoryEntries
                 .ToList()
                 .OrderByDescending(x => x.Date)
-                .Select(x => new DataGridViewRow() { Cells = { new DataGridViewTextBoxCell() { Value = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(s => s.SongId == x.SongId)?.Name }, new DataGridViewTextBoxCell() { Value = x.Date }, new DataGridViewTextBoxCell() { Value = x.ScoreChange } } })
+                .Select(x => new DataGridViewRow() { Cells = { new DataGridViewTextBoxCell() { Value = songDbContext.UpvotedSongs.FirstOrDefault(s => s.SongId == x.SongId)?.Name }, new DataGridViewTextBoxCell() { Value = x.Date }, new DataGridViewTextBoxCell() { Value = x.ScoreChange } } })
                 .ToArray();
             dataGridView1.Rows.AddRange(historyListRows);
 
             // for (int i = 0; i < historyList.Count; i++)
             // {
             //     dataGridView1.Rows.Add(new object[] { historyList[i].SongName, historyList[i].Date, historyList[i].ScoreChange });
-            //     if (!DbHolder.DbContext.UpvotedSongs.Select(x => x.Name).Contains(historyList[i].SongName + ".mp3"))
+            //     if (!songDbContext.UpvotedSongs.Select(x => x.Name).Contains(historyList[i].SongName + ".mp3"))
             //         dataGridView1.Rows[^1].DefaultCellStyle.BackColor = Color.Red;
             // }
 

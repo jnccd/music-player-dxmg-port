@@ -191,11 +191,12 @@ namespace MusicPlayerDXMonoGamePort
         private void AddArtistAndAlbumInDB()
         {
             // In the SqlLite Database, add artist and album if empty
-            if (DbHolder.DbContext.UpvotedSongs.All(x => string.IsNullOrWhiteSpace(x.Artist)))
+            using var songDbContext = new SongDbContext();
+            if (songDbContext.UpvotedSongs.All(x => string.IsNullOrWhiteSpace(x.Artist)))
             {
                 Console.WriteLine("Empty artist fields detected, updating database...");
 
-                foreach (var song in DbHolder.DbContext.UpvotedSongs)
+                foreach (var song in songDbContext.UpvotedSongs)
                 {
                     AddAlbumAndArtistMetadataToUpvotedSong(song, (s, e) =>
                     {
@@ -205,7 +206,7 @@ namespace MusicPlayerDXMonoGamePort
                     });
                 }
                 Console.WriteLine("Writing migration...");
-                DbHolder.SaveChanges();
+                songDbContext.SaveChanges();
             }
         }
         public void AddAlbumAndArtistMetadataToUpvotedSong(UpvotedSong song, Action<UpvotedSong, Exception> onError = null)

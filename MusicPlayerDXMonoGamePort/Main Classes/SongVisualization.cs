@@ -272,7 +272,8 @@ namespace MusicPlayerDXMonoGamePort
             else
                 Program.game.ShowSecondRowMessage("Applied Volume multiplier of: very large", 1);
 
-            var upvotedSong = DbHolder.DbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongManager.currentlyPlayingSongName);
+            using var songDbContext = new SongDbContext();
+            var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongManager.currentlyPlayingSongName);
             Values.VolumeMultiplier = mult;
             upvotedSong.Volume = sn;
 
