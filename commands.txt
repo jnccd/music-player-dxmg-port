@@ -1,4 +1,5 @@
 dotnet ef migrations add ___  --project ../MusicPlayerSyncInterface
+dotnet ef migrations remove  --project ../MusicPlayerSyncInterface
 
 Update
 Debug:    DB_PROVIDER=sqlite MUSIC_PLAYER_SQLITE_DB_PATH=./bin/Debug/net8.0-windows7.0/ dotnet ef database update --project ../MusicPlayerSyncInterface
