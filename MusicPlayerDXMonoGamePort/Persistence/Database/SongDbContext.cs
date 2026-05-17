@@ -9,6 +9,7 @@ namespace MusicPlayerDXMonoGamePort.Persistence.Database;
 public class SongDbContext : DbContext
 {
     public string DbStatus { get; private set; } = "Not connected";
+    public DbSet<User> Users { get; set; }
     public DbSet<UpvotedSong> UpvotedSongs { get; set; }
     public DbSet<SongHistoryEntry> SongHistoryEntries { get; set; }
 
