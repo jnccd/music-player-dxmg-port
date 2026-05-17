@@ -215,7 +215,8 @@ namespace MusicPlayerDXMonoGamePort
             try
             {
                 TagLib.File file = TagLib.File.Create(song.Path);
-                song.Album = file.Tag.Album;
+                if (!string.IsNullOrWhiteSpace(file.Tag.Album))
+                    song.Album = file.Tag.Album;
                 song.Artist = file.Tag.AlbumArtists.Length == 0 ? "" : file.Tag.AlbumArtists.Aggregate((x, y) => x + " + " + y);
             }
             catch (Exception e)

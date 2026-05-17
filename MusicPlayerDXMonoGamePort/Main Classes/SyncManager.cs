@@ -26,8 +26,6 @@ public static class SyncManager
 
     public static void Init(string? password = null, bool TryCallApiInit = false)
     {
-        client?.Dispose();
-
         try
         {
             keyCloakAddress = GetKeycloakAddress(Config.Data.SyncServerHost);
@@ -43,6 +41,7 @@ public static class SyncManager
         catch (Exception ex)
         {
             State = $"SyncManager Init failed: {ex.Message}";
+            return;
         }
 
         try
@@ -78,6 +77,8 @@ public static class SyncManager
 
             if (pulledData == null)
                 throw new Exception("Pulled data was null!");
+            if (pulledData.songs.Count() == 0 || pulledData.historyEntries.Count() == 0)
+                throw new Exception("Pulled data was empty!");
 
             using var songDbContext = new SongDbContext();
             songDbContext.SongHistoryEntries.RemoveRange(songDbContext.SongHistoryEntries);
