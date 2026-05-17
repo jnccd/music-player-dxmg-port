@@ -82,14 +82,11 @@ public static class SyncManager
 
             using var songDbContext = new SongDbContext();
             songDbContext.SongHistoryEntries.RemoveRange(songDbContext.SongHistoryEntries);
-            songDbContext.SaveChanges();
             songDbContext.UpvotedSongs.RemoveRange(songDbContext.UpvotedSongs);
-            songDbContext.SaveChanges();
 
             if (!songDbContext.Users.Where(x => x.UserId == pulledData.users.FirstOrDefault().UserId).Any())
                 songDbContext.Users.Add(pulledData.users.FirstOrDefault());
             songDbContext.UpvotedSongs.AddRange(pulledData.songs);
-            songDbContext.SaveChanges();
             songDbContext.SongHistoryEntries.AddRange(pulledData.historyEntries);
             songDbContext.SaveChanges();
         }
@@ -101,33 +98,57 @@ public static class SyncManager
 
     public static void UploadNewSong(UpvotedSong newSong)
     {
+        void SaveUnsyncedData(string newSongjson, string? error = null)
+        {
+            using var songDbContext = new SongDbContext();
+            songDbContext.NotYetSyncedData.Add(new NotYetSyncedData(Guid.NewGuid(), "/sync/new-song", newSongjson, error));
+            songDbContext.SaveChanges();
+        }
+
+        var newSongjson = JsonConvert.SerializeObject(newSong, Formatting.Indented);
         try
         {
-            var newSongjson = JsonConvert.SerializeObject(newSong, Formatting.Indented);
             var newSongContent = new StringContent(newSongjson, Encoding.UTF8, "application/json");
             var res = client.PostAsync($"{Config.Data.SyncServerHost}/sync/new-song", newSongContent).Result;
+
+            if (!res.IsSuccessStatusCode && res.StatusCode != System.Net.HttpStatusCode.Conflict)
+                SaveUnsyncedData(newSongjson, $"{res.IsSuccessStatusCode} {res.Content.ReadAsStringAsync().Result}");
 
             State = $"UploadNewSong {res.StatusCode} {res.Content.ReadAsStringAsync().Result}";
         }
         catch (Exception ex)
         {
             State = $"UploadNewSong failed: {ex.Message}";
+
+            SaveUnsyncedData(newSongjson, ex.Message);
         }
     }
 
     public static void Vote(SongHistoryEntry newEntry)
     {
+        void SaveUnsyncedData(string newEntryjson, string? error = null)
+        {
+            using var songDbContext = new SongDbContext();
+            songDbContext.NotYetSyncedData.Add(new NotYetSyncedData(Guid.NewGuid(), "/sync/vote", newEntryjson, error, newEntry.SongId));
+            songDbContext.SaveChanges();
+        }
+
+        var newEntryjson = JsonConvert.SerializeObject(newEntry, Formatting.Indented);
         try
         {
-            var newEntryjson = JsonConvert.SerializeObject(newEntry, Formatting.Indented);
             var newEntryContent = new StringContent(newEntryjson, Encoding.UTF8, "application/json");
             var res = client.PostAsync($"{Config.Data.SyncServerHost}/sync/vote", newEntryContent).Result;
+
+            if (!res.IsSuccessStatusCode && res.StatusCode != System.Net.HttpStatusCode.Conflict)
+                SaveUnsyncedData(newEntryjson, $"{res.IsSuccessStatusCode} {res.Content.ReadAsStringAsync().Result}");
 
             State = $"Vote {res.StatusCode} {res.Content.ReadAsStringAsync().Result}";
         }
         catch (Exception ex)
         {
             State = $"Vote failed: {ex.Message}";
+
+            SaveUnsyncedData(newEntryjson, ex.Message);
         }
     }
 }
