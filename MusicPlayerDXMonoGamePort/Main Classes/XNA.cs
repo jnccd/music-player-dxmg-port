@@ -14,6 +14,7 @@ using Persistence;
 using MusicPlayerDXMonoGamePort.HelperClasses;
 using MusicPlayerSyncInterface.Database;
 using MusicPlayerSyncInterface.DTOs;
+using MusicPlayerDXMonoGamePort.Persistence.Database;
 
 namespace MusicPlayerDXMonoGamePort
 {

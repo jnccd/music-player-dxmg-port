@@ -1,4 +1,5 @@
-﻿using MusicPlayerSyncInterface.Database;
+﻿using MusicPlayerDXMonoGamePort.Persistence.Database;
+using MusicPlayerSyncInterface.Database;
 using System;
 using System.Data;
 using System.Linq;

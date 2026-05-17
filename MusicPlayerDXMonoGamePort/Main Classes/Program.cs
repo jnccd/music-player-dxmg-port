@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using MusicPlayerSyncInterface.DTOs;
+using MusicPlayerDXMonoGamePort.Persistence.Database;
 
 namespace MusicPlayerDXMonoGamePort
 {
