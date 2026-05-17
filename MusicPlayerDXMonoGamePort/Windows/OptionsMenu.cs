@@ -84,6 +84,7 @@ namespace MusicPlayerDXMonoGamePort
 
             textBoxHost.Text = Config.Data.SyncServerHost;
             textBoxUsername.Text = Config.Data.SyncServerUsername;
+            textBoxConnectionState.Text = SyncManager.State;
             SyncManager.OnStateChanged += (string newState) =>
             {
                 textBoxConnectionState.InvokeIfRequired(() => { textBoxConnectionState.Text = newState; });
