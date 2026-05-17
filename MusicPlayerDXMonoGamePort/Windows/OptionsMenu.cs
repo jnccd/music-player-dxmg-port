@@ -1,6 +1,9 @@
-﻿using Persistence;
+﻿using EzAuth.Keycloak;
 using MediaToolkit;
 using MediaToolkit.Model;
+using MusicPlayerDXMonoGamePort.Persistence.Database;
+using Newtonsoft.Json;
+using Persistence;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,7 +13,9 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -24,6 +29,8 @@ namespace MusicPlayerDXMonoGamePort
         bool DoesPreloadActuallyWork = true;
         public bool IsClosed = false;
         public bool HasBeenShown = false;
+
+        HttpClient? _httpClient = new();
 
         public OptionsMenu(XNA parent)
         {
@@ -75,6 +82,9 @@ namespace MusicPlayerDXMonoGamePort
                 tSmoothness.Enabled = true;
                 cOldSmooth.Checked = false;
             }
+
+            textBoxHost.Text = Config.Data.SyncServerHost;
+            textBoxUsername.Text = Config.Data.SyncServerUsername;
         }
 
         private void PreloadToggle_Click(object sender, EventArgs e)
@@ -179,13 +189,15 @@ namespace MusicPlayerDXMonoGamePort
 
         private void Download_Click(object sender, EventArgs e)
         {
-            Values.StartSTATask(() => {
+            Values.StartSTATask(() =>
+            {
                 string download = DownloadBox.Text;
                 Program.game.optionsMenu.InvokeIfRequired(() => { Download.Text = "Downloading..."; });
                 Program.game.optionsMenu.InvokeIfRequired(() => { Download.Enabled = false; });
                 Program.game.optionsMenu.InvokeIfRequired(() => { DownloadBox.Enabled = false; });
                 ConsoleManager.PauseConsoleInputThread = true;
-                Task T = Task.Factory.StartNew(() => {
+                Task T = Task.Factory.StartNew(() =>
+                {
                     ConsoleManager.Download(download);
                 });
                 Thread.Sleep(200);
@@ -244,7 +256,7 @@ namespace MusicPlayerDXMonoGamePort
         {
             IsClosed = true;
         }
-        
+
         private void bExport_Click(object sender, EventArgs e)
         {
             ExportsChooser Chooser = new ExportsChooser();
@@ -448,6 +460,56 @@ namespace MusicPlayerDXMonoGamePort
             else
                 KeyHookManager.CreateGlobalKeyHooks(Program.game.gameWindowForm.Handle);
             keyhookActivated = !keyhookActivated;
+        }
+
+        // --- Connection Stuff ---
+
+        KeyCloakHttpClient client = null;
+        KeyCloakAddress keyCloakAddress = null;
+
+        void UpdateKeycloakAddress(string syncServerHost)
+        {
+            var res = _httpClient.GetAsync($"{syncServerHost}/keycloak").Result;
+            var content = res.Content.ReadAsStringAsync().Result;
+            keyCloakAddress = JsonConvert.DeserializeObject<KeyCloakAddress>(content);
+        }
+
+        private void buttonRegister_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                UpdateKeycloakAddress(textBoxHost.Text);
+                var url = keyCloakAddress.KeycloakRealmUrl + "/account";
+
+                Process.Start($"firefox", $"{url}");
+            }
+            catch (Exception ex) { MessageBox.Show("Can't open registration page.\n\nException: " + ex.ToString()); }
+        }
+
+        private void buttonLogin_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                UpdateKeycloakAddress(textBoxHost.Text);
+                client = new(keyCloakAddress, (string newKeycloakRefreshToken) =>
+                {
+                    Config.Data.KeycloakRefreshToken = newKeycloakRefreshToken;
+                    Config.Save();
+                }, Config.Data.KeycloakRefreshToken, _httpClient);
+
+                client.Login(textBoxUsername.Text, textBoxPassword.Text);
+
+                Config.Data.SyncServerHost = textBoxHost.Text;
+                Config.Data.SyncServerUsername = textBoxUsername.Text;
+                Config.Save();
+
+                using var songDbContext = new SongDbContext();
+                var sendObjString = JsonConvert.SerializeObject(new SongDataAndHistory(songDbContext.UpvotedSongs.ToArray(), songDbContext.SongHistoryEntries.ToArray()), Formatting.Indented);
+                var sendContent = new StringContent(sendObjString, Encoding.UTF8, "application/json");
+                var res = client.PostAsync($"{textBoxHost.Text}/sync/init", sendContent).Result;
+                textBoxConnectionState.Text = $"State: Init {res.StatusCode} {res.Content.ReadAsStringAsync().Result}";
+            }
+            catch (Exception ex) { MessageBox.Show("Can't initialize login.\n\nException: " + ex.ToString()); }
         }
     }
 }

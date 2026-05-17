@@ -28,6 +28,11 @@ namespace Persistence
         public int WavePreload = 1;
         public Point WindowPos = new Point(0, 0);
 
+        // Sync settings
+        public string? KeycloakRefreshToken;
+        public string? SyncServerHost;
+        public string? SyncServerUsername;
+
         public List<UpvotedSong> songDatabaseEntries;
 
         public ConfigData()

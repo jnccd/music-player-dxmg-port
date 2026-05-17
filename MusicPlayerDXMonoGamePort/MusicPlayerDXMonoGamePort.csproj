@@ -72,6 +72,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MusicPlayerSyncInterface\MusicPlayerSyncInterface.csproj" />
+    <ProjectReference Include="..\EzAuth\EzAuth.csproj" />
   </ItemGroup>
   <Target Name="RestoreDotnetTools" BeforeTargets="Restore">
     <Message Text="Restoring dotnet tools" Importance="High" />
