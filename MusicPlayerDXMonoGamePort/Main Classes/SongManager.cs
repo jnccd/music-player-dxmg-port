@@ -631,7 +631,8 @@ namespace MusicPlayerDXMonoGamePort
         {
             var songName = SongPath.Split('\\').Last();
             using var songDbContext = new SongDbContext();
-            if (songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == songName) == null)
+            var song = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == songName);
+            if (song == null)
             {
                 var newSong = new UpvotedSong(songName, 0, 0, 0, 0, GetSongFileCreationDate(SongPath), -1) { Path = SongPath };
                 Program.game.AddAlbumAndArtistMetadataToUpvotedSong(newSong, (s, e) =>
@@ -639,6 +640,10 @@ namespace MusicPlayerDXMonoGamePort
                     Console.WriteLine($"Error getting metadata for song {s.Name}.\n{e}");
                 });
                 songDbContext.UpvotedSongs.Add(newSong);
+            }
+            else
+            {
+                song.Path = SongPath;
             }
         }
         public static void SaveUserSettings(bool SongSwap)
@@ -753,6 +758,7 @@ namespace MusicPlayerDXMonoGamePort
                 string title = curSong.Name;
                 while (title.EndsWith(".mp3"))
                     title = title.Remove(title.Length - 4);
+                string songPath = string.IsNullOrWhiteSpace(curSong.Path) ? GetSongPathFromSongName(curSong.Name) : curSong.Path;
 
                 SongInformationArray[i, 0] = title;
                 SongInformationArray[i, 1] = curSong.Score;
@@ -761,7 +767,7 @@ namespace MusicPlayerDXMonoGamePort
                 if (curSong.Volume != -1)
                     SongInformationArray[i, 4] = Values.BaseVolume / curSong.Volume;
                 SongInformationArray[i, 5] = SongAge(curSong);
-                SongInformationArray[i, 6] = SongChoosingList.FindAll(x => x == curSong.Path).Count / (float)SongChoosingList.Count * 100;
+                SongInformationArray[i, 6] = SongChoosingList.FindAll(x => x == songPath).Count / (float)SongChoosingList.Count * 100;
             }
 
             return SongInformationArray;
