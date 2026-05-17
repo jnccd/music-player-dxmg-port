@@ -1,6 +1,7 @@
 ﻿using EzAuth.Keycloak;
 using MediaToolkit;
 using MediaToolkit.Model;
+using MusicPlayerDXMonoGamePort.Main_Classes;
 using MusicPlayerDXMonoGamePort.Persistence.Database;
 using Newtonsoft.Json;
 using Persistence;
@@ -29,8 +30,6 @@ namespace MusicPlayerDXMonoGamePort
         bool DoesPreloadActuallyWork = true;
         public bool IsClosed = false;
         public bool HasBeenShown = false;
-
-        HttpClient? _httpClient = new();
 
         public OptionsMenu(XNA parent)
         {
@@ -85,6 +84,10 @@ namespace MusicPlayerDXMonoGamePort
 
             textBoxHost.Text = Config.Data.SyncServerHost;
             textBoxUsername.Text = Config.Data.SyncServerUsername;
+            SyncManager.OnStateChanged += (string newState) =>
+            {
+                textBoxConnectionState.InvokeIfRequired(() => { textBoxConnectionState.Text = newState; });
+            };
         }
 
         private void PreloadToggle_Click(object sender, EventArgs e)
@@ -464,24 +467,18 @@ namespace MusicPlayerDXMonoGamePort
 
         // --- Connection Stuff ---
 
-        KeyCloakHttpClient client = null;
-        KeyCloakAddress keyCloakAddress = null;
-
-        void UpdateKeycloakAddress(string syncServerHost)
-        {
-            var res = _httpClient.GetAsync($"{syncServerHost}/keycloak").Result;
-            var content = res.Content.ReadAsStringAsync().Result;
-            keyCloakAddress = JsonConvert.DeserializeObject<KeyCloakAddress>(content);
-        }
-
         private void buttonRegister_Click(object sender, EventArgs e)
         {
             try
             {
-                UpdateKeycloakAddress(textBoxHost.Text);
+                var keyCloakAddress = SyncManager.GetKeycloakAddress(textBoxHost.Text);
                 var url = keyCloakAddress.KeycloakRealmUrl + "/account";
 
-                Process.Start($"firefox", $"{url}");
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
             }
             catch (Exception ex) { MessageBox.Show("Can't open registration page.\n\nException: " + ex.ToString()); }
         }
@@ -490,24 +487,11 @@ namespace MusicPlayerDXMonoGamePort
         {
             try
             {
-                UpdateKeycloakAddress(textBoxHost.Text);
-                client = new(keyCloakAddress, (string newKeycloakRefreshToken) =>
-                {
-                    Config.Data.KeycloakRefreshToken = newKeycloakRefreshToken;
-                    Config.Save();
-                }, Config.Data.KeycloakRefreshToken, _httpClient);
-
-                client.Login(textBoxUsername.Text, textBoxPassword.Text);
-
                 Config.Data.SyncServerHost = textBoxHost.Text;
                 Config.Data.SyncServerUsername = textBoxUsername.Text;
                 Config.Save();
 
-                using var songDbContext = new SongDbContext();
-                var sendObjString = JsonConvert.SerializeObject(new SongDataAndHistory(songDbContext.UpvotedSongs.ToArray(), songDbContext.SongHistoryEntries.ToArray()), Formatting.Indented);
-                var sendContent = new StringContent(sendObjString, Encoding.UTF8, "application/json");
-                var res = client.PostAsync($"{textBoxHost.Text}/sync/init", sendContent).Result;
-                textBoxConnectionState.Text = $"State: Init {res.StatusCode} {res.Content.ReadAsStringAsync().Result}";
+                SyncManager.Init(textBoxPassword.Text, true);
             }
             catch (Exception ex) { MessageBox.Show("Can't initialize login.\n\nException: " + ex.ToString()); }
         }

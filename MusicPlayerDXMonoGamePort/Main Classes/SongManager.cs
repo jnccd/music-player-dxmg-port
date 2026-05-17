@@ -14,6 +14,7 @@ using System.Windows.Forms;
 using MusicPlayerSyncInterface.Database;
 using MusicPlayerSyncInterface.DTOs;
 using MusicPlayerDXMonoGamePort.Persistence.Database;
+using MusicPlayerDXMonoGamePort.Main_Classes;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -643,6 +644,7 @@ namespace MusicPlayerDXMonoGamePort
                 });
                 songDbContext.UpvotedSongs.Add(newSong);
                 songDbContext.SaveChanges();
+                SyncManager.UploadNewSong(newSong);
             }
             else
             {
@@ -792,8 +794,10 @@ namespace MusicPlayerDXMonoGamePort
             if (HistorySongData.Count > 0 && currentlyPlayingSongName == songDbContext.UpvotedSongs.FirstOrDefault(x => x.SongId == currentNewestHistoryEntry.SongId)?.Name)
                 return;
 
-            songDbContext.SongHistoryEntries.Add(new SongHistoryEntry(currentlyPlayingSongData.SongId, ScoreChange, DateTime.Now));
+            var newEntry = new SongHistoryEntry(currentlyPlayingSongData.SongId, ScoreChange, DateTime.Now);
+            songDbContext.SongHistoryEntries.Add(newEntry);
             songDbContext.SaveChanges();
+            SyncManager.Vote(newEntry);
         }
         private static void TestChoosingListIntegrity()
         {
