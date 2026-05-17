@@ -314,6 +314,7 @@ namespace MusicPlayerDXMonoGamePort
                             SongManager.SaveUserSettings(false);
                             bRefresh_Click(null, EventArgs.Empty);
                         }
+                        songDbContext.SaveChanges();
                     }
                     catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
                 })));
@@ -353,6 +354,7 @@ namespace MusicPlayerDXMonoGamePort
                                 };
                                 songDbContext.UpvotedSongs.Add(replacement);
                                 SongManager.SaveUserSettings(false);
+                                songDbContext.SaveChanges();
 
                                 // Update file
                                 string dest = path.Split('\\').SkipLast(1).Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";

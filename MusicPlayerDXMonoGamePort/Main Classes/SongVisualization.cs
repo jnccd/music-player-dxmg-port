@@ -277,6 +277,7 @@ namespace MusicPlayerDXMonoGamePort
             var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongManager.currentlyPlayingSongName);
             Values.VolumeMultiplier = mult;
             upvotedSong.Volume = sn;
+            songDbContext.SaveChanges();
 
             Debug.WriteLine("---------------------------------------------------------------------------------------------------------");
             Debug.WriteLine("RMS Volume for " + SongManager.currentlyPlayingSongName + " = " + sn);

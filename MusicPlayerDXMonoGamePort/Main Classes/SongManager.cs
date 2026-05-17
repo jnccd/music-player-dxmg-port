@@ -555,12 +555,12 @@ namespace MusicPlayerDXMonoGamePort
         }
         private static void DownvoteCurrentSongIfNeccesary(bool DownVoteCurrentSongForUserSkip)
         {
-            using var songDbContext = new SongDbContext();
             if (PlayerHistoryIndex != -1)
             {
+                using var songDbContext = new SongDbContext();
                 var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
 
-                if (upvotedSong != null && DownVoteCurrentSongForUserSkip && PlayerHistoryIndex == PlayerHistory.Count - 1 && !IsCurrentSongUpvoted)
+                if (upvotedSong != null && DownVoteCurrentSongForUserSkip && PlayerHistoryIndex >= PlayerHistory.Count - 2 && !IsCurrentSongUpvoted)
                 {
                     float percentage = (Channel32.Position - XnaGuiManager.SongTimeSkipped) / (float)Channel32.Length;
 
@@ -583,6 +583,7 @@ namespace MusicPlayerDXMonoGamePort
 
                     UpdateSongChoosingList(currentlyPlayingSongPath);
                 }
+                songDbContext.SaveChanges();
             }
         }
         private static void UpvoteCurrentSongIfNeccesary()
@@ -618,6 +619,7 @@ namespace MusicPlayerDXMonoGamePort
                 upvotedSong.TotalLikes++;
 
                 UpdateSongChoosingList(currentlyPlayingSongPath);
+                songDbContext.SaveChanges();
             }
             IsCurrentSongUpvoted = false;
         }
@@ -640,6 +642,7 @@ namespace MusicPlayerDXMonoGamePort
                     Console.WriteLine($"Error getting metadata for song {s.Name}.\n{e}");
                 });
                 songDbContext.UpvotedSongs.Add(newSong);
+                songDbContext.SaveChanges();
             }
             else
             {
@@ -654,9 +657,6 @@ namespace MusicPlayerDXMonoGamePort
                 SaveCurrentSongToHistory(LastScoreChange);
                 LastScoreChange = 0;
             }
-
-            using var songDbContext = new SongDbContext();
-            songDbContext.SaveChanges();
 
             Task.Run(() =>
             {
@@ -729,6 +729,7 @@ namespace MusicPlayerDXMonoGamePort
             DateTime? OriginalSongCreationDate = upvotedSong.DateAdded?.DateTime;
             if (OriginalSongCreationDate == null || File.Exists(SongPath) && DateTime.Compare(OriginalSongCreationDate!.Value, File.GetCreationTime(SongPath)) > 0)
                 upvotedSong.DateAdded = File.GetCreationTime(SongPath);
+            songDbContext.SaveChanges();
         }
         private static float SongAge(UpvotedSong upvotedSong)
         {
