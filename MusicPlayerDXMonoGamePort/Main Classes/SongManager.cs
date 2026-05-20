@@ -789,12 +789,32 @@ namespace MusicPlayerDXMonoGamePort
         {
             using var songDbContext = new SongDbContext();
 
-            try { string s = currentlyPlayingSongName; } catch { return; }
-            var currentNewestHistoryEntry = songDbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).FirstOrDefault();
-            if (HistorySongData.Count > 0 && currentlyPlayingSongName == songDbContext.UpvotedSongs.FirstOrDefault(x => x.SongId == currentNewestHistoryEntry.SongId)?.Name)
+            try
+            {
+                var currentNewestHistoryEntry = songDbContext.SongHistoryEntries.Any() ? songDbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).FirstOrDefault() : null;
+                var currentNewestUpvotedSong = songDbContext.UpvotedSongs.AsEnumerable().FirstOrDefault(x => x.SongId == currentNewestHistoryEntry?.SongId);
+                if (songDbContext.SongHistoryEntries.Any() && currentlyPlayingSongName == currentNewestUpvotedSong?.Name)
+                    return;
+
+                currentlyPlayingSongData ??= songDbContext.UpvotedSongs.AsEnumerable().FirstOrDefault(x => x.Name == currentlyPlayingSongName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("SaveCurrentSongToHistory Error:");
+                Console.WriteLine(ex);
                 return;
+            }
 
             var newEntry = new SongHistoryEntry(currentlyPlayingSongData.SongId, ScoreChange, DateTime.Now);
+            string strPath = Values.CurrentExecutablePath + @"\Log.txt";
+            if (!File.Exists(strPath))
+            {
+                File.Create(strPath).Dispose();
+            }
+            using (StreamWriter sw = File.AppendText(strPath))
+            {
+                sw.WriteLine($"Adding history entry for song {newEntry.SongId} with score change of {newEntry.ScoreChange} at {newEntry.Date} for user {newEntry.UserId}...");
+            }
             songDbContext.SongHistoryEntries.Add(newEntry);
             songDbContext.SaveChanges();
             SyncManager.Vote(newEntry);

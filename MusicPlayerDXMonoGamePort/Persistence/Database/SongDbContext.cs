@@ -19,6 +19,8 @@ public class SongDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
+        options.EnableSensitiveDataLogging();
+
         if (Environment.GetEnvironmentVariable("DB_PROVIDER") == "postgres")
         {
             options.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRES_DB_ACCESS"));
