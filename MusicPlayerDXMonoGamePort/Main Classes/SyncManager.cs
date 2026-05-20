@@ -80,13 +80,18 @@ public static class SyncManager
             if (pulledData.songs.Count() == 0 || pulledData.historyEntries.Count() == 0)
                 throw new Exception("Pulled data was empty!");
 
+            Console.WriteLine($"Pulled {pulledData.songs.Count()} songs and {pulledData.historyEntries.Count()} history entries, writing into local db...");
+
             using var songDbContext = new SongDbContext();
             songDbContext.SongHistoryEntries.RemoveRange(songDbContext.SongHistoryEntries);
+            songDbContext.SaveChanges();
             songDbContext.UpvotedSongs.RemoveRange(songDbContext.UpvotedSongs);
+            songDbContext.SaveChanges();
 
             if (!songDbContext.Users.Where(x => x.UserId == pulledData.users.FirstOrDefault().UserId).Any())
                 songDbContext.Users.Add(pulledData.users.FirstOrDefault());
             songDbContext.UpvotedSongs.AddRange(pulledData.songs);
+            songDbContext.SaveChanges();
             songDbContext.SongHistoryEntries.AddRange(pulledData.historyEntries);
             songDbContext.SaveChanges();
         }
