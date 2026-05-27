@@ -293,8 +293,6 @@ namespace MusicPlayerDXMonoGamePort
             //     }
             //     songDbContext.SaveChanges();
             // }
-
-            SongManager.HistorySongData = songDbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).TakeLast(25).ToList();
         }
         public static bool CheckForOtherInstances(string[] args)
         {

@@ -60,7 +60,6 @@ namespace MusicPlayerDXMonoGamePort
 
         // History Data
         public static readonly string historyFilePath = Values.CurrentExecutablePath + "\\History.txt";
-        public static List<SongHistoryEntry> HistorySongData = new();
 
         // Song Data
         public static UpvotedSong currentlyPlayingSongData;
@@ -287,15 +286,18 @@ namespace MusicPlayerDXMonoGamePort
         {
             // TODO: Real time song choosing
             CurrentDebugTime = Stopwatch.GetTimestamp();
+            //Console.WriteLine("Choosing new song...");
 
             double random = Values.RDM.NextDouble();
             if (random < 0.45)
             {
+                //Console.WriteLine("Taking a song from the choosing list");
                 // Just get a song from the Choosing List
                 PlaySongFromTheChoosingList();
             }
             else if (random < 0.8)
             {
+                //Console.WriteLine("Taking a song that hasnt been played yet");
                 // Play a song that hasnt been played yet
                 using var songDbContext = new SongDbContext();
                 var notPlayedSongNames = songDbContext.UpvotedSongs
@@ -305,6 +307,7 @@ namespace MusicPlayerDXMonoGamePort
                     .Where(x => !string.IsNullOrWhiteSpace(x.Item2));
                 if (notPlayedSongNames.Any())
                 {
+                    //Console.WriteLine("Found " + notPlayedSongNames.Count() + " unplayed songs, picking one...");
                     // If there is one play it
                     PlayerHistory.Add(GetSongPathFromSongName(notPlayedSongNames.GetRandomValue().Item1.Name));
                     PlayerHistoryIndex = PlayerHistory.Count - 1;
@@ -312,20 +315,24 @@ namespace MusicPlayerDXMonoGamePort
                 }
                 else
                 {
+                    //Console.WriteLine("No unplayed songs found.");
                     // No unplayed song found get one from the choosing list
                     PlaySongFromTheChoosingList();
                 }
             }
             else
             {
+                //Console.WriteLine("Taking a song that has been upvoted recently");
                 // Play a song that has been upvoted recently
-                List<string> RecentlyPlayedChoosingList = new List<string>();
-                List<Guid> traversedSongs = HistorySongData.Take(3).Where(x => x.ScoreChange < 0 && x.SongId != null).Select(x => x.SongId.Value).ToList(); // Even on the songs before the 3 to 9 high replay chance window, skip those who were downvoted
+                var RecentlyPlayedChoosingList = new List<string>();
+                using var songDbContext = new SongDbContext();
+                var HistorySongData = songDbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).TakeLast(25).ToList();
+                var traversedSongIds = HistorySongData.Take(3).Where(x => x.ScoreChange < 0 && x.SongId != null).Select(x => x.SongId.Value).ToList(); // Even on the songs before the 3 to 9 high replay chance window, skip those who were downvoted
                 foreach (var song in HistorySongData.Skip(3).Take(6))
                 {
-                    if (song.SongId != null && !traversedSongs.Contains(song.SongId.Value))
+                    if (song.SongId != null && !traversedSongIds.Contains(song.SongId.Value))
                     {
-                        traversedSongs.Add(song.SongId.Value);
+                        traversedSongIds.Add(song.SongId.Value);
                         if (song.ScoreChange > 0)
                         {
                             if (song.UpvotedSong != null && song.UpvotedSong.Score < 120)
@@ -338,6 +345,8 @@ namespace MusicPlayerDXMonoGamePort
                 }
                 if (RecentlyPlayedChoosingList.Count > 0)
                 {
+                    //Console.WriteLine("Found " + RecentlyPlayedChoosingList.Count + " recently upvoted songs");
+                    //Console.WriteLine($"The song that appears the most in the list is \"{RecentlyPlayedChoosingList.GroupBy(x => x).OrderByDescending(x => x.Count()).First().Key}\" with {RecentlyPlayedChoosingList.Count(x => x == RecentlyPlayedChoosingList.GroupBy(x => x).OrderByDescending(x => x.Count()).First().Key)} entries");
                     // Play a recently upvoted song
                     PlayerHistory.Add(GetSongPathFromSongName(RecentlyPlayedChoosingList[Values.RDM.Next(RecentlyPlayedChoosingList.Count)]));
                     PlayerHistoryIndex = PlayerHistory.Count - 1;
@@ -345,6 +354,7 @@ namespace MusicPlayerDXMonoGamePort
                 }
                 else
                 {
+                    //Console.WriteLine("No recently upvoted songs found.");
                     // No recently upvoted song found
                     PlaySongFromTheChoosingList();
                 }
