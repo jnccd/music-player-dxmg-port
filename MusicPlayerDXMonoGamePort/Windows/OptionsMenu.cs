@@ -1,22 +1,10 @@
-﻿using EzAuth.Keycloak;
-using MediaToolkit;
-using MediaToolkit.Model;
-using MusicPlayerDXMonoGamePort.Main_Classes;
-using MusicPlayerDXMonoGamePort.Persistence.Database;
-using Newtonsoft.Json;
+﻿using MusicPlayerDXMonoGamePort.Main_Classes;
 using Persistence;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -472,8 +460,7 @@ namespace MusicPlayerDXMonoGamePort
         {
             try
             {
-                var keyCloakAddress = SyncManager.GetKeycloakAddress(textBoxHost.Text);
-                var url = keyCloakAddress.KeycloakRealmUrl + "/account";
+                var url = SyncManager.GetAccountRegistrationAddress();
 
                 Process.Start(new ProcessStartInfo
                 {

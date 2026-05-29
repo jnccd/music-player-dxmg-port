@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using EzAuth.Interfaces;
 using EzAuth.Keycloak;
 using MusicPlayerDXMonoGamePort.Persistence.Database;
 using MusicPlayerSyncInterface.DTOs;
@@ -13,8 +14,8 @@ namespace MusicPlayerDXMonoGamePort.Main_Classes;
 public static class SyncManager
 {
     static HttpClient? _httpClient = new();
-    static KeyCloakHttpClient client = null;
-    static KeyCloakAddress keyCloakAddress = null;
+    static IEzAuthHttpClient client = null;
+    static EzAuthAddress authBackendAddress = null;
     public static string State { get => state; private set { OnStateChanged?.Invoke(value); state = value; } }
     private static string state = "";
     public static Action<string>? OnStateChanged = null;
@@ -28,12 +29,12 @@ public static class SyncManager
     {
         try
         {
-            keyCloakAddress = GetKeycloakAddress(Config.Data.SyncServerHost);
-            client = new(keyCloakAddress, (string newKeycloakRefreshToken) =>
-                {
-                    Config.Data.KeycloakRefreshToken = newKeycloakRefreshToken;
-                    Config.Save();
-                }, Config.Data.KeycloakRefreshToken, _httpClient);
+            authBackendAddress = GetAuthBackendAddress(Config.Data.SyncServerHost);
+            client = new KeyCloakHttpClient(authBackendAddress, authBackendRefreshToken =>
+            {
+                Config.Data.AuthBackendRefreshToken = authBackendRefreshToken;
+                Config.Save();
+            }, Config.Data.AuthBackendRefreshToken, _httpClient);
 
             if (password != null)
                 client.Login(Config.Data.SyncServerUsername, password);
@@ -61,12 +62,14 @@ public static class SyncManager
         }
     }
 
-    public static KeyCloakAddress GetKeycloakAddress(string syncServerHost)
+    public static EzAuthAddress GetAuthBackendAddress(string syncServerHost)
     {
-        var res = _httpClient.GetAsync($"{syncServerHost}/keycloak").Result;
+        var res = _httpClient.GetAsync($"{syncServerHost}/authBackend").Result;
         var content = res.Content.ReadAsStringAsync().Result;
-        return JsonConvert.DeserializeObject<KeyCloakAddress>(content);
+        return JsonConvert.DeserializeObject<EzAuthAddress>(content);
     }
+
+    public static string GetAccountRegistrationAddress() => client.GetAccountRegistrationAddress();
 
     public static void Pull()
     {
@@ -88,6 +91,7 @@ public static class SyncManager
             songDbContext.UpvotedSongs.RemoveRange(songDbContext.UpvotedSongs);
             songDbContext.SaveChanges();
 
+            // Add missing user (should just be one, ourselves)
             if (!songDbContext.Users.Where(x => x.UserId == pulledData.users.FirstOrDefault().UserId).Any())
                 songDbContext.Users.Add(pulledData.users.FirstOrDefault());
             songDbContext.UpvotedSongs.AddRange(pulledData.songs);

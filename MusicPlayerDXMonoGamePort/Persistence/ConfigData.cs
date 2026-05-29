@@ -29,7 +29,7 @@ namespace Persistence
         public Point WindowPos = new Point(0, 0);
 
         // Sync settings
-        public string? KeycloakRefreshToken;
+        public string? AuthBackendRefreshToken;
         public string? SyncServerHost;
         public string? SyncServerUsername;
 
