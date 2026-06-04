@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using MusicPlayerSyncInterface.Database;
 using MusicPlayerDXMonoGamePort.Persistence.Database;
+using MusicPlayerDXMonoGamePort.Main_Classes;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -278,6 +279,7 @@ namespace MusicPlayerDXMonoGamePort
             Values.VolumeMultiplier = mult;
             upvotedSong.Volume = sn;
             songDbContext.SaveChanges();
+            SyncManager.UpdateVolume(upvotedSong, sn);
 
             Debug.WriteLine("---------------------------------------------------------------------------------------------------------");
             Debug.WriteLine("RMS Volume for " + SongManager.currentlyPlayingSongName + " = " + sn);
