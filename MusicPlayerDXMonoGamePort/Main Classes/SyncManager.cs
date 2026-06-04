@@ -52,7 +52,7 @@ public static class SyncManager
             if (TryCallApiInit)
             {
                 using var songDbContext = new SongDbContext();
-                var sendObjString = JsonConvert.SerializeObject(new SyncInitRequest([], songDbContext.UpvotedSongs.ToArray(), songDbContext.SongHistoryEntries.ToArray()), Formatting.Indented);
+                var sendObjString = JsonConvert.SerializeObject(new SyncInitRequest(songDbContext.UpvotedSongs.ToArray(), songDbContext.SongHistoryEntries.ToArray()), Formatting.Indented);
                 var sendContent = new StringContent(sendObjString, Encoding.UTF8, "application/json");
                 var res = client.PostAsync($"{Config.Data.SyncServerHost}{ROUTE_VERSION_PREFIX}/sync/init", sendContent).Result;
                 State = $"Init {res.StatusCode} {res.Content.ReadAsStringAsync().Result}";
@@ -78,14 +78,14 @@ public static class SyncManager
         try
         {
             var res = client.GetStringAsync($"{Config.Data.SyncServerHost}{ROUTE_VERSION_PREFIX}/sync/pull").Result;
-            var pulledData = JsonConvert.DeserializeObject<SyncPullResult>(res);
+            var pulledData = JsonConvert.DeserializeObject<SyncPullResponse>(res);
 
             if (pulledData == null)
                 throw new Exception("Pulled data was null!");
-            if (pulledData.songs.Count() == 0 || pulledData.historyEntries.Count() == 0)
+            if (pulledData.Songs.Count() == 0 || pulledData.HistoryEntries.Count() == 0)
                 throw new Exception("Pulled data was empty!");
 
-            Console.WriteLine($"Pulled {pulledData.songs.Count()} songs and {pulledData.historyEntries.Count()} history entries, writing into local db...");
+            Console.WriteLine($"Pulled {pulledData.Songs.Count()} songs and {pulledData.HistoryEntries.Count()} history entries, writing into local db...");
 
             using var songDbContext = new SongDbContext();
             songDbContext.SongHistoryEntries.RemoveRange(songDbContext.SongHistoryEntries);
@@ -94,11 +94,11 @@ public static class SyncManager
             songDbContext.SaveChanges();
 
             // Add missing user (should just be one, ourselves)
-            if (!songDbContext.Users.Where(x => x.UserId == pulledData.users.FirstOrDefault().UserId).Any())
-                songDbContext.Users.Add(pulledData.users.FirstOrDefault());
-            songDbContext.UpvotedSongs.AddRange(pulledData.songs);
+            if (!songDbContext.Users.Where(x => x.UserId == pulledData.User.UserId).Any())
+                songDbContext.Users.Add(pulledData.User);
+            songDbContext.UpvotedSongs.AddRange(pulledData.Songs);
             songDbContext.SaveChanges();
-            songDbContext.SongHistoryEntries.AddRange(pulledData.historyEntries);
+            songDbContext.SongHistoryEntries.AddRange(pulledData.HistoryEntries);
             songDbContext.SaveChanges();
         }
         catch (Exception ex)
