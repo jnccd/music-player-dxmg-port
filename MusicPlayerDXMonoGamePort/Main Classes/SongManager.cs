@@ -571,7 +571,7 @@ namespace MusicPlayerDXMonoGamePort
                 using var songDbContext = new SongDbContext();
                 var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
 
-                if (upvotedSong != null && DownVoteCurrentSongForUserSkip && PlayerHistoryIndex >= PlayerHistory.Count - 2 && !IsCurrentSongUpvoted)
+                if (upvotedSong != null && DownVoteCurrentSongForUserSkip && PlayerHistoryIndex >= PlayerHistory.Count - 1 && !IsCurrentSongUpvoted)
                 {
                     float percentage = (Channel32.Position - XnaGuiManager.SongTimeSkipped) / (float)Channel32.Length;
 
