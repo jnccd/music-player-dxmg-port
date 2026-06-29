@@ -270,14 +270,18 @@ namespace MusicPlayerDXMonoGamePort
 
             // Prune UpvotedSongs bad metadata
             {
-                foreach (var song in songDbContext.UpvotedSongs.AsEnumerable())
+                try
                 {
-                    if (song.Artist.ToLower() == "unknown" || song.Name.Contains(song.Artist))
-                        song.Artist = "";
-                    if (song.Album == null || song.Album == "MusicPlayer Songs" || song.Name.Contains(song.Album))
-                        song.Album = "";
+                    foreach (var song in songDbContext.UpvotedSongs.AsEnumerable())
+                    {
+                        if (song.Artist.ToLower() == "unknown" || song.Name.Contains(song.Artist))
+                            song.Artist = "";
+                        if (song.Album == null || song.Album == "MusicPlayer Songs" || song.Name.Contains(song.Album))
+                            song.Album = "";
+                    }
+                    songDbContext.SaveChanges();
                 }
-                songDbContext.SaveChanges();
+                catch { }
             }
 
             // Fill DateAdded fields from old AddingDates fields if they are null
