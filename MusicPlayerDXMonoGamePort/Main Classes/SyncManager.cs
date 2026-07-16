@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 using EzAuth.Interfaces;
 using EzAuth.Keycloak;
 using MusicPlayerDXMonoGamePort.Persistence.Database;
@@ -73,7 +74,11 @@ public static class SyncManager
                 try
                 {
                     var sendContent = new StringContent(unsyncedData.Body, Encoding.UTF8, "application/json");
-                    var res = client.PostAsync($"{Config.Data.SyncServerHost}{ROUTE_VERSION_PREFIX}{unsyncedData.Endpoint}", sendContent).Result;
+                    HttpResponseMessage res;
+                    if (unsyncedData.Endpoint == "/sync/volume")
+                        res = client.PutAsync($"{Config.Data.SyncServerHost}{ROUTE_VERSION_PREFIX}{unsyncedData.Endpoint}", sendContent).Result;
+                    else
+                        res = client.PostAsync($"{Config.Data.SyncServerHost}{ROUTE_VERSION_PREFIX}{unsyncedData.Endpoint}", sendContent).Result;
 
                     Console.WriteLine($"Synced data for endpoint {unsyncedData.Endpoint}: {res.StatusCode}, {unsyncedData.Body}");
 
