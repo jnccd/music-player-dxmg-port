@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -154,9 +154,26 @@ namespace MusicPlayerDXMonoGamePort
 
             SyncManager.Pull();
 
+            // If the configured song library is registered for a different account, the pull was aborted
+            // before anything was synced (local database and library state file are untouched). Ask the user
+            // whether they want to take the library over for the currently logged in account.
+            bool libraryTakeOverDeclined = false;
+            var pullAbortWarning = SyncManager.TakeSongLibraryOwnerWarning();
+            if (pullAbortWarning != null)
+            {
+                if (MessageBox.Show(pullAbortWarning + "\n\nDo you want to take the library over for your account and sync anyway?",
+                    "Song Library", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                    SyncManager.Pull(true); // User agreed: syncs the data and registers the library for the current account
+                else
+                    libraryTakeOverDeclined = true; // Dont ask about the same library again below
+            }
+
             Console.WriteLine("Searching for Songs...");
             if (Directory.Exists(Config.Data.MusicPath) && DirOrSubDirsContainMp3(Config.Data.MusicPath))
+            {
+                SyncManager.ApplySongLibraryMigrations(Config.Data.MusicPath);
                 FindAllMp3FilesInDir(Config.Data.MusicPath, true);
+            }
             else
             {
                 FolderBrowserDialog open = new FolderBrowserDialog();
@@ -164,7 +181,22 @@ namespace MusicPlayerDXMonoGamePort
                 if (open.ShowDialog() != DialogResult.OK) Process.GetCurrentProcess().Kill();
                 Config.Data.MusicPath = open.SelectedPath;
                 Config.Save();
+                SyncManager.ApplySongLibraryMigrations(Config.Data.MusicPath);
                 FindAllMp3FilesInDir(open.SelectedPath, true);
+            }
+
+            // If the song library turned out to be registered for a different account while applying
+            // migrations (e.g. the folder was selected after the pull), nothing was applied to it. Ask the
+            // user whether they want to take the library over for the currently logged in account.
+            var applyWarning = SyncManager.TakeSongLibraryOwnerWarning();
+            if (applyWarning != null)
+            {
+                if (!libraryTakeOverDeclined &&
+                    MessageBox.Show(applyWarning + "\n\nDo you want to take the library over for your account?",
+                        "Song Library", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                    SyncManager.AdoptSongLibrary(Config.Data.MusicPath);
+                else
+                    Console.WriteLine("Song library sync skipped: the library is registered for another account.");
             }
             Console.WriteLine();
 

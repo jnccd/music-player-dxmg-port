@@ -1,4 +1,4 @@
-﻿using MusicPlayerDXMonoGamePort.Persistence.Database;
+using MusicPlayerDXMonoGamePort.Persistence.Database;
 using MusicPlayerSyncInterface.Database;
 using MusicPlayerSyncInterface.DTOs;
 using System;
@@ -10,6 +10,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using MusicPlayerDXMonoGamePort.Main_Classes;
+using Newtonsoft.Json;
+using Persistence;
 
 namespace MusicPlayerDXMonoGamePort
 {
@@ -323,14 +326,14 @@ namespace MusicPlayerDXMonoGamePort
                     try
                     {
                         string path = SongManager.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
-                        using var songDbContext = new SongDbContext();
-                        var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3");
-                        int PlaylistIndex = SongManager.Playlist.IndexOf(path);
 
                         if (!File.Exists(path))
+                        {
+                            MessageBox.Show("This entry isnt linked to a mp3 file!");
                             return;
+                        }
 
-                        if (dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongName)))
+                        if (dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongName)))
                         {
                             MessageBox.Show("Sorry Dave but im afraight I cant do that\n(You cant play a file and rename it at the same time!)");
                             return;
@@ -344,28 +347,202 @@ namespace MusicPlayerDXMonoGamePort
                         }
                         else if (Dia.result != "")
                         {
+                            string oldName = dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3";
+                            string newName = Dia.result.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) ? Dia.result : Dia.result + ".mp3";
+
+                            // A migration refers to one specific upvotedSong entry (its SongId), so resolve which
+                            // entry the user means first. When several entries share the file name they are
+                            // different songs; the entry is then disambiguated via the album/artist tags of the
+                            // file this row is linked to.
+                            Guid targetSongId;
+                            List<string> filesToRename;
+                            int skippedCopies = 0;
+                            using (var preflightDb = new SongDbContext())
+                            {
+                                var rowsWithThisName = preflightDb.UpvotedSongs.Where(x => x.Name == oldName).ToArray();
+                                if (rowsWithThisName.Length == 0)
+                                {
+                                    MessageBox.Show("No song entry with this name was found in the database!");
+                                    return;
+                                }
+
+                                UpvotedSong targetEntry;
+                                if (rowsWithThisName.Length == 1)
+                                {
+                                    targetEntry = rowsWithThisName[0];
+                                }
+                                else
+                                {
+                                    // Several entries share the file name: pick the one whose metadata matches the
+                                    // file this row is linked to. Anything else is ambiguous.
+                                    UpvotedSong matchedEntry = null;
+                                    foreach (var candidate in rowsWithThisName)
+                                    {
+                                        if (SyncManager.SongFileMatchesEntry(path, candidate))
+                                        {
+                                            if (matchedEntry != null)
+                                            {
+                                                matchedEntry = null; // Several entries match: ambiguous
+                                                break;
+                                            }
+                                            matchedEntry = candidate;
+                                        }
+                                    }
+                                    if (matchedEntry == null)
+                                    {
+                                        MessageBox.Show("Several songs share this file name and it is not clear which one you want to rename.\n\n" +
+                                            "Update the album/artist metadata of the affected songs so they can be told apart, and try again.");
+                                        return;
+                                    }
+                                    targetEntry = matchedEntry;
+                                }
+                                targetSongId = targetEntry.SongId;
+
+                                // Rename only files whose tags match this entry (a file with the same name but
+                                // different album/artist tags is a different song). Entries without album/artist
+                                // metadata (legacy entries) can only be identified by their file name.
+                                if (string.IsNullOrWhiteSpace(targetEntry.Artist) && string.IsNullOrWhiteSpace(targetEntry.Album))
+                                {
+                                    filesToRename = SyncManager.FindSongFilesByName(Config.Data.MusicPath, oldName);
+                                }
+                                else
+                                {
+                                    filesToRename = new List<string>();
+                                    foreach (string candidate in SyncManager.FindSongFilesByName(Config.Data.MusicPath, oldName))
+                                    {
+                                        if (SyncManager.SongFileMatchesEntry(candidate, targetEntry))
+                                            filesToRename.Add(candidate);
+                                        else
+                                            skippedCopies++;
+                                    }
+                                }
+                            }
+
+                            if (filesToRename.Count == 0)
+                            {
+                                MessageBox.Show("No file of this song could be found in the song library.\n\n" +
+                                    (skippedCopies > 0
+                                        ? "Files with this name exist, but their album/artist metadata does not match this song entry, so they were not renamed."
+                                        : "Files with this name exist, but they could not be read or matched to this song entry."));
+                                return;
+                            }
+
+                            // Commit point: the migration POST on the server. The server assigns the migration number
+                            // and renames the entry with the given SongId. If this fails, abort without changing
+                            // anything locally, since migrations should only be done with a working server connection.
+                            var createdMigration = SyncManager.PostSongLibraryMigration(new SongLibraryMigration(oldName, newName, SongLibraryMigrationType.Rename)
+                            {
+                                SongId = targetSongId
+                            });
+                            if (createdMigration == null)
+                            {
+                                MessageBox.Show("Rename aborted! The sync server did not accept the rename.\n\n" + SyncManager.State +
+                                    "\n\n(Songs can only be renamed while the connection to the sync server is up and their entry was synced)");
+                                return;
+                            }
+
+                            // Rename every copy of the song in the library (there can be copies in multiple
+                            // subfolders). If a copy is already gone and its target already exists, another client
+                            // (e.g. sharing the library via NAS) already renamed it - that counts as done. Only if
+                            // all renames went through is the migration state bumped, so a failed rename is going
+                            // to be retried automatically on the next startup.
+                            List<(string OldPath, string NewPath)> movedFiles = new List<(string, string)>();
                             try
                             {
-                                // Update database entry - Cant just easily rename the primary key tho, need to create a new entry
-                                songDbContext.UpvotedSongs.Remove(upvotedSong);
-                                var replacement = new UpvotedSong(Dia.result + ".mp3", upvotedSong.Score, upvotedSong.Streak, upvotedSong.TotalLikes, upvotedSong.TotalDislikes, upvotedSong.DateAdded, upvotedSong.Volume, upvotedSong.Artist, upvotedSong.Album, upvotedSong.UserId)
+                                foreach (string oldFilePath in filesToRename)
                                 {
-                                    Path = upvotedSong.Path
-                                };
-                                songDbContext.UpvotedSongs.Add(replacement);
-                                SongManager.SaveUserSettings(false);
-                                songDbContext.SaveChanges();
-
-                                // Update file
-                                string dest = path.Split('\\').SkipLast(1).Aggregate((i, j) => i + "\\" + j) + "\\" + Dia.result + ".mp3";
-                                File.Move(path, dest);
-
-                                SongManager.Playlist[PlaylistIndex] = dest;
-
-                                SongManager.CreateSongChoosingList();
-                                bRefresh_Click(null, EventArgs.Empty);
+                                    string destPath = Path.Combine(Path.GetDirectoryName(oldFilePath) ?? "", newName);
+                                    if (File.Exists(destPath))
+                                    {
+                                        if (File.Exists(oldFilePath))
+                                        {
+                                            // A different file with the target name is in the way.
+                                            RollbackFileRenames(movedFiles);
+                                            MessageBox.Show("A file called \"" + newName + "\" already exists in the song library!");
+                                            return;
+                                        }
+                                        movedFiles.Add((oldFilePath, destPath)); // Another client already renamed this copy
+                                        continue;
+                                    }
+                                    File.Move(oldFilePath, destPath);
+                                    movedFiles.Add((oldFilePath, destPath));
+                                }
                             }
-                            catch (Exception ex) { MessageBox.Show(ex.ToString()); }
+                            catch (Exception ex)
+                            {
+                                // The migration is already on the server, but the library migration state was not bumped,
+                                // so the remaining renames are going to be retried automatically on the next startup.
+                                MessageBox.Show("The server registered the rename, but some files could not be renamed locally:\n" + ex.Message);
+                                return;
+                            }
+
+                            // Update the playlist & play history (the files moved)
+                            foreach (var moved in movedFiles)
+                            {
+                                for (int i = 0; i < SongManager.Playlist.Count; i++)
+                                    if (SongManager.Playlist[i] == moved.OldPath)
+                                        SongManager.Playlist[i] = moved.NewPath;
+                                for (int i = 0; i < SongManager.PlayerHistory.Count; i++)
+                                    if (SongManager.PlayerHistory[i] == moved.OldPath)
+                                        SongManager.PlayerHistory[i] = moved.NewPath;
+                            }
+
+                            // Update the local database entry (the server already renamed its copy of the row).
+                            // Also rename queued uploads of the affected song ("/sync/new-song" queue bodies still
+                            // contain the old name), so an upload that is retried later creates the row with the
+                            // new name instead of resurrecting the old one.
+                            using (var songDbContext = new SongDbContext())
+                            {
+                                var songIdsToRename = new[] { targetSongId };
+                                var upvotedSongsToRename = songDbContext.UpvotedSongs.Where(x => x.SongId == targetSongId).ToArray();
+                                foreach (var upvotedSong in upvotedSongsToRename)
+                                {
+                                    if (songDbContext.UpvotedSongs.Any(x => x.SongId != upvotedSong.SongId && x.Name == newName && x.Artist == upvotedSong.Artist && x.Album == upvotedSong.Album))
+                                    {
+                                        // Target name already taken by a different entry, roll the file renames back.
+                                        RollbackFileRenames(movedFiles);
+                                        MessageBox.Show("A song with that name already exists!");
+                                        return;
+                                    }
+                                    upvotedSong.Name = newName;
+                                }
+
+                                var queuedUploadsToRename = songDbContext.NotYetSyncedData
+                                    .Where(x => x.Endpoint == "/sync/new-song" && x.BelongedToSongId != null && songIdsToRename.Contains(x.BelongedToSongId.Value)).ToArray();
+                                foreach (var queuedUpload in queuedUploadsToRename)
+                                {
+                                    var queuedSong = JsonConvert.DeserializeObject<UpvotedSong>(queuedUpload.Body);
+                                    if (queuedSong == null)
+                                        continue;
+                                    queuedSong.Name = newName;
+                                    queuedUpload.Body = JsonConvert.SerializeObject(queuedSong, Formatting.Indented);
+                                }
+
+                                try
+                                {
+                                    songDbContext.SaveChanges();
+                                }
+                                catch (Exception ex)
+                                {
+                                    RollbackFileRenames(movedFiles);
+                                    MessageBox.Show("Could not update the local database:\n" + ex.Message);
+                                    return;
+                                }
+                            }
+
+                            SyncManager.WriteSongLibraryMigrationState(Config.Data.MusicPath, createdMigration.UserId, createdMigration.MigrationNumber);
+
+                            // If the library turned out to be registered for a different account, warn about it
+                            var ownerWarning = SyncManager.TakeSongLibraryOwnerWarning();
+                            if (ownerWarning != null)
+                                MessageBox.Show(ownerWarning, "Song Library");
+
+                            SongManager.CreateSongChoosingList();
+                            bRefresh_Click(null, EventArgs.Empty);
+
+                            MessageBox.Show("Successfully renamed \"" + oldName + "\" to \"" + newName + "\"!" + (skippedCopies > 0
+                                ? "\n\nNote: " + skippedCopies + " file(s) with the old name were left alone, since their album/artist metadata did not match this song entry."
+                                : ""));
                         }
                     }
                     catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!"); }
@@ -440,12 +617,167 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     try
                     {
-                        using var songDbContext = new SongDbContext();
-                        var upvotedSongToRemove = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == dataGridView1.Rows[e.RowIndex].Cells[0].Value.ToString() + ".mp3");
-                        songDbContext.UpvotedSongs.Remove(upvotedSongToRemove);
-                        songDbContext.SaveChanges();
+                        string songName = dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString() + ".mp3";
 
+                        if (dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString().Equals(Path.GetFileNameWithoutExtension(SongManager.currentlyPlayingSongName)))
+                        {
+                            MessageBox.Show("Sorry Dave but im afraight I cant do that\n(You cant play a file and delete it at the same time!)");
+                            return;
+                        }
+
+                        if (MessageBox.Show("Do you really want to delete \"" + songName + "\"?\n\n" +
+                            "This deletes the song entry AND the song file from the database and from all synchronized song libraries!",
+                            "Delete Entry", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                            return;
+
+                        // A migration refers to one specific upvotedSong entry (its SongId), so resolve which
+                        // entry the user means first (same logic as in the rename flow).
+                        Guid targetSongId;
+                        List<string> filesToDelete = new List<string>();
+                        int skippedFiles = 0;
+                        using (var preflightDb = new SongDbContext())
+                        {
+                            var rowsWithThisName = preflightDb.UpvotedSongs.Where(x => x.Name == songName).ToArray();
+                            if (rowsWithThisName.Length == 0)
+                            {
+                                MessageBox.Show("No song entry with this name was found in the database!");
+                                return;
+                            }
+
+                            UpvotedSong targetEntry;
+                            if (rowsWithThisName.Length == 1)
+                            {
+                                targetEntry = rowsWithThisName[0];
+                            }
+                            else
+                            {
+                                // Several entries share the file name: pick the one whose metadata matches the
+                                // linked file. Anything else is ambiguous.
+                                string linkedFilePath = SongManager.GetSongPathFromSongName(dataGridView1.Rows[currentMouseOverRow].Cells[0].Value.ToString());
+                                UpvotedSong matchedEntry = null;
+                                foreach (var candidate in rowsWithThisName)
+                                {
+                                    if (File.Exists(linkedFilePath) && SyncManager.SongFileMatchesEntry(linkedFilePath, candidate))
+                                    {
+                                        if (matchedEntry != null)
+                                        {
+                                            matchedEntry = null; // Several entries match: ambiguous
+                                            break;
+                                        }
+                                        matchedEntry = candidate;
+                                    }
+                                }
+                                if (matchedEntry == null)
+                                {
+                                    MessageBox.Show("Several songs share this file name and it is not clear which one you want to delete.\n\n" +
+                                        "Update the album/artist metadata of the affected songs so they can be told apart, and try again.");
+                                    return;
+                                }
+                                targetEntry = matchedEntry;
+                            }
+                            targetSongId = targetEntry.SongId;
+
+                            // Only delete files whose tags match this entry (a file with the same name but
+                            // different album/artist tags is a different song). Entries without album/artist
+                            // metadata can only be identified by their file name.
+                            if (Directory.Exists(Config.Data.MusicPath))
+                            {
+                                if (string.IsNullOrWhiteSpace(targetEntry.Artist) && string.IsNullOrWhiteSpace(targetEntry.Album))
+                                {
+                                    filesToDelete = SyncManager.FindSongFilesByName(Config.Data.MusicPath, songName);
+                                }
+                                else
+                                {
+                                    foreach (string candidate in SyncManager.FindSongFilesByName(Config.Data.MusicPath, songName))
+                                    {
+                                        if (SyncManager.SongFileMatchesEntry(candidate, targetEntry))
+                                            filesToDelete.Add(candidate);
+                                        else
+                                            skippedFiles++;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Commit point: the migration POST on the server. The server assigns the migration number
+                        // and removes the entry with the given SongId (and its history entries). If this fails,
+                        // abort without changing anything locally, since migrations should only be done with a
+                        // working server connection.
+                        var createdMigration = SyncManager.PostSongLibraryMigration(new SongLibraryMigration(songName, "", SongLibraryMigrationType.Delete)
+                        {
+                            SongId = targetSongId
+                        });
+                        if (createdMigration == null)
+                        {
+                            MessageBox.Show("Delete aborted! The sync server did not accept the deletion.\n\n" + SyncManager.State +
+                                "\n\n(Songs can only be deleted while the connection to the sync server is up and their entry was synced)");
+                            return;
+                        }
+
+                        // Delete the matched file(s) from the local song library (there can be copies in multiple
+                        // subfolders). Only if the file deletion went through is the migration state bumped, so a
+                        // failed delete is going to be retried automatically on the next startup.
+                        foreach (string songFilePath in filesToDelete)
+                        {
+                            try
+                            {
+                                File.Delete(songFilePath);
+                            }
+                            catch (Exception ex)
+                            {
+                                if (!File.Exists(songFilePath))
+                                    continue; // Another client (e.g. sharing the library via NAS) already deleted this copy
+
+                                // The migration is already on the server, but the library migration state was not bumped,
+                                // so this deletion is going to be retried automatically on the next startup.
+                                MessageBox.Show("The server registered the deletion, but the file could not be deleted locally:\n" + ex.Message);
+                                return;
+                            }
+                        }
+
+                        // Remove the song from the playlist (only the actually deleted files)
+                        foreach (string songFilePath in filesToDelete)
+                            SongManager.Playlist.RemoveAll(x => x == songFilePath);
+
+                        // Remove the local database entry (the server already removed its copy of the row).
+                        // The history entries referencing the deleted song are removed as well (the server does
+                        // that via its database cascade), and so are queued unsynced requests that belonged to
+                        // the deleted song (votes, volume, ...), since they can never succeed meaningfully anymore.
+                        using (var songDbContext = new SongDbContext())
+                        {
+                            var songIdsToRemove = new[] { targetSongId };
+                            var upvotedSongsToRemove = songDbContext.UpvotedSongs.Where(x => x.SongId == targetSongId).ToArray();
+                            var historyToRemove = songDbContext.SongHistoryEntries.Where(h => h.SongId != null && songIdsToRemove.Contains(h.SongId.Value)).ToArray();
+                            var queuedToRemove = songDbContext.NotYetSyncedData.Where(n => n.BelongedToSongId != null && songIdsToRemove.Contains(n.BelongedToSongId.Value)).ToArray();
+
+                            songDbContext.SongHistoryEntries.RemoveRange(historyToRemove);
+                            songDbContext.UpvotedSongs.RemoveRange(upvotedSongsToRemove);
+                            songDbContext.NotYetSyncedData.RemoveRange(queuedToRemove);
+                            try
+                            {
+                                songDbContext.SaveChanges();
+                            }
+                            catch (Exception ex)
+                            {
+                                // The file is already deleted, the local database heals itself on the next pull.
+                                MessageBox.Show("The file was deleted, but the local database could not be updated:\n" + ex.Message);
+                                return;
+                            }
+                        }
+
+                        SyncManager.WriteSongLibraryMigrationState(Config.Data.MusicPath, createdMigration.UserId, createdMigration.MigrationNumber);
+
+                        // If the library turned out to be registered for a different account, warn about it
+                        var ownerWarning = SyncManager.TakeSongLibraryOwnerWarning();
+                        if (ownerWarning != null)
+                            MessageBox.Show(ownerWarning, "Song Library");
+
+                        SongManager.CreateSongChoosingList();
                         bRefresh_Click(null, EventArgs.Empty);
+
+                        MessageBox.Show("Successfully deleted \"" + songName + "\" from the database and the song libraries!" + (skippedFiles > 0
+                            ? "\n\nNote: " + skippedFiles + " file(s) with the old name were left alone, since their album/artist metadata did not match the deleted song entries."
+                            : ""));
                     }
                     catch { MessageBox.Show("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!!", e.ToString()); }
                 })));
@@ -459,6 +791,19 @@ namespace MusicPlayerDXMonoGamePort
         }
 
         // Other Events
+        static void RollbackFileRenames(List<(string OldPath, string NewPath)> movedFiles)
+        {
+            for (int i = movedFiles.Count - 1; i >= 0; i--)
+            {
+                try
+                {
+                    if (File.Exists(movedFiles[i].NewPath) && !File.Exists(movedFiles[i].OldPath))
+                        File.Move(movedFiles[i].NewPath, movedFiles[i].OldPath);
+                }
+                catch { }
+            }
+        }
+
         private void textBox1_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -481,8 +826,7 @@ namespace MusicPlayerDXMonoGamePort
         }
 
         public void toSong(string Song)
-        {
-            int index = 0;
+        {            int index = 0;
             for (int i = 0; i < dataGridView1.Rows.Count; i++)
                 if ((string)dataGridView1.Rows[i].Cells[0].Value == Song)
                 {
