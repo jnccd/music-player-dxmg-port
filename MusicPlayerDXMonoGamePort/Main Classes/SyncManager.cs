@@ -112,7 +112,25 @@ public static class SyncManager
 
                     Console.WriteLine($"Synced data for endpoint {unsyncedData.Endpoint}: {res.StatusCode}, {unsyncedData.Body}");
 
-                    if (res.IsSuccessStatusCode || res.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    if (res.StatusCode == System.Net.HttpStatusCode.NotFound && unsyncedData.Endpoint != "/sync/new-song")
+                    {
+                        // The song row this request refers to does not exist on the server (anymore):
+                        // it was merged away by a duplicate heal (its canonical row now has a different
+                        // SongId) or deleted. If an upload of the same song is still queued (this entry
+                        // was retried before it), leave it - the upload either creates the row or
+                        // resolves to the canonical one; otherwise the request can never succeed and is
+                        // dropped so it is not retried on every startup.
+                        bool uploadStillQueued = unsyncedData.BelongedToSongId != null
+                            && songDbContext.NotYetSyncedData.Any(x =>
+                                x.Endpoint.EndsWith("/sync/new-song") && x.BelongedToSongId == unsyncedData.BelongedToSongId);
+                        if (!uploadStillQueued)
+                        {
+                            Console.WriteLine($"Server does not know the song of queued {unsyncedData.Endpoint} data (anymore), dropping it: {unsyncedData.Body}");
+                            songDbContext.NotYetSyncedData.Remove(unsyncedData);
+                            songDbContext.SaveChanges();
+                        }
+                    }
+                    else if (res.IsSuccessStatusCode || res.StatusCode == System.Net.HttpStatusCode.Conflict)
                     {
                         songDbContext.NotYetSyncedData.Remove(unsyncedData);
                         songDbContext.SaveChanges();
