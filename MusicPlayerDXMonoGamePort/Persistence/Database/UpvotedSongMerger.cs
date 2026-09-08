@@ -49,7 +49,7 @@ public static class UpvotedSongMerger
             // Fill the empty tag fields of the kept row from the combined metadata when the kept row
             // was the one missing them (it won because it carries the song data) - after the other
             // rows were removed.
-            if (SongFileMatching.TryFillMissingTags(keep, combinedAlbum, combinedArtist, out string? artistToSet, out string? albumToSet))
+            if (SongFileMatching.TryFillMissingTags(keep, combinedAlbum, combinedArtist, out var artistToSet, out var albumToSet))
             {
                 if (artistToSet != null)
                     keep.Artist = artistToSet;

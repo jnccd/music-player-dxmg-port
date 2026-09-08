@@ -86,7 +86,7 @@ namespace MusicPlayerDXMonoGamePort
         /// canonical (data-carrying) row wins, so up/downvotes and the choosing weights always hit the
         /// same row instead of splitting the song state across duplicates.
         /// </summary>
-        static UpvotedSong? ResolveSongRowByName(string songName, SongDbContext songDbContext)
+        static UpvotedSong ResolveSongRowByName(string songName, SongDbContext songDbContext)
         {
             var rows = songDbContext.UpvotedSongs.Where(x => x.Name == songName).ToArray();
             return rows.Length == 0 ? null : SongFileMatching.ChooseCanonicalEntry(rows);
@@ -97,7 +97,7 @@ namespace MusicPlayerDXMonoGamePort
         /// auto-chooser from immediately replaying the file that just ended - even when duplicate rows
         /// make several SongIds point at the same file.
         /// </summary>
-        static string? LastPlayedSongPath =>
+        static string LastPlayedSongPath =>
             PlayerHistory.Count > 1 && PlayerHistoryIndex > 0 ? PlayerHistory[PlayerHistoryIndex - 1] : null;
 
         // Player Managment
