@@ -98,7 +98,7 @@ namespace MusicPlayerDXMonoGamePort
         /// make several SongIds point at the same file.
         /// </summary>
         static string LastPlayedSongPath =>
-            PlayerHistory.Count > 1 && PlayerHistoryIndex > 0 ? PlayerHistory[PlayerHistoryIndex - 1] : null;
+            PlayerHistory.Count > 0 && PlayerHistoryIndex > 0 ? PlayerHistory[PlayerHistoryIndex - 1] : null;
 
         // Player Managment
         public static void PlayPause()
@@ -355,7 +355,7 @@ namespace MusicPlayerDXMonoGamePort
                 // Play a song that has been upvoted recently
                 var RecentlyPlayedChoosingList = new List<string>();
                 using var songDbContext = new SongDbContext();
-                var HistorySongData = songDbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).TakeLast(25).ToList();
+                var HistorySongData = songDbContext.SongHistoryEntries.OrderByDescending(x => x.Date).Take(25).ToList();
                 var traversedSongIds = HistorySongData.Take(3).Where(x => x.ScoreChange < 0 && x.SongId != null).Select(x => x.SongId.Value).ToList(); // Even on the songs before the 3 to 9 high replay chance window, skip those who were downvoted
                 foreach (var song in HistorySongData.Skip(3).Take(6))
                 {
@@ -404,7 +404,7 @@ namespace MusicPlayerDXMonoGamePort
 
             do
                 SongChoosingListIndex = Values.RDM.Next(SongChoosingList.Count);
-            while (PlayerHistory.Count != 0 && SongChoosingList[SongChoosingListIndex] == PlayerHistory[PlayerHistoryIndex - 1] && Playlist.Count > 1);
+            while (PlayerHistory.Count != 0 && PlayerHistoryIndex > 0 && SongChoosingList[SongChoosingListIndex] == PlayerHistory[PlayerHistoryIndex - 1] && Playlist.Count > 1);
 
             PlayerHistory.Add(SongChoosingList[SongChoosingListIndex]);
             PlayerHistoryIndex = PlayerHistory.Count - 1;
@@ -833,6 +833,11 @@ namespace MusicPlayerDXMonoGamePort
         }
         private static void SaveCurrentSongToHistory(float ScoreChange)
         {
+            // Nothing is playing yet (e.g. history save fired during startup before the first song was
+            // added): the currently-playing getters would index out of range.
+            if (PlayerHistory.Count == 0 || PlayerHistoryIndex < 0 || PlayerHistoryIndex >= PlayerHistory.Count)
+                return;
+
             using var songDbContext = new SongDbContext();
 
             try
@@ -850,6 +855,9 @@ namespace MusicPlayerDXMonoGamePort
                 Console.WriteLine(ex);
                 return;
             }
+
+            if (currentlyPlayingSongData == null)
+                return; // No database row for the current song: nothing to record
 
             var newEntry = new SongHistoryEntry(currentlyPlayingSongData.SongId, ScoreChange, DateTime.Now);
             string strPath = Values.CurrentExecutablePath + @"\Log.txt";
