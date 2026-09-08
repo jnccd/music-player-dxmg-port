@@ -200,6 +200,20 @@ public static class SyncManager
             songDbContext.SongHistoryEntries.AddRange(pulledData.HistoryEntries);
             songDbContext.SaveChanges();
 
+            // Heal duplicate rows that the (possibly not yet healed) server delivered: duplicates of one
+            // song made the dxmg client treat it as several songs (disliked songs kept being chosen, see
+            // the "not played yet" pool and the per-SongId replay window).
+            try
+            {
+                int mergedAway = MusicPlayerDXMonoGamePort.Persistence.Database.UpvotedSongMerger.MergeDuplicateUpvotedSongs(songDbContext);
+                if (mergedAway > 0)
+                    Console.WriteLine($"Healed {mergedAway} duplicate upvotedSong row(s) after the pull.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"UpvotedSong duplicate heal after pull failed: {ex.Message}");
+            }
+
             // If the user explicitly agreed to take the library over, register it for the current account
             // now (treated as fully migrated for it). Migrations are then applied as usual below, which is
             // a no-op, since the library state was just set to the latest known migration.

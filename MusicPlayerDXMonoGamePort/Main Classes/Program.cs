@@ -1,4 +1,4 @@
-﻿using Persistence;
+using Persistence;
 using MusicPlayerSyncInterface.Database;
 using System;
 using System.Diagnostics;
@@ -282,6 +282,23 @@ namespace MusicPlayerDXMonoGamePort
                     songDbContext.SaveChanges();
                 }
                 catch { }
+            }
+
+            // Heal duplicate UpvotedSong rows (same file name): leftover duplicates (e.g. a metadata-less
+            // row next to a tagged row of the same song) made the client treat one song as several - the
+            // "not played yet" pool kept containing disliked songs (only one duplicate row got the
+            // downvote) and the recent-replay window was bypassed per duplicate SongId.
+            {
+                try
+                {
+                    int mergedAway = UpvotedSongMerger.MergeDuplicateUpvotedSongs(songDbContext);
+                    if (mergedAway > 0)
+                        Console.WriteLine($"Healed {mergedAway} duplicate upvotedSong row(s) at startup.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"UpvotedSong duplicate heal failed at startup: {ex.Message}");
+                }
             }
 
             // Fill DateAdded fields from old AddingDates fields if they are null

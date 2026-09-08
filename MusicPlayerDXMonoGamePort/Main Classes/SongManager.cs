@@ -1,4 +1,4 @@
-﻿using Persistence;
+using Persistence;
 using Microsoft.Xna.Framework.Media;
 using NAudio.CoreAudioApi;
 using NAudio.Dsp;
@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using MusicPlayerSyncInterface.Database;
+using MusicPlayerSyncInterface;
 using MusicPlayerSyncInterface.DTOs;
 using MusicPlayerDXMonoGamePort.Persistence.Database;
 using MusicPlayerDXMonoGamePort.Main_Classes;
@@ -78,6 +79,26 @@ namespace MusicPlayerDXMonoGamePort
         // Debug
         public static long CurrentDebugTime = 0;
         public static long CurrentDebugTime2 = 0;
+
+        /// <summary>
+        /// Resolves the row that represents the song of the given file name. When duplicate rows of the
+        /// same name exist (leftover duplicates before they get healed, see UpvotedSongMerger), the
+        /// canonical (data-carrying) row wins, so up/downvotes and the choosing weights always hit the
+        /// same row instead of splitting the song state across duplicates.
+        /// </summary>
+        static UpvotedSong? ResolveSongRowByName(string songName, SongDbContext songDbContext)
+        {
+            var rows = songDbContext.UpvotedSongs.Where(x => x.Name == songName).ToArray();
+            return rows.Length == 0 ? null : SongFileMatching.ChooseCanonicalEntry(rows);
+        }
+
+        /// <summary>
+        /// Returns the path of the song that was played last (before the current one). Used to keep the
+        /// auto-chooser from immediately replaying the file that just ended - even when duplicate rows
+        /// make several SongIds point at the same file.
+        /// </summary>
+        static string? LastPlayedSongPath =>
+            PlayerHistory.Count > 1 && PlayerHistoryIndex > 0 ? PlayerHistory[PlayerHistoryIndex - 1] : null;
 
         // Player Managment
         public static void PlayPause()
@@ -223,11 +244,10 @@ namespace MusicPlayerDXMonoGamePort
             }
 
             using var songDbContext = new SongDbContext();
-            var upvotedSongsList = songDbContext.UpvotedSongs.ToList();
-            int index = upvotedSongsList.FindIndex(x => x.Name == currentlyPlayingSongName);
-            if (index != -1 && upvotedSongsList[index].Volume != -1)
+            var upvotedSong = ResolveSongRowByName(currentlyPlayingSongName, songDbContext);
+            if (upvotedSong != null && upvotedSong.Volume != -1)
             {
-                float mult = Values.BaseVolume / upvotedSongsList[index].Volume;
+                float mult = Values.BaseVolume / upvotedSong.Volume;
                 Values.VolumeMultiplier = mult > 3 ? 3 : mult;
                 //Program.game.ShowSecondRowMessage("Applied Volume multiplier of: " + Math.Round(mult, 2), 1);
             }
@@ -263,7 +283,7 @@ namespace MusicPlayerDXMonoGamePort
             output = new DirectSoundOut();
             output.Init(Channel32);
 
-            if (Config.Data.Preload || songDbContext.UpvotedSongs.ElementAt(index).Volume == -1)
+            if (Config.Data.Preload || upvotedSong?.Volume == -1)
             {
                 if (Config.Data.MultiThreading)
                     T = Task.Factory.StartNew(SongVisualization.UpdateEntireSongBuffers);
@@ -276,7 +296,7 @@ namespace MusicPlayerDXMonoGamePort
             SongStartTime = (int)Values.Timer;
             Channel32.Position = SongVisualization.bufferLength / 2;
 
-            currentlyPlayingSongData = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
+            currentlyPlayingSongData = ResolveSongRowByName(currentlyPlayingSongName, songDbContext);
             AddSongToListIfNotDoneSoFar(currentlyPlayingSongPath);
             //Program.game.UpdateDiscordRPC();
         }
@@ -300,16 +320,25 @@ namespace MusicPlayerDXMonoGamePort
                 //Console.WriteLine("Taking a song that hasnt been played yet");
                 // Play a song that hasnt been played yet
                 using var songDbContext = new SongDbContext();
-                var notPlayedSongNames = songDbContext.UpvotedSongs
-                    .Where(x => x.Streak == 0)
-                    .ToList()
-                    .Select(x => Tuple.Create(x, GetSongPathFromSongName(x.Name)))
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Item2));
-                if (notPlayedSongNames.Any())
+                string lastPlayedPath = LastPlayedSongPath ?? "";
+                // One candidate per FILE NAME: duplicate rows of one song must not add the same file to
+                // this pool several times (that made disliked songs stay in here - the downvote only hit
+                // one of their rows). The representative of each name is the canonical (data-carrying)
+                // row, and it must still be unplayed (Streak == 0): a disliked song has Streak < 0 on
+                // the row that carries its data. The file that just ended is skipped as well.
+                var notPlayedPaths = songDbContext.UpvotedSongs.ToArray()
+                    .GroupBy(x => x.Name)
+                    .Select(g => (Row: SongFileMatching.ChooseCanonicalEntry(g), Name: g.Key))
+                    .Where(t => t.Row != null && t.Row.Streak == 0)
+                    .Select(t => GetSongPathFromSongName(t.Name))
+                    .Where(path => !string.IsNullOrWhiteSpace(path) && !string.Equals(path, lastPlayedPath, StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                if (notPlayedPaths.Count > 0)
                 {
-                    //Console.WriteLine("Found " + notPlayedSongNames.Count() + " unplayed songs, picking one...");
+                    //Console.WriteLine("Found " + notPlayedPaths.Count + " unplayed songs, picking one...");
                     // If there is one play it
-                    PlayerHistory.Add(GetSongPathFromSongName(notPlayedSongNames.GetRandomValue().Item1.Name));
+                    PlayerHistory.Add(notPlayedPaths[Values.RDM.Next(notPlayedPaths.Count)]);
                     PlayerHistoryIndex = PlayerHistory.Count - 1;
                     PlaySongByPath(PlayerHistory[PlayerHistoryIndex]);
                 }
@@ -347,8 +376,15 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     //Console.WriteLine("Found " + RecentlyPlayedChoosingList.Count + " recently upvoted songs");
                     //Console.WriteLine($"The song that appears the most in the list is \"{RecentlyPlayedChoosingList.GroupBy(x => x).OrderByDescending(x => x.Count()).First().Key}\" with {RecentlyPlayedChoosingList.Count(x => x == RecentlyPlayedChoosingList.GroupBy(x => x).OrderByDescending(x => x.Count()).First().Key)} entries");
-                    // Play a recently upvoted song
-                    PlayerHistory.Add(GetSongPathFromSongName(RecentlyPlayedChoosingList[Values.RDM.Next(RecentlyPlayedChoosingList.Count)]));
+                    // Play a recently upvoted song - but never the file that just ended (duplicate rows
+                    // of one song must not be able to bypass that guard through a second SongId).
+                    string lastPlayedName = LastPlayedSongPath != null ? Path.GetFileNameWithoutExtension(LastPlayedSongPath) : null;
+                    var candidates = lastPlayedName != null
+                        ? RecentlyPlayedChoosingList.Where(name => name != lastPlayedName).ToList()
+                        : RecentlyPlayedChoosingList;
+                    if (candidates.Count == 0)
+                        candidates = RecentlyPlayedChoosingList;
+                    PlayerHistory.Add(GetSongPathFromSongName(candidates[Values.RDM.Next(candidates.Count)]));
                     PlayerHistoryIndex = PlayerHistory.Count - 1;
                     PlaySongByPath(PlayerHistory[PlayerHistoryIndex]);
                 }
@@ -385,7 +421,7 @@ namespace MusicPlayerDXMonoGamePort
 
                 string SongName = Playlist[i].Split('\\').Last();
                 using var songDbContext = new SongDbContext();
-                float amount = GetSongChoosingAmount(songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongName)) + 1;
+                float amount = GetSongChoosingAmount(ResolveSongRowByName(SongName, songDbContext)) + 1;
 
                 for (int k = 0; k < amount; k++)
                     SongChoosingList.Add(Playlist[i]);
@@ -417,7 +453,7 @@ namespace MusicPlayerDXMonoGamePort
 
             // Getting target Count
             using var songDbContext = new SongDbContext();
-            int amount = (int)GetSongChoosingAmount(songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == SongName)) + 1;
+            int amount = (int)GetSongChoosingAmount(ResolveSongRowByName(SongName, songDbContext)) + 1;
 
             for (int j = 0; j < amount - count; j++)
                 SongChoosingList.Insert(index, SongPath);
@@ -569,7 +605,7 @@ namespace MusicPlayerDXMonoGamePort
             if (PlayerHistoryIndex != -1)
             {
                 using var songDbContext = new SongDbContext();
-                var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
+                var upvotedSong = ResolveSongRowByName(currentlyPlayingSongName, songDbContext);
 
                 if (upvotedSong != null && DownVoteCurrentSongForUserSkip && PlayerHistoryIndex >= PlayerHistory.Count - 1 && !IsCurrentSongUpvoted)
                 {
@@ -606,7 +642,7 @@ namespace MusicPlayerDXMonoGamePort
                 AddSongToListIfNotDoneSoFar(currentlyPlayingSongPath);
 
                 using var songDbContext = new SongDbContext();
-                var upvotedSong = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == currentlyPlayingSongName);
+                var upvotedSong = ResolveSongRowByName(currentlyPlayingSongName, songDbContext);
                 double percentage;
                 if (Channel32 == null)
                     percentage = 1;
@@ -644,7 +680,7 @@ namespace MusicPlayerDXMonoGamePort
         {
             var songName = SongPath.Split('\\').Last();
             using var songDbContext = new SongDbContext();
-            var song = songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == songName);
+            var song = ResolveSongRowByName(songName, songDbContext);
             if (song == null)
             {
                 var newSong = new UpvotedSong(songName, 0, 0, 0, 0, GetSongFileCreationDate(SongPath), -1) { Path = SongPath };
@@ -753,7 +789,7 @@ namespace MusicPlayerDXMonoGamePort
 
             string songName = SongPath.Split('\\').LastOrDefault();
             if (File.Exists(SongPath) && songName != null)
-                return SongAge(songDbContext.UpvotedSongs.FirstOrDefault(x => x.Name == songName));
+                return SongAge(ResolveSongRowByName(songName, songDbContext));
             else
                 return float.NaN;
         }
@@ -806,7 +842,7 @@ namespace MusicPlayerDXMonoGamePort
                 if (songDbContext.SongHistoryEntries.Any() && currentlyPlayingSongName == currentNewestUpvotedSong?.Name)
                     return;
 
-                currentlyPlayingSongData ??= songDbContext.UpvotedSongs.AsEnumerable().FirstOrDefault(x => x.Name == currentlyPlayingSongName);
+                currentlyPlayingSongData ??= ResolveSongRowByName(currentlyPlayingSongName, songDbContext);
             }
             catch (Exception ex)
             {
