@@ -355,7 +355,10 @@ namespace MusicPlayerDXMonoGamePort
                 // Play a song that has been upvoted recently
                 var RecentlyPlayedChoosingList = new List<string>();
                 using var songDbContext = new SongDbContext();
-                var HistorySongData = songDbContext.SongHistoryEntries.OrderByDescending(x => x.Date).Take(25).ToList();
+                // SQLite cannot ORDER BY DateTimeOffset server-side, so the ordering happens in memory
+                // (AsEnumerable). Take(25) on the DESCENDING order gives the 25 MOST RECENT entries -
+                // the original TakeLast(25) took the OLDEST 25 of the whole history.
+                var HistorySongData = songDbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).Take(25).ToList();
                 var traversedSongIds = HistorySongData.Take(3).Where(x => x.ScoreChange < 0 && x.SongId != null).Select(x => x.SongId.Value).ToList(); // Even on the songs before the 3 to 9 high replay chance window, skip those who were downvoted
                 foreach (var song in HistorySongData.Skip(3).Take(6))
                 {
