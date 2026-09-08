@@ -14,12 +14,12 @@ namespace MusicPlayerDXMonoGamePort.Persistence.Database;
 /// existed several times: the "not played yet" pool (Streak == 0) keeps containing the song even after
 /// it was disliked (only one of its rows got the downvote), and the recent-replay window is tracked per
 /// SongId, so the other row bypasses it.
-/// Rows are merged per file name when they can be proven to be the same song: all tagged rows of the
-/// name must share ONE tag signature (a metadata-less row is then absorbed into that song; rows with
-/// several different tag signatures are left alone, since they are genuinely different same-named
-/// songs). The canonical row is chosen by SongFileMatching (data-first: the row carrying the score
-/// history always survives), its metadata is adopted when it was the metadata-less one, its counters
-/// stay untouched, and the history of the merged-away rows is moved onto it (delete + re-add under the
+/// Rows are merged per file name when they can be proven to be the same song: the rows must not
+/// CONTRADICT each other (both carrying a tag field with different non-empty values would mean
+/// different songs; rows that differ only by empty fields - e.g. a pruned artist - are one song).
+/// The canonical row is chosen by SongFileMatching (data-first: the row carrying the score history
+/// always survives), its counters stay untouched, its empty metadata fields are filled from the
+/// combined tags, and the history of the merged-away rows is moved onto it (delete + re-add under the
 /// kept row's key, because EF Core cannot modify key properties in place). Returns how many rows were
 /// merged away.
 /// </summary>
@@ -36,25 +36,26 @@ public static class UpvotedSongMerger
 
         foreach (var group in groups)
         {
-            var taggedRows = group.Where(song => !SongFileMatching.HasNoAlbumOrArtist(song.Artist, song.Album)).ToArray();
-            var tagSignatures = taggedRows.Select(song => (song.Artist, song.Album)).Distinct().ToArray();
-            if (tagSignatures.Length > 1)
-                continue; // Several differently tagged songs share the file name: genuinely different songs
+            // Rows of one song may differ by EMPTY tag fields (e.g. an artist pruned on one client);
+            // only CONTRADICTING non-empty values (different artist or album on the same name) mean
+            // genuinely different same-named songs.
+            if (!SongFileMatching.TryGetCombinedTags(group, out string combinedArtist, out string combinedAlbum))
+                continue;
 
-            string fileArtist = tagSignatures.Length == 1 ? tagSignatures[0].Item1 : "";
-            string fileAlbum = tagSignatures.Length == 1 ? tagSignatures[0].Item2 : "";
-
-            var (keep, remove) = SongFileMatching.MergeSameSongEntries(group, fileAlbum, fileArtist);
+            var (keep, remove) = SongFileMatching.MergeSameSongEntries(group, combinedAlbum, combinedArtist);
             mergedAway += MoveHistoryAndRemoveRows(songDbContext, keep, remove);
 
-            // Adopt the file's metadata onto the kept row when it was the metadata-less one (it won
-            // because it carries the song data) - after the tagged duplicate was removed.
-            if (SongFileMatching.TryGetTagsToAdoptOnto(keep, group, fileAlbum, fileArtist, out string adoptAlbum, out string adoptArtists))
+            // Fill the empty tag fields of the kept row from the combined metadata when the kept row
+            // was the one missing them (it won because it carries the song data) - after the other
+            // rows were removed.
+            if (SongFileMatching.TryFillMissingTags(keep, combinedAlbum, combinedArtist, out string? artistToSet, out string? albumToSet))
             {
-                keep.Artist = adoptArtists;
-                keep.Album = adoptAlbum;
+                if (artistToSet != null)
+                    keep.Artist = artistToSet;
+                if (albumToSet != null)
+                    keep.Album = albumToSet;
                 songDbContext.SaveChanges();
-                Console.WriteLine($"Adopted metadata of \"{keep.Name}\" (artist: {keep.Artist}, album: {keep.Album}) onto data-carrying row {keep.SongId}.");
+                Console.WriteLine($"Filled metadata of \"{keep.Name}\" (artist: {keep.Artist}, album: {keep.Album}) onto data-carrying row {keep.SongId}.");
             }
         }
 
