@@ -1,3 +1,56 @@
-body {
-  
+/*
+ * Buttons injected by the Music Player browser extension (see content.js).
+ *
+ * They are styled with YouTube's own design tokens where possible, so they follow
+ * the active theme (light / dark) and keep looking like the buttons around them.
+ * Every token has a neutral fallback in case YouTube renames one.
+ */
+
+.music-player-download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+
+  height: 36px;
+  margin: 0 0 0 8px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 18px;
+
+  background-color: var(--yt-sys-color-baseline--tonal-background, var(--yt-spec-badge-chip-background, rgba(128, 128, 128, 0.18)));
+  color: var(--yt-sys-color-baseline--text-primary, var(--yt-spec-text-primary, currentColor));
+
+  cursor: pointer;
+  white-space: nowrap;
+  text-transform: uppercase;
+
+  font-family: "Roboto", "Arial", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0.5px;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+.music-player-download-button:hover {
+  background-color: var(--yt-sys-color-baseline--mono-tonal-hover, var(--yt-spec-badge-chip-background-hover, rgba(128, 128, 128, 0.28)));
+}
+
+.music-player-download-button:active {
+  background-color: var(--yt-sys-color-baseline--mono-tonal-hover-inverse, rgba(128, 128, 128, 0.36));
+}
+
+.music-player-download-button:focus-visible {
+  outline: 2px solid var(--yt-sys-color-baseline--call-to-action, #3ea6ff);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .music-player-download-button {
+    border: 1px solid ButtonBorder;
+  }
 }
