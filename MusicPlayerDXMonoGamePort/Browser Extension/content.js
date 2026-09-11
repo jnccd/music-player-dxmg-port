@@ -14,6 +14,8 @@
 (() => {
   'use strict';
 
+  const GROUP_CLASS = 'music-player-button-group';
+  const GROUP_ATTR = 'data-music-player-button-group';
   const BUTTON_CLASS = 'music-player-download-button';
   const BUTTON_ATTR = 'data-music-player-button';
 
@@ -30,12 +32,24 @@
    * Injected buttons
    * ---------------------------------------------------------------------- */
 
-  function createButtons() {
-    return [
+  /**
+   * The buttons live in a wrapper of our own: it keeps them together as one flex
+   * item, so they centre themselves vertically inside whatever container YouTube
+   * puts the subscribe button in, just like YouTube's own buttons do.
+   */
+  function createGroup() {
+    const group = document.createElement('div');
+
+    group.className = GROUP_CLASS;
+    group.setAttribute(GROUP_ATTR, '');
+
+    [
       createButton('Song Download', 'Download the current song to the Music Player', onSongDownload),
       createButton('Video Download', 'Download this video to the Music Player', onVideoDownload),
       createButton('View Thumbnail', 'Open this video\'s thumbnail in a new tab', onViewThumbnail),
-    ];
+    ].forEach((button) => group.appendChild(button));
+
+    return group;
   }
 
   function createButton(label, tooltip, action) {
@@ -114,46 +128,56 @@
    * Injection
    * ---------------------------------------------------------------------- */
 
-  function findInsertTarget() {
+  function findMetadata() {
     /// Prefer the real watch page over the miniplayer, which reuses the same component.
     const metadata = document.querySelector('#primary ytd-watch-metadata') || document.querySelector('ytd-watch-metadata');
     if (!metadata || metadata.closest('ytd-miniplayer')) {
       return null;
     }
 
-    /// Current layout: the buttons sit in the top row, right next to the subscribe button.
-    const topRow = metadata.querySelector('#top-row');
-    if (topRow) {
-      return topRow;
-    }
-
-    /// Layouts YouTube used before - better than not showing up at all.
-    return metadata.querySelector('#owner') || metadata.querySelector('#above-the-fold');
+    return metadata;
   }
 
   function syncButtons() {
     syncTimeoutId = null;
 
-    const target = findInsertTarget();
-    if (!target) {
+    const metadata = findMetadata();
+    if (!metadata) {
       return;
     }
 
     removeOfficialDownloadButton();
 
-    /// Still mounted where we put it - nothing to do.
-    if (target.querySelector('[' + BUTTON_ATTR + ']')) {
-      return;
-    }
-
-    /// Drop leftovers of a row YouTube has thrown away in the meantime.
-    document.querySelectorAll('[' + BUTTON_ATTR + ']').forEach((button) => {
-      if (!target.contains(button)) {
-        button.remove();
+    /// Only one group may exist, and only inside the metadata component on screen.
+    document.querySelectorAll('[' + GROUP_ATTR + ']').forEach((group) => {
+      if (!metadata.contains(group)) {
+        group.remove();
       }
     });
 
-    createButtons().forEach((button) => target.appendChild(button));
+    /// The buttons belong directly right of the subscribe button, where they always were.
+    const subscribe = metadata.querySelector('#subscribe-button');
+    if (subscribe) {
+      const group = metadata.querySelector('[' + GROUP_ATTR + ']') || createGroup();
+
+      if (subscribe.nextElementSibling === group) {
+        return;
+      }
+
+      subscribe.insertAdjacentElement('afterend', group);
+      console.log('[Music Player] Buttons added!');
+      return;
+    }
+
+    /// A layout without a subscribe button: fall back to the metadata row itself.
+    const container = metadata.querySelector('#top-row')
+      || metadata.querySelector('#owner')
+      || metadata.querySelector('#above-the-fold');
+    if (!container || container.querySelector('[' + GROUP_ATTR + ']')) {
+      return;
+    }
+
+    container.appendChild(createGroup());
     console.log('[Music Player] Buttons added!');
   }
 

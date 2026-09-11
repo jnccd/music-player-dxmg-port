@@ -6,16 +6,35 @@
  * Every token has a neutral fallback in case YouTube renames one.
  */
 
+/*
+ * Wrapper holding the three buttons as a single flex item. It centres itself in
+ * whatever container YouTube keeps the subscribe button in, so the buttons line up
+ * with the subscribe button and YouTube's own pills next to them.
+ */
+.music-player-button-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  align-self: center;
+
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin: 0 0 0 8px;
+
+  /* Only relevant when YouTube renders the row as inline content instead of flex. */
+  vertical-align: middle;
+}
+
 .music-player-download-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: center;
   box-sizing: border-box;
   flex: 0 0 auto;
 
   height: 36px;
-  margin: 0 0 0 8px;
+  margin: 0;
   padding: 0 16px;
   border: none;
   border-radius: 18px;
@@ -26,11 +45,12 @@
   cursor: pointer;
   white-space: nowrap;
   text-transform: uppercase;
+  vertical-align: middle;
 
   font-family: "Roboto", "Arial", sans-serif;
   font-size: 14px;
   font-weight: 500;
-  line-height: 20px;
+  line-height: 1;
   letter-spacing: 0.5px;
 
   -webkit-font-smoothing: antialiased;
