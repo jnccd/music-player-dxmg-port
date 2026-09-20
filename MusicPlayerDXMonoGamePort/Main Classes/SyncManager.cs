@@ -243,12 +243,15 @@ public static class SyncManager
                     var (newHistoryEntries, mergedDuplicates) = IncrementalPullApplier.Apply(incrementalContext, pulledData, authedUserId);
                     mergedAway = mergedDuplicates;
 
-                    // Verification: without a cursor every entry of the response (the verification tail)
-                    // must already have been local - anything new means this client was NOT fully synced
-                    // and the bootstrap cannot be trusted. Additionally the local history may never be
-                    // MISSING entries the server has (kept orphans only make it larger).
+                    // Verification: when the client had no cursor yet AND claimed to hold everything (the
+                    // response was the verification tail), nothing in it may be new - anything new means
+                    // this client was not fully synced and the bootstrap cannot be trusted. Otherwise (a
+                    // normal delta, or a bounded catch-up delta) the count check decides: the local history
+                    // may never be MISSING entries the server has (kept orphans only make it larger).
                     int localCountAfterPull = IncrementalPullApplier.CountLocalHistory(incrementalContext, authedUserId);
-                    bool tailVerified = historyCursor > 0 || newHistoryEntries == 0;
+                    bool tailVerified = historyCursor > 0
+                        || localHistoryCount < pulledData.TotalHistoryCount
+                        || newHistoryEntries == 0;
                     if (tailVerified && localCountAfterPull >= pulledData.TotalHistoryCount)
                     {
                         incrementalApplied = true;
