@@ -84,7 +84,17 @@ public static class SyncManager
             if (TryCallApiInit)
             {
                 using var songDbContext = new SongDbContext();
-                var sendObjString = JsonConvert.SerializeObject(new SyncInitRequest(songDbContext.UpvotedSongs.ToArray(), songDbContext.SongHistoryEntries.ToArray()), Formatting.Indented);
+                // Only upload history of songs that are part of this upload: the local database may hold
+                // history of songs that no longer exist (dead songs from delete migrations or merged-away
+                // duplicates). Those entries would violate the server's foreign key and fail the whole
+                // init request, so they are never sent.
+                var initSongs = songDbContext.UpvotedSongs.ToArray();
+                var initSongIds = new HashSet<Guid>(initSongs.Select(song => song.SongId));
+                var initHistory = songDbContext.SongHistoryEntries
+                    .ToArray()
+                    .Where(entry => entry.SongId != null && initSongIds.Contains(entry.SongId.Value))
+                    .ToArray();
+                var sendObjString = JsonConvert.SerializeObject(new SyncInitRequest(initSongs, initHistory), Formatting.Indented);
                 var sendContent = new StringContent(sendObjString, Encoding.UTF8, "application/json");
                 var res = client.PostAsync($"{Config.Data.SyncServerHost}{ROUTE_VERSION_PREFIX}/sync/init", sendContent).Result;
                 State = $"Init {res.StatusCode} {res.Content.ReadAsStringAsync().Result}";
@@ -166,12 +176,29 @@ public static class SyncManager
     {
         try
         {
-            var res = client.GetStringAsync($"{Config.Data.SyncServerHost}{ROUTE_VERSION_PREFIX}/sync/pull").Result;
+            // Incremental history pull: tell the server what this client already holds (see
+            // ConfigData.SyncHistorySequences). Without any local history (fresh database) no parameters
+            // are sent and the server answers with the full history, like before. The songs are always
+            // complete. When the client has history but no cursor yet (the first pull after this feature
+            // was introduced), the server answers with a short verification tail and the client adopts the
+            // cursor, so the whole history is not transferred again.
+            string accountId = Config.Data.SyncServerUsername ?? "";
+            long historyCursor = GetHistoryCursor(accountId);
+            int localHistoryCount;
+            using (var countContext = new SongDbContext())
+                localHistoryCount = IncrementalPullApplier.CountLocalHistory(countContext, accountId);
+            string historyQuery = localHistoryCount > 0
+                ? $"?historySince={historyCursor}&historyCount={localHistoryCount}"
+                : "";
+
+            var res = client.GetStringAsync($"{Config.Data.SyncServerHost}{ROUTE_VERSION_PREFIX}/sync/pull{historyQuery}").Result;
             var pulledData = JsonConvert.DeserializeObject<SyncPullResponse>(res);
 
             if (pulledData == null)
                 throw new Exception("Pulled data was null!");
-            if (pulledData.Songs.Count() == 0 || pulledData.HistoryEntries.Count() == 0)
+            // An incremental response may legitimately contain no new history entries; only a full pull
+            // without any history (or a pull without songs) is treated as an empty/failed response.
+            if (pulledData.Songs.Length == 0 || (!pulledData.IsIncremental && pulledData.HistoryEntries.Length == 0))
                 throw new Exception("Pulled data was empty!");
 
             string authedUserId = pulledData.User?.UserId ?? "";
@@ -199,38 +226,89 @@ public static class SyncManager
                 }
             }
 
-            Console.WriteLine($"Pulled {pulledData.Songs.Count()} songs and {pulledData.HistoryEntries.Count()} history entries, writing into local db...");
+            Console.WriteLine(pulledData.IsIncremental
+                ? $"Pulled {pulledData.Songs.Length} songs (incremental history: {pulledData.HistoryEntries.Length} of {pulledData.TotalHistoryCount} entries, cursor {pulledData.HistorySequence})..."
+                : $"Pulled {pulledData.Songs.Length} songs and {pulledData.HistoryEntries.Length} history entries, writing into local db...");
 
             LastPulledMigrations = pulledData.Migrations ?? [];
             LastPulledUserId = authedUserId != "" ? authedUserId : pulledData.User?.UserId;
 
-            using var songDbContext = new SongDbContext();
-            songDbContext.SongHistoryEntries.RemoveRange(songDbContext.SongHistoryEntries);
-            songDbContext.SaveChanges();
-            songDbContext.UpvotedSongs.RemoveRange(songDbContext.UpvotedSongs);
-            songDbContext.SaveChanges();
-
-            // Add missing user (should just be one, ourselves)
-            if (!songDbContext.Users.Where(x => x.UserId == pulledData.User.UserId).Any())
-                songDbContext.Users.Add(pulledData.User);
-            songDbContext.UpvotedSongs.AddRange(pulledData.Songs);
-            songDbContext.SaveChanges();
-            songDbContext.SongHistoryEntries.AddRange(pulledData.HistoryEntries);
-            songDbContext.SaveChanges();
-
-            // Heal duplicate rows that the (possibly not yet healed) server delivered: duplicates of one
-            // song made the dxmg client treat it as several songs (disliked songs kept being chosen, see
-            // the "not played yet" pool and the per-SongId replay window).
-            try
+            int mergedAway = 0;
+            bool incrementalApplied = false;
+            if (pulledData.IsIncremental && !pulledData.ResyncRequired && authedUserId != "")
             {
-                int mergedAway = MusicPlayerDXMonoGamePort.Persistence.Database.UpvotedSongMerger.MergeDuplicateUpvotedSongs(songDbContext);
-                if (mergedAway > 0)
-                    Console.WriteLine($"Healed {mergedAway} duplicate upvotedSong row(s) after the pull.");
+                try
+                {
+                    using var incrementalContext = new SongDbContext();
+                    var (newHistoryEntries, mergedDuplicates) = IncrementalPullApplier.Apply(incrementalContext, pulledData, authedUserId);
+                    mergedAway = mergedDuplicates;
+
+                    // Verification: without a cursor every entry of the response (the verification tail)
+                    // must already have been local - anything new means this client was NOT fully synced
+                    // and the bootstrap cannot be trusted. Additionally the local history may never be
+                    // MISSING entries the server has (kept orphans only make it larger).
+                    int localCountAfterPull = IncrementalPullApplier.CountLocalHistory(incrementalContext, authedUserId);
+                    bool tailVerified = historyCursor > 0 || newHistoryEntries == 0;
+                    if (tailVerified && localCountAfterPull >= pulledData.TotalHistoryCount)
+                    {
+                        incrementalApplied = true;
+                        SetHistoryCursor(authedUserId, pulledData.HistorySequence);
+                        Console.WriteLine($"Incremental history pull applied: {newHistoryEntries} new entr{(newHistoryEntries == 1 ? "y" : "ies")}, cursor {pulledData.HistorySequence}, {localCountAfterPull} local entries.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Incremental history pull could not be verified (new entries: {newHistoryEntries}, local {localCountAfterPull} vs server {pulledData.TotalHistoryCount}) - falling back to the full history.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Incremental history pull failed ({ex.Message}) - falling back to the full history.");
+                }
             }
-            catch (Exception ex)
+
+            if (!incrementalApplied)
             {
-                Console.WriteLine($"UpvotedSong duplicate heal after pull failed: {ex.Message}");
+                // The received response may be a delta or the short verification tail: fetch the whole
+                // history explicitly in that case (historyCount=0 disables the bootstrap server side).
+                bool responseHoldsFullHistory = !pulledData.IsIncremental
+                    && pulledData.HistoryEntries.Length >= pulledData.TotalHistoryCount;
+                if (!responseHoldsFullHistory)
+                {
+                    res = client.GetStringAsync($"{Config.Data.SyncServerHost}{ROUTE_VERSION_PREFIX}/sync/pull?historySince=0&historyCount=0").Result;
+                    pulledData = JsonConvert.DeserializeObject<SyncPullResponse>(res)
+                        ?? throw new Exception("Pulled data was null!");
+                }
+
+                using var songDbContext = new SongDbContext();
+                songDbContext.SongHistoryEntries.RemoveRange(songDbContext.SongHistoryEntries);
+                songDbContext.SaveChanges();
+                songDbContext.UpvotedSongs.RemoveRange(songDbContext.UpvotedSongs);
+                songDbContext.SaveChanges();
+
+                // Add missing user (should just be one, ourselves)
+                if (!songDbContext.Users.Where(x => x.UserId == pulledData.User.UserId).Any())
+                    songDbContext.Users.Add(pulledData.User);
+                songDbContext.UpvotedSongs.AddRange(pulledData.Songs);
+                songDbContext.SaveChanges();
+                songDbContext.SongHistoryEntries.AddRange(pulledData.HistoryEntries);
+                songDbContext.SaveChanges();
+
+                // Heal duplicate rows that the (possibly not yet healed) server delivered: duplicates of one
+                // song made the dxmg client treat it as several songs (disliked songs kept being chosen, see
+                // the "not played yet" pool and the per-SongId replay window).
+                try
+                {
+                    mergedAway = MusicPlayerDXMonoGamePort.Persistence.Database.UpvotedSongMerger.MergeDuplicateUpvotedSongs(songDbContext);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"UpvotedSong duplicate heal after pull failed: {ex.Message}");
+                }
+
+                SetHistoryCursor(authedUserId != "" ? authedUserId : accountId, pulledData.HistorySequence);
             }
+            if (mergedAway > 0)
+                Console.WriteLine($"Healed {mergedAway} duplicate upvotedSong row(s) after the pull.");
 
             // If the user explicitly agreed to take the library over, register it for the current account
             // now (treated as fully migrated for it). Migrations are then applied as usual below, which is
@@ -252,6 +330,28 @@ public static class SyncManager
         {
             State = $"Pull failed: {ex.Message}";
         }
+    }
+
+    /// <summary>
+    /// The incremental history cursor (highest history sequence this client holds) of an account, 0 when
+    /// this client has no cursor for it yet (see ConfigData.SyncHistorySequences).
+    /// </summary>
+    static long GetHistoryCursor(string accountId) =>
+        accountId != "" && Config.Data.SyncHistorySequences.ContainsKey(accountId) ? Config.Data.SyncHistorySequences[accountId] : 0;
+
+    /// <summary>
+    /// Stores the incremental history cursor of an account (0 removes it, e.g. when the server could not
+    /// report one).
+    /// </summary>
+    static void SetHistoryCursor(string accountId, long cursor)
+    {
+        if (accountId == "")
+            return;
+        if (cursor > 0)
+            Config.Data.SyncHistorySequences[accountId] = cursor;
+        else
+            Config.Data.SyncHistorySequences.Remove(accountId);
+        Config.Save();
     }
 
     static void SaveUnsyncedData(string newEntryjson, string endpoint, string? error = null, Guid? SongId = null)
