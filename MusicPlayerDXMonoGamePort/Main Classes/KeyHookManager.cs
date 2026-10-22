@@ -50,7 +50,11 @@ namespace MusicPlayerDXMonoGamePort
         }
         public static void DisposeGlobalKeyHooks()
         {
-            _rawinput.KeyPressed -= OnRawKeyPressed;
+            // The hooks may never have been created (e.g. startup failed before LoadContent): without
+            // this check the fatal error handler itself dies with a NullReferenceException and the real
+            // error never reaches the user.
+            if (_rawinput != null)
+                _rawinput.KeyPressed -= OnRawKeyPressed;
         }
     }
 }

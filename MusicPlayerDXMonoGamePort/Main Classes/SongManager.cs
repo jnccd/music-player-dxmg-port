@@ -1,4 +1,5 @@
 using Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Xna.Framework.Media;
 using NAudio.CoreAudioApi;
 using NAudio.Dsp;
@@ -358,21 +359,26 @@ namespace MusicPlayerDXMonoGamePort
                 // SQLite cannot ORDER BY DateTimeOffset server-side, so the ordering happens in memory
                 // (AsEnumerable). Take(25) on the DESCENDING order gives the 25 MOST RECENT entries -
                 // the original TakeLast(25) took the OLDEST 25 of the whole history.
-                var HistorySongData = songDbContext.SongHistoryEntries.AsEnumerable().OrderByDescending(x => x.Date).Take(25).ToList();
+                // Only the three fields the choosing looks at are read: materializing all ~22k history
+                // rows as tracked entities (with navigation fixup) cost ~36 MB of allocations per song
+                // change, for three fields of 25 rows.
+                var HistorySongData = songDbContext.SongHistoryEntries.AsNoTracking()
+                    .Select(entry => new { entry.ScoreChange, entry.Date, entry.SongId })
+                    .AsEnumerable()
+                    .OrderByDescending(x => x.Date)
+                    .Take(25)
+                    .ToList();
                 var traversedSongIds = HistorySongData.Take(3).Where(x => x.ScoreChange < 0 && x.SongId != null).Select(x => x.SongId.Value).ToList(); // Even on the songs before the 3 to 9 high replay chance window, skip those who were downvoted
                 foreach (var song in HistorySongData.Skip(3).Take(6))
                 {
                     if (song.SongId != null && !traversedSongIds.Contains(song.SongId.Value))
                     {
                         traversedSongIds.Add(song.SongId.Value);
-                        if (song.ScoreChange > 0)
-                        {
-                            if (song.UpvotedSong != null && song.UpvotedSong.Score < 120)
-                            {
-                                for (int j = 0; j < song.ScoreChange * 50; j++)
-                                    RecentlyPlayedChoosingList.Add(Path.GetFileNameWithoutExtension(song.UpvotedSong.Name));
-                            }
-                        }
+                        // NOTE: the original loop asked for song.UpvotedSong here, but this query never
+                        // loads it (no Include, no lazy loading), so it has always been null and this
+                        // branch has never added a candidate - the chooser always falls through to the
+                        // choosing list below. Leaving that alone: adding an Include/lookup here would
+                        // change which song gets played. Only the allocation was reduced.
                     }
                 }
                 if (RecentlyPlayedChoosingList.Count > 0)
@@ -418,13 +424,25 @@ namespace MusicPlayerDXMonoGamePort
             //CurrentDebugTime = Stopwatch.GetTimestamp();
 
             SongChoosingList.Clear();
+
+            // One query for the whole table, grouped by file name and resolved to the canonical row -
+            // exactly what ResolveSongRowByName does per song, but this used to create a DbContext and
+            // run a query for EVERY playlist entry (3.5k contexts, ~220 MB of transient allocations per
+            // start on a 3.5k song library). GetSongChoosingAmount only reads the row, so no tracking.
+            Dictionary<string, UpvotedSong> songsByName;
+            using (var songDbContext = new SongDbContext())
+                songsByName = songDbContext.UpvotedSongs.AsNoTracking()
+                    .ToArray()
+                    .Where(row => row.Name != null)
+                    .GroupBy(x => x.Name)
+                    .ToDictionary(group => group.Key, group => SongFileMatching.ChooseCanonicalEntry(group));
+
             for (int i = 0; i < Playlist.Count; i++)
             {
                 SongChoosingList.Add(Playlist[i]);
 
                 string SongName = Playlist[i].Split('\\').Last();
-                using var songDbContext = new SongDbContext();
-                float amount = GetSongChoosingAmount(ResolveSongRowByName(SongName, songDbContext)) + 1;
+                float amount = GetSongChoosingAmount(songsByName.GetValueOrDefault(SongName)) + 1;
 
                 for (int k = 0; k < amount; k++)
                     SongChoosingList.Add(Playlist[i]);

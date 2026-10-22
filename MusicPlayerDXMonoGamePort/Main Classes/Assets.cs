@@ -120,9 +120,13 @@ namespace MusicPlayerDXMonoGamePort
             }
             try
             {
-                FileStream Stream = new FileStream(UserWallpaper.GetValue("WallPaper").ToString(), FileMode.Open);
-                bg = Texture2D.FromStream(GD, Stream);
-                Stream.Dispose();
+                // Read-only and shared: reading the wallpaper never needs write access. The two-argument
+                // FileStream constructor opens ReadWrite with no sharing, which fails (and killed the
+                // whole app with "CouldntFindWallpaperFile") for read-only files, files another program
+                // has open, and processes without write access - e.g. a sandboxed/restricted launch or a
+                // wallpaper that lives on a read-only share.
+                using (FileStream Stream = new FileStream(UserWallpaper.GetValue("WallPaper").ToString(), FileMode.Open, FileAccess.Read, FileShare.Read))
+                    bg = Texture2D.FromStream(GD, Stream);
             }
             catch
             {

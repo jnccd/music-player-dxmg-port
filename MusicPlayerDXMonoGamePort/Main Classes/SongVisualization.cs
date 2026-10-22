@@ -137,7 +137,9 @@ namespace MusicPlayerDXMonoGamePort
                     GC.WaitForPendingFinalizers();
 
                     SongManager.Channel32ReaderThreaded.Position = 0;
-                    EntireSongWaveBuffer = new GigaFloatList();
+                    // Hand the song length over so the buffer is sized once up front (it used to
+                    // allocate and immediately drop a 256 MB array per song, see GigaFloatList).
+                    EntireSongWaveBuffer = new GigaFloatList(SongManager.Channel32ReaderThreaded.Length / 4);
 
                     while (SongManager.Channel32ReaderThreaded.Position < SongManager.Channel32ReaderThreaded.Length)
                     {
@@ -206,8 +208,12 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     if (SongManager.Channel32 != null && SongManager.Channel32.CanRead && EntireSongWaveBuffer.Count > SongManager.Channel32.Position / 4 && SongManager.Channel32.Position > bufferLength)
                     {
-                        WaveBuffer = EntireSongWaveBuffer.GetRange((int)((SongManager.Channel32.Position - bufferLength / 2) / 4), bufferLength / 4).ToArray();
-                        worked = true;
+                        // Same window as before, but copied into the existing buffer instead of
+                        // building a temporary List<float> + array every frame (~128 KB of garbage
+                        // per video frame, for the whole run).
+                        if (WaveBuffer == null || WaveBuffer.Length != bufferLength / 4)
+                            WaveBuffer = new float[bufferLength / 4];
+                        worked = EntireSongWaveBuffer.CopyRange((int)((SongManager.Channel32.Position - bufferLength / 2) / 4), WaveBuffer, 0, bufferLength / 4);
                     }
                     else
                     {
