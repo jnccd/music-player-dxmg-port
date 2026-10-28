@@ -188,6 +188,8 @@ namespace MusicPlayerDXMonoGamePort
             KeepWindowInScreen();
             Shadow = new DropShadow(gameWindowForm, true);
             Shadow.Show();
+            // Show() puts the new window above the player; re-insert it directly below again.
+            Shadow.UpdateSizeLocation();
         }
         private void AddArtistAndAlbumInDB()
         {

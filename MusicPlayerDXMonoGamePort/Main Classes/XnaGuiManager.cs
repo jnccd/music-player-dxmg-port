@@ -101,11 +101,11 @@ namespace MusicPlayerDXMonoGamePort
                 MouseClickedPos.X = Control.CurMS.X;
                 MouseClickedPos.Y = Control.CurMS.Y;
 
-                if (Values.GetWindow(gameWindowForm.Handle, 2) != Program.game.Shadow.Handle)
-                {
-                    Program.game.Shadow.BringToFront();
-                    gameWindowForm.BringToFront();
-                }
+                // The shadow is a separate window. Re-insert it directly below the player instead of
+                // raising both to the front, which left the shadow on top whenever the player was not
+                // the focused window (while it is covered, the player never has focus, so no repair ran).
+                if (Program.game.Shadow != null && !Program.game.Shadow.IsDisposed)
+                    Program.game.Shadow.KeepBehindParent();
 
                 if (Control.GetMouseRect().Intersects(DurationBarHitbox))
                 {
