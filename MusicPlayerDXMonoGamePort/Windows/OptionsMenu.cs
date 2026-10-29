@@ -426,7 +426,7 @@ namespace MusicPlayerDXMonoGamePort
             Config.Data.ShadowDistance = trackBar2.Value;
             XnaGuiManager.UpdateRectangles();
             XnaGuiManager.UpdateShadowRects();
-            Program.game.ForceTitleRedraw(false);
+            Program.game.ForceTitleRedraw();
         }
 
         private void DownloadBox_TextChanged(object sender, EventArgs e)

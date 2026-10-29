@@ -308,7 +308,7 @@ namespace MusicPlayerDXMonoGamePort
 
             XnaGuiManager.SongTimeSkipped = 0;
             Program.game.ForcedCoverBackgroundRedraw = true;
-            Program.game.ForceTitleRedraw(true);
+            Program.game.ForceTitleRedraw();
             if (Program.game.DG != null)
                 Program.game.DG.Clear();
 

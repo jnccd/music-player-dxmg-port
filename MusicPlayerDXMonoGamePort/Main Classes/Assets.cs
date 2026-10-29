@@ -120,19 +120,17 @@ namespace MusicPlayerDXMonoGamePort
             }
             try
             {
-                // Read-only and shared: reading the wallpaper never needs write access. The two-argument
-                // FileStream constructor opens ReadWrite with no sharing, which fails (and killed the
-                // whole app with "CouldntFindWallpaperFile") for read-only files, files another program
-                // has open, and processes without write access - e.g. a sandboxed/restricted launch or a
-                // wallpaper that lives on a read-only share.
-                using (FileStream Stream = new FileStream(UserWallpaper.GetValue("WallPaper").ToString(), FileMode.Open, FileAccess.Read, FileShare.Read))
-                    bg = Texture2D.FromStream(GD, Stream);
+                // Read-only and shared, and decoded into a texture clamped to the largest screen size
+                // (see SongVisualization.LoadWallpaperTexture). Loaded exactly once: the old code loaded
+                // the wallpaper here and then called RefreshBGtex, which loaded it a second time and
+                // overwrote the field without disposing the first texture (a permanent 31.9 MiB leak for
+                // a 4K wallpaper). RefreshBGtex is only for wallpaper/theme/DPI changes now.
+                bg = SongVisualization.LoadWallpaperTexture(GD, UserWallpaper.GetValue("WallPaper").ToString());
             }
             catch
             {
                 throw new Exception("CouldntFindWallpaperFile");
             }
-            SongVisualization.RefreshBGtex(GD);
             SystemEvents.UserPreferenceChanged += new UserPreferenceChangedEventHandler((object o, UserPreferenceChangedEventArgs target) =>
             {
                 SongVisualization.RefreshBGtex(GD);

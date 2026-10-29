@@ -292,29 +292,140 @@ namespace MusicPlayerDXMonoGamePort
             Debug.WriteLine("Volume multiplier for " + SongManager.currentlyPlayingSongName + " = " + mult);
             Debug.WriteLine("---------------------------------------------------------------------------------------------------------");
         }
+        /// <summary>
+        /// Reads the desktop wallpaper again after the wallpaper, the theme, the DPI or the system colours
+        /// changed (SystemEvents.UserPreferenceChanged). Startup does not come through here any more -
+        /// Assets.Load loads the wallpaper once itself.
+        ///
+        /// The image is decoded on a background thread, then swapped in on the UI thread, where the
+        /// previous texture can be disposed: the frame loop draws Assets.bg, so a background thread must
+        /// never dispose a texture the current frame may still be using. The old code replaced the
+        /// texture without disposing it, which leaked one whole wallpaper per event (31.9 MiB for a 4K
+        /// image) - permanently, because MonoGame textures have no finalizer.
+        /// </summary>
         public static void RefreshBGtex(GraphicsDevice GD)
         {
             Task.Factory.StartNew(() =>
             {
-                lock (Assets.bg)
+                try
                 {
-                    try
+                    RegistryKey UserWallpaper = Registry.CurrentUser.OpenSubKey("Control Panel\\Desktop", false);
+                    if (Convert.ToInt32(UserWallpaper.GetValue("WallpaperStyle")) != 2)
                     {
-                        RegistryKey UserWallpaper = Registry.CurrentUser.OpenSubKey("Control Panel\\Desktop", false);
-                        if (Convert.ToInt32(UserWallpaper.GetValue("WallpaperStyle")) != 2)
-                        {
-                            MessageBox.Show("The background won't work if the Desktop WallpaperStyle isn't set to stretch! \nDer Hintergrund wird nicht funktionieren, wenn der Dektop WallpaperStyle nicht auf Dehnen gesetzt wurde!");
-                        }
-                        FileStream Stream = new FileStream(UserWallpaper.GetValue("WallPaper").ToString(), FileMode.Open);
-                        Assets.bg = Texture2D.FromStream(GD, Stream);
-                        Stream.Dispose();
-
-                        Program.game.ForceBackgroundRedraw();
+                        MessageBox.Show("The background won't work if the Desktop WallpaperStyle isn't set to stretch! \nDer Hintergrund wird nicht funktionieren, wenn der Dektop WallpaperStyle nicht auf Dehnen gesetzt wurde!");
                     }
-                    catch { }
+
+                    Texture2D newBackground = LoadWallpaperTexture(GD, UserWallpaper.GetValue("WallPaper").ToString());
+
+                    Program.game.gameWindowForm.InvokeIfRequired(() =>
+                    {
+                        Texture2D previousBackground = Assets.bg;
+                        Assets.bg = newBackground;
+                        previousBackground?.Dispose();
+                        Program.game.ForceBackgroundRedraw();
+                    });
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Couldn't reload the wallpaper: " + e.Message);
                 }
             });
         }
+
+        /// <summary>
+        /// Loads the desktop wallpaper into a GPU texture, clamped to the largest screen size (see
+        /// <see cref="LoadClampedWallpaperTexture"/>). Falls back to the plain importer when System.Drawing
+        /// cannot decode the file (some WebP/HEIF wallpapers), so an exotic wallpaper still loads - it just
+        /// keeps its full resolution. Throws when the wallpaper is unreadable (callers decide whether that
+        /// is fatal).
+        /// </summary>
+        public static Texture2D LoadWallpaperTexture(GraphicsDevice GD, string wallpaperPath)
+        {
+            try
+            {
+                return LoadClampedWallpaperTexture(GD, wallpaperPath);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Couldn't clamp the wallpaper (" + e.Message + "), loading it unscaled.");
+                using FileStream stream = new FileStream(wallpaperPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                return Texture2D.FromStream(GD, stream);
+            }
+        }
+
+        /// <summary>
+        /// Loads the desktop wallpaper, clamped to the largest screen size. The wallpaper is only ever drawn
+        /// scaled to a screen (or, blurred, into a window sized render target), so the pixels a 4K wallpaper
+        /// has above the biggest screen are pure VRAM cost: 3840x2176 is 31.9 MiB as a Color texture, the
+        /// same image clamped to a 2560x1440 screen is 14.8 MiB. Never upscales - a smaller wallpaper is
+        /// uploaded as it is.
+        /// </summary>
+        static Texture2D LoadClampedWallpaperTexture(GraphicsDevice GD, string wallpaperPath)
+        {
+            int maxWidth = 0;
+            int maxHeight = 0;
+            foreach (Screen screen in Screen.AllScreens)
+            {
+                if (screen.Bounds.Width > maxWidth)
+                    maxWidth = screen.Bounds.Width;
+                if (screen.Bounds.Height > maxHeight)
+                    maxHeight = screen.Bounds.Height;
+            }
+
+            // Read-only and shared: reading the wallpaper never needs write access, and files another
+            // program has open (or on a read-only share) must still load.
+            using FileStream stream = new FileStream(wallpaperPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using System.Drawing.Image source = System.Drawing.Image.FromStream(stream);
+
+            int width = source.Width;
+            int height = source.Height;
+            if (maxWidth > 0 && maxHeight > 0 && (width > maxWidth || height > maxHeight))
+            {
+                // Preserve the aspect ratio, shrink only as far as the largest screen requires.
+                float scale = Math.Min(maxWidth / (float)width, maxHeight / (float)height);
+                width = Math.Max(1, (int)Math.Round(width * scale));
+                height = Math.Max(1, (int)Math.Round(height * scale));
+            }
+
+            Color[] pixels;
+            using (System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+            {
+                using (System.Drawing.Graphics graphics = System.Drawing.Graphics.FromImage(bitmap))
+                {
+                    graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+                    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                    graphics.DrawImage(source, new System.Drawing.Rectangle(0, 0, width, height));
+                }
+
+                pixels = new Color[width * height];
+                System.Drawing.Imaging.BitmapData data = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, width, height),
+                    System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                try
+                {
+                    byte[] bytes = new byte[Math.Abs(data.Stride) * height];
+                    System.Runtime.InteropServices.Marshal.Copy(data.Scan0, bytes, 0, bytes.Length);
+                    for (int y = 0; y < height; y++)
+                    {
+                        int row = data.Stride >= 0 ? y * data.Stride : (height - 1 - y) * -data.Stride;
+                        for (int x = 0; x < width; x++)
+                        {
+                            int i = row + x * 4; // the bitmap is BGRA
+                            pixels[y * width + x] = Color.FromNonPremultiplied(bytes[i + 2], bytes[i + 1], bytes[i], bytes[i + 3]);
+                        }
+                    }
+                }
+                finally
+                {
+                    bitmap.UnlockBits(data);
+                }
+            }
+
+            Texture2D texture = new Texture2D(GD, width, height);
+            texture.SetData(pixels);
+            return texture;
+        }
+
 
         // Draw Methods
         public static void DrawLine(Vector2 End1, Vector2 End2, int Thickness, Color Col, SpriteBatch SB)

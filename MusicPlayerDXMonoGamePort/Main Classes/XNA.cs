@@ -371,24 +371,33 @@ namespace MusicPlayerDXMonoGamePort
                     LeDialog.AnyColor = true;
                     LeDialog.Color = System.Drawing.Color.FromArgb(primaryColor.A, primaryColor.R, primaryColor.G, primaryColor.B);
 
-                    Color[] Background = new Color[Assets.bg.Bounds.Width * Assets.bg.Bounds.Height];
-                    Vector3 AvgColor = new Vector3();
-                    Assets.bg.GetData(Background);
-
-                    for (int i = 0; i < Background.Length; i++)
-                        AvgColor.X += Background[i].R;
-                    AvgColor.X /= Background.Length;
-
-                    for (int i = 0; i < Background.Length; i++)
-                        AvgColor.Y += Background[i].G;
-                    AvgColor.Y /= Background.Length;
-
-                    for (int i = 0; i < Background.Length; i++)
-                        AvgColor.Z += Background[i].B;
-                    AvgColor.Z /= Background.Length;
-
-                    System.Drawing.Color AvgC = System.Drawing.Color.FromArgb(255, (int)AvgColor.Z, (int)AvgColor.Y, (int)AvgColor.X);
+                    // The wallpaper texture can be swapped, and the previous one disposed, while this task
+                    // runs (see SongVisualization.RefreshBGtex). Read it defensively - without the average
+                    // colour the dialog simply keeps the default swatches.
                     System.Drawing.Color DefC = System.Drawing.Color.FromArgb(255, 255, 75, 25);
+                    System.Drawing.Color AvgC = DefC;
+                    try
+                    {
+                        Texture2D wallpaper = Assets.bg;
+                        Color[] Background = new Color[wallpaper.Bounds.Width * wallpaper.Bounds.Height];
+                        Vector3 AvgColor = new Vector3();
+                        wallpaper.GetData(Background);
+
+                        for (int i = 0; i < Background.Length; i++)
+                            AvgColor.X += Background[i].R;
+                        AvgColor.X /= Background.Length;
+
+                        for (int i = 0; i < Background.Length; i++)
+                            AvgColor.Y += Background[i].G;
+                        AvgColor.Y /= Background.Length;
+
+                        for (int i = 0; i < Background.Length; i++)
+                            AvgColor.Z += Background[i].B;
+                        AvgColor.Z /= Background.Length;
+
+                        AvgC = System.Drawing.Color.FromArgb(255, (int)AvgColor.Z, (int)AvgColor.Y, (int)AvgColor.X);
+                    }
+                    catch { }
                     System.Drawing.Color SysC = System.Drawing.Color.FromArgb(255, Assets.SystemDefaultColor.B, Assets.SystemDefaultColor.G, Assets.SystemDefaultColor.R);
 
                     LeDialog.CustomColors = new int[]{
@@ -630,16 +639,25 @@ namespace MusicPlayerDXMonoGamePort
                     Title = Title.Remove(Title.Length - 4);
 
                 int length = (int)(titleFontRenderer.MeasureString(Title).Width);
-                if (TitleTarget == null)
+
+                // The render target is window sized, not title sized, so it is reused across songs and only
+                // rebuilt when it is really gone (first frame, device reset). The old code dropped it on
+                // every song change (ForceTitleRedraw(true) set TitleTarget = null) without disposing it,
+                // which leaked ~0.3 MiB of VRAM per song for the rest of the process - MonoGame textures
+                // have no finalizer, so the GC never gets it back.
+                if (TitleTarget == null || TitleTarget.IsContentLost || TitleTarget.IsDisposed)
                 {
+                    TitleTarget?.Dispose();
                     TitleTarget = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X - (int)(166 * UiScaling.scaleMult), (int)Assets.Title.MeasureString("I()I").Y);
                     X1 = startX;
                     X2 = X1 + length + abstand;
-
-                    TitleTextTarget?.Dispose();
-                    TitleTextTarget = new Texture2D(GraphicsDevice, length, (int)Assets.Title.MeasureString("I()I").Y);
-                    titleFontRenderer.RenderToTexture(TitleTextTarget, Title);
                 }
+
+                // The text texture is sized by the title, so it is rebuilt for every new title (the old
+                // one is disposed first).
+                TitleTextTarget?.Dispose();
+                TitleTextTarget = new Texture2D(GraphicsDevice, Math.Max(1, length), (int)Assets.Title.MeasureString("I()I").Y);
+                titleFontRenderer.RenderToTexture(TitleTextTarget, Title);
 
                 try
                 {
@@ -683,7 +701,7 @@ namespace MusicPlayerDXMonoGamePort
                 catch
                 {
                     try { spriteBatch.End(); } catch { }
-                    //ForceTitleRedraw(true);
+                    //ForceTitleRedraw();
                 }
             }
 
@@ -774,19 +792,26 @@ namespace MusicPlayerDXMonoGamePort
                         try
                         {
                             string path = SongManager.currentlyPlayingSongPath;
-                            TagLib.File file = TagLib.File.Create(path);
+                            using TagLib.File file = TagLib.File.Create(path);
                             TagLib.IPicture pic = file.Tag.Pictures[0];
-                            MemoryStream ms = new MemoryStream(pic.Data.Data);
-                            if (ms != null && ms.Length > 4096)
+                            using MemoryStream ms = new MemoryStream(pic.Data.Data);
+                            if (ms.Length > 4096)
                             {
-                                System.Drawing.Image currentImage = System.Drawing.Image.FromStream(ms);
+                                using System.Drawing.Image currentImage = System.Drawing.Image.FromStream(ms);
                                 path = Values.CurrentExecutablePath + "\\Downloads\\Thumbnail.png";
                                 Directory.CreateDirectory(Path.GetDirectoryName(path));
                                 using (var stream = File.Create(path)) { }
                                 currentImage.Save(path);
-                                Assets.CoverPicture = Texture2D.FromStream(Program.game.GraphicsDevice, new FileStream(path, FileMode.Open));
+
+                                using var coverStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                Texture2D cover = Texture2D.FromStream(Program.game.GraphicsDevice, coverStream);
+                                // This runs inside Draw, on the UI thread: the previous cover is not used
+                                // by any frame any more, so disposing it here cannot cut a frame short.
+                                // The old code only replaced the field, leaking one cover picture per song
+                                // change (MonoGame textures have no finalizer).
+                                Assets.CoverPicture?.Dispose();
+                                Assets.CoverPicture = cover;
                             }
-                            ms.Close();
                         }
                         catch { }
                         ForcedCoverBackgroundRedraw = false;
@@ -1144,11 +1169,13 @@ namespace MusicPlayerDXMonoGamePort
 
             //Debug.WriteLine("Draw: " + (Stopwatch.GetTimestamp() - CurrentDebugTime).ToString());
         }
-        public void ForceTitleRedraw(bool clearTarget)
+        /// <summary>
+        /// Asks the next Draw to render the song title again. The window sized title render target itself is
+        /// reused (see Draw) - it does not depend on the title, only the text texture does.
+        /// </summary>
+        public void ForceTitleRedraw()
         {
             ForcedTitleRedraw = true;
-            if (clearTarget)
-                TitleTarget = null;
         }
         public void ForceBackgroundRedraw()
         {
