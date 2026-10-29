@@ -186,6 +186,10 @@ namespace MusicPlayerDXMonoGamePort
             KeyHookManager.CreateGlobalKeyHooks(Program.game.gameWindowForm.Handle);
 
             KeepWindowInScreen();
+            // Put the window at its saved position before the first frame; Update keeps applying it every
+            // frame from here on (see there). Without this the window would show up at WinForms' default
+            // position - the center of the screen - until the first Update ran.
+            gameWindowForm.Location = Config.Data.WindowPos;
             Shadow = new DropShadow(gameWindowForm, true);
             Shadow.Show();
             // Show() puts the new window above the player; re-insert it directly below again.
@@ -233,8 +237,16 @@ namespace MusicPlayerDXMonoGamePort
             //CurrentDebugTime = Stopwatch.GetTimestamp();
             //FPSCounter.Update(gameTime);
             Control.Update();
-            if (gameWindowForm.Focused)
+            // IsForegroundWindow instead of gameWindowForm.Focused: WinForms' focus flag reports the state
+            // of its own thread and stays "focused" when the window never really got activated at startup,
+            // which made the player eat clicks that landed on another window covering it.
+            if (Values.IsForegroundWindow(gameWindowForm.Handle))
                 XnaGuiManager.ComputeControls();
+            // The window position is window state, not input: it has to be applied every frame even while
+            // the player is in the background. This used to happen as a side effect of ComputeControls,
+            // which only runs while the player is focused - so a startup without focus was left at the
+            // default (centered) position instead of the last one.
+            gameWindowForm.Location = Config.Data.WindowPos;
             if (ScrollWheelCooldown < 0)
             {
                 // Next / Previous Song [MouseWheel] ((On Win10 mouseWheel input is send to the process even if its not focused))
@@ -322,7 +334,7 @@ namespace MusicPlayerDXMonoGamePort
             catch { }
 
             XnaGuiManager.UpdateRectangles();
-            XnaGuiManager.WasFocusedLastFrame = gameWindowForm.Focused;
+            XnaGuiManager.WasFocusedLastFrame = Values.IsForegroundWindow(gameWindowForm.Handle);
 
             //Debug.WriteLine("Update: " + (Stopwatch.GetTimestamp() - CurrentDebugTime).ToString());
             //base.Update(gameTime);

@@ -35,6 +35,15 @@ namespace MusicPlayerDXMonoGamePort
 
         static Form gameWindowForm;
 
+        /// <summary>
+        /// True while the player's window is the window the user is actually working in (see
+        /// <see cref="Values.IsForegroundWindow"/>). Replaces <see cref="Form.Focused"/>, which is only the
+        /// focus state of WinForms' own thread: it reported "focused" while another program owned the real
+        /// input focus, so clicks over the player's area acted even though another window was on top, until
+        /// the player had been activated once.
+        /// </summary>
+        static bool PlayerIsForeground => Values.IsForegroundWindow(gameWindowForm.Handle);
+
         static System.Drawing.Point MouseClickedPos = new();
         static System.Drawing.Point WindowLocation = new();
         public static System.Drawing.Point newPos = new System.Drawing.Point(Config.Data.WindowPos.X, Config.Data.WindowPos.Y);
@@ -45,7 +54,6 @@ namespace MusicPlayerDXMonoGamePort
         public static long SkipStartPosition = 0;
         public static long SongTimeSkipped = 0;
         public static bool WasFocusedLastFrame = true;
-        static bool wasClickedOn = false;
         public const float MaxVolume = 1f;
         private static readonly int shadowDistance = (int)(Config.Data.ShadowDistance * UiScaling.scaleMult);
 
@@ -92,9 +100,9 @@ namespace MusicPlayerDXMonoGamePort
         public static void ComputeControls()
         {
             // Mouse Controls
-            if (Control.WasLMBJustPressed() && gameWindowForm.Focused &&
+            if (Control.WasLMBJustPressed() && PlayerIsForeground &&
                 Control.GetMouseRect().Intersects(Values.WindowRect) ||
-                !WasFocusedLastFrame && gameWindowForm.Focused &&
+                !WasFocusedLastFrame && PlayerIsForeground &&
                 Control.GetMouseRect().Intersects(Values.WindowRect))
             {
                 KeyHookManager.CreateGlobalKeyHooks(Program.game.gameWindowForm.Handle);
@@ -125,8 +133,6 @@ namespace MusicPlayerDXMonoGamePort
                 else
                     selectedControl = SelectedControl.DragWindow;
             }
-            if (Control.WasLMBJustPressed() && Control.GetMouseRect().Intersects(Values.WindowRect))
-                wasClickedOn = true;
             if (Control.WasLMBJustReleased())
             {
                 if (selectedControl == SelectedControl.DurationBar)
@@ -154,7 +160,7 @@ namespace MusicPlayerDXMonoGamePort
                     break;
 
                 case SelectedControl.PlayPauseButton:
-                    if (Control.WasLMBJustPressed() || !WasFocusedLastFrame && gameWindowForm.Focused)
+                    if (Control.WasLMBJustPressed() || !WasFocusedLastFrame && PlayerIsForeground)
                         SongManager.PlayPause();
                     break;
 
@@ -177,12 +183,12 @@ namespace MusicPlayerDXMonoGamePort
                     break;
 
                 case SelectedControl.OptionsButton:
-                    if (Control.WasLMBJustPressed() || !WasFocusedLastFrame && gameWindowForm.Focused)
+                    if (Control.WasLMBJustPressed() || !WasFocusedLastFrame && PlayerIsForeground)
                         Program.game.ShowOptions();
                     break;
 
                 case SelectedControl.UpvoteButton:
-                    if (Control.WasLMBJustPressed() || !WasFocusedLastFrame && gameWindowForm.Focused)
+                    if (Control.WasLMBJustPressed() || !WasFocusedLastFrame && PlayerIsForeground)
                         SongManager.IsCurrentSongUpvoted = !SongManager.IsCurrentSongUpvoted;
                     break;
 
@@ -219,10 +225,14 @@ namespace MusicPlayerDXMonoGamePort
                     }
                     break;
             }
-            gameWindowForm.Location = Config.Data.WindowPos;
+            // NOTE: the window position (gameWindowForm.Location = Config.Data.WindowPos) is applied in
+            // XNA.Update, not here: it must happen even while the player is in the background, and this
+            // method only runs while it is the foreground window.
 
-            if (!wasClickedOn)
-                return;
+            // Keyboard shortcuts. ComputeControls only runs while the player is the foreground window
+            // (XNA.Update), so nothing here can fire from typing in another program - that is what the
+            // "wasClickedOn" guard used to approximate by ignoring all keys until the first click on the
+            // player, which also swallowed them when the player did have focus.
 
             // Pause [Space]
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.Space))

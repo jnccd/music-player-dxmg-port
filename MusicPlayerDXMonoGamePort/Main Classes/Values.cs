@@ -483,6 +483,18 @@ namespace MusicPlayerDXMonoGamePort
             RegistryKey commandKey = key.CreateSubKey(@"shell\open\command");
             commandKey.SetValue("", "\"" + CurrentExecutablePath + "\\MusicPlayer.exe" + "\" \"%1\"");
         }
+        /// <summary>
+        /// True when <paramref name="hWnd"/> is the window the user is actually working in - the system
+        /// foreground window. <see cref="Form.Focused"/> must not be used for this: WinForms only reports
+        /// the focus state of its own thread, and that state can be "focused" for the player's window while
+        /// another program owns the real input focus. That is what happens at startup when the window
+        /// cannot be activated (another window held the foreground): the player then reacted to clicks on
+        /// its pixel area even though another window was on top, until it had been activated once.
+        /// </summary>
+        public static bool IsForegroundWindow(IntPtr hWnd)
+        {
+            return hWnd != IntPtr.Zero && GetForegroundWindow() == hWnd;
+        }
         public static bool IsForegroundFullScreen()
         {
             return IsForegroundFullScreen(null);
