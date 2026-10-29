@@ -646,11 +646,24 @@ namespace MusicPlayerDXMonoGamePort
             // Song Title
             if (ForcedTitleRedraw || TitleTarget == null || TitleTarget.IsContentLost || TitleTarget.IsDisposed)
             {
-                Title = SongManager.currentlyPlayingSongName;
-                while (Title.EndsWith(".mp3"))
-                    Title = Title.Remove(Title.Length - 4);
+                string title = SongManager.currentlyPlayingSongName;
+                while (title.EndsWith(".mp3"))
+                    title = title.Remove(title.Length - 4);
 
-                int length = (int)(titleFontRenderer.MeasureString(Title).Width);
+                int length = (int)(titleFontRenderer.MeasureString(title).Width);
+
+                // A different title restarts the scrolling layout. For a long title two copies of the text
+                // are drawn, and X2 - X1 is the gap between them - so it has to follow the CURRENT title
+                // length. It used to be computed whenever the render target was recreated, which happened
+                // on every song change; now that the target is reused, a title longer than the previous one
+                // would be drawn twice with the old title's gap and overlap itself.
+                bool titleChanged = title != Title;
+                if (titleChanged)
+                {
+                    Title = title;
+                    X1 = startX;
+                    X2 = X1 + length + abstand;
+                }
 
                 // The render target is window sized, not title sized, so it is reused across songs and only
                 // rebuilt when it is really gone (first frame, device reset). The old code dropped it on
@@ -661,15 +674,17 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     TitleTarget?.Dispose();
                     TitleTarget = new RenderTarget2D(GraphicsDevice, Values.WindowSize.X - (int)(166 * UiScaling.scaleMult), (int)Assets.Title.MeasureString("I()I").Y);
-                    X1 = startX;
-                    X2 = X1 + length + abstand;
                 }
 
-                // The text texture is sized by the title, so it is rebuilt for every new title (the old
-                // one is disposed first).
-                TitleTextTarget?.Dispose();
-                TitleTextTarget = new Texture2D(GraphicsDevice, Math.Max(1, length), (int)Assets.Title.MeasureString("I()I").Y);
-                titleFontRenderer.RenderToTexture(TitleTextTarget, Title);
+                // The text texture is sized by the title, so it is rebuilt when the title changes (and when
+                // the texture was lost) - not on every redraw: a long title re-renders the target every
+                // frame to scroll, and the text itself does not change while doing that.
+                if (titleChanged || TitleTextTarget == null || TitleTextTarget.IsDisposed)
+                {
+                    TitleTextTarget?.Dispose();
+                    TitleTextTarget = new Texture2D(GraphicsDevice, Math.Max(1, length), (int)Assets.Title.MeasureString("I()I").Y);
+                    titleFontRenderer.RenderToTexture(TitleTextTarget, title);
+                }
 
                 try
                 {
