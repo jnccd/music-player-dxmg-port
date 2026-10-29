@@ -41,6 +41,15 @@ namespace MusicPlayerDXMonoGamePort
         }
         public static List<string> Playlist = new List<string>();
         public static List<string> PlayerHistory = new List<string>();
+        /// <summary>
+        /// One flag per <see cref="PlayerHistory"/> entry (same index): true when that entry was upvoted
+        /// while it was the current song. Going back and forth through the history does not remove the
+        /// entry, so a song that was just liked stays the newest entry; without the flag, skipping it
+        /// again would run the regular "leaving the newest entry" downvote and turn the like into a
+        /// dislike (Streak 1 -> -1). Only this class may change the history - it must always go through
+        /// the helpers below so both lists stay aligned.
+        /// </summary>
+        static readonly List<bool> PlayerHistoryUpvoted = new List<bool>();
         public static int PlayerHistoryIndex = -1;
         public static int SongChangedTickTime = -100000;
         public static int SongStartTime;
@@ -101,6 +110,36 @@ namespace MusicPlayerDXMonoGamePort
         static string LastPlayedSongPath =>
             PlayerHistory.Count > 0 && PlayerHistoryIndex > 0 ? PlayerHistory[PlayerHistoryIndex - 1] : null;
 
+        // Playback History Helpers
+        /// <summary>
+        /// Appends a song to the playback history and keeps the per-entry upvote flag aligned.
+        /// </summary>
+        static void AddPlayerHistoryEntry(string songPath)
+        {
+            PlayerHistory.Add(songPath);
+            PlayerHistoryUpvoted.Add(false);
+        }
+        /// <summary>
+        /// Removes a playback history entry (and its upvote flag). The history is only changed here, so
+        /// the flag list cannot drift out of sync with it.
+        /// </summary>
+        static void RemovePlayerHistoryEntryAt(int index)
+        {
+            PlayerHistory.RemoveAt(index);
+            if (index >= 0 && index < PlayerHistoryUpvoted.Count)
+                PlayerHistoryUpvoted.RemoveAt(index);
+        }
+        static void MarkPlayerHistoryEntryUpvoted(int index)
+        {
+            if (index < 0)
+                return;
+            while (PlayerHistoryUpvoted.Count <= index)
+                PlayerHistoryUpvoted.Add(false);
+            PlayerHistoryUpvoted[index] = true;
+        }
+        static bool IsPlayerHistoryEntryUpvoted(int index) =>
+            index >= 0 && index < PlayerHistoryUpvoted.Count && PlayerHistoryUpvoted[index];
+
         // Player Managment
         public static void PlayPause()
         {
@@ -143,7 +182,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     int PlaylistIndex = Values.RDM.Next(Playlist.Count);
                     GetNextSong(true, false);
-                    PlayerHistory.Add(Playlist[PlaylistIndex]);
+                    AddPlayerHistoryEntry(Playlist[PlaylistIndex]);
                 }
             }
             else
@@ -192,7 +231,7 @@ namespace MusicPlayerDXMonoGamePort
                     }
                 }
 
-                PlayerHistory.Add(sPath);
+                AddPlayerHistoryEntry(sPath);
                 PlayerHistoryIndex = PlayerHistory.Count - 1;
 
                 if (!Playlist.Contains(sPath))
@@ -205,7 +244,11 @@ namespace MusicPlayerDXMonoGamePort
                 catch
                 {
                     MessageBox.Show("That song is not readable!");
-                    PlayerHistory.Remove(sPath);
+                    // The entry was appended above, so its (last) occurrence is the one to drop - removing
+                    // it through the helper keeps the per-entry upvote flags aligned.
+                    int appendedEntryIndex = PlayerHistory.LastIndexOf(sPath);
+                    if (appendedEntryIndex >= 0)
+                        RemovePlayerHistoryEntryAt(appendedEntryIndex);
                     PlayerHistoryIndex = PlayerHistory.Count - 1;
                     GetNextSong(true, false);
                 }
@@ -223,7 +266,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     SaveUserSettings(true);
 
-                    PlayerHistory.Add(Playlist[i]);
+                    AddPlayerHistoryEntry(Playlist[i]);
                     PlayerHistoryIndex = PlayerHistory.Count - 1;
                     PlaySongByPath(Playlist[i]);
                     return true;
@@ -236,7 +279,7 @@ namespace MusicPlayerDXMonoGamePort
             if (!File.Exists(PathString))
             {
                 Playlist.Remove(PathString);
-                PlayerHistory.RemoveAt(PlayerHistoryIndex);
+                RemovePlayerHistoryEntryAt(PlayerHistoryIndex);
                 PlayerHistoryIndex--;
                 if (PlayerHistoryIndex < 0)
                     PlayerHistoryIndex = 0;
@@ -339,7 +382,7 @@ namespace MusicPlayerDXMonoGamePort
                 {
                     //Console.WriteLine("Found " + notPlayedPaths.Count + " unplayed songs, picking one...");
                     // If there is one play it
-                    PlayerHistory.Add(notPlayedPaths[Values.RDM.Next(notPlayedPaths.Count)]);
+                    AddPlayerHistoryEntry(notPlayedPaths[Values.RDM.Next(notPlayedPaths.Count)]);
                     PlayerHistoryIndex = PlayerHistory.Count - 1;
                     PlaySongByPath(PlayerHistory[PlayerHistoryIndex]);
                 }
@@ -393,7 +436,7 @@ namespace MusicPlayerDXMonoGamePort
                         : RecentlyPlayedChoosingList;
                     if (candidates.Count == 0)
                         candidates = RecentlyPlayedChoosingList;
-                    PlayerHistory.Add(GetSongPathFromSongName(candidates[Values.RDM.Next(candidates.Count)]));
+                    AddPlayerHistoryEntry(GetSongPathFromSongName(candidates[Values.RDM.Next(candidates.Count)]));
                     PlayerHistoryIndex = PlayerHistory.Count - 1;
                     PlaySongByPath(PlayerHistory[PlayerHistoryIndex]);
                 }
@@ -415,7 +458,7 @@ namespace MusicPlayerDXMonoGamePort
                 SongChoosingListIndex = Values.RDM.Next(SongChoosingList.Count);
             while (PlayerHistory.Count != 0 && PlayerHistoryIndex > 0 && SongChoosingList[SongChoosingListIndex] == PlayerHistory[PlayerHistoryIndex - 1] && Playlist.Count > 1);
 
-            PlayerHistory.Add(SongChoosingList[SongChoosingListIndex]);
+            AddPlayerHistoryEntry(SongChoosingList[SongChoosingListIndex]);
             PlayerHistoryIndex = PlayerHistory.Count - 1;
             PlaySongByPath(PlayerHistory[PlayerHistoryIndex]);
         }
@@ -609,7 +652,7 @@ namespace MusicPlayerDXMonoGamePort
         public static void QueueSong(string Song)
         {
             Program.game.ShowSecondRowMessage("Added  a  song  to  the  queue!", 1f);
-            PlayerHistory.Add(Song);
+            AddPlayerHistoryEntry(Song);
         }
 
         // Song Metadata Management
@@ -628,7 +671,11 @@ namespace MusicPlayerDXMonoGamePort
                 using var songDbContext = new SongDbContext();
                 var upvotedSong = ResolveSongRowByName(currentlyPlayingSongName, songDbContext);
 
-                if (upvotedSong != null && DownVoteCurrentSongForUserSkip && PlayerHistoryIndex >= PlayerHistory.Count - 1 && !IsCurrentSongUpvoted)
+                // A song that was liked in this playback history must not be disliked later: going back to
+                // an older song and returning leaves the liked entry as the newest one, where this
+                // downvote would otherwise fire again and flip the like into a dislike.
+                if (upvotedSong != null && DownVoteCurrentSongForUserSkip && PlayerHistoryIndex >= PlayerHistory.Count - 1
+                    && !IsCurrentSongUpvoted && !IsPlayerHistoryEntryUpvoted(PlayerHistoryIndex))
                 {
                     float percentage = (Channel32.Position - XnaGuiManager.SongTimeSkipped) / (float)Channel32.Length;
 
@@ -688,6 +735,10 @@ namespace MusicPlayerDXMonoGamePort
 
                 UpdateSongChoosingList(currentlyPlayingSongPath);
                 songDbContext.SaveChanges();
+
+                // Remember the like on the playback history entry, so a later skip of that same entry
+                // (after navigating back and forth) cannot downvote the song again.
+                MarkPlayerHistoryEntryUpvoted(PlayerHistoryIndex);
             }
             IsCurrentSongUpvoted = false;
         }
