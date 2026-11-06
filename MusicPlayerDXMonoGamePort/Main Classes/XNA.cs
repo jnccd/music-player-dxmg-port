@@ -95,6 +95,12 @@ namespace MusicPlayerDXMonoGamePort
         float X1;
         float X2;
         int ScrollWheelCooldown = 0;
+        /// <summary>
+        /// Frames to wait between two mouse wheel seeks. A wheel spin keeps delivering a notch per frame while
+        /// it lasts, and without a cooldown one flick would jump minutes of the song (the song switch the wheel
+        /// used to trigger needed a much longer pause, because it started a whole new song).
+        /// </summary>
+        const int WheelSeekCooldownFrames = 6;
 
         // Forms
         public OptionsMenu optionsMenu;
@@ -249,16 +255,17 @@ namespace MusicPlayerDXMonoGamePort
             gameWindowForm.Location = Config.Data.WindowPos;
             if (ScrollWheelCooldown < 0)
             {
-                // Next / Previous Song [MouseWheel] ((On Win10 mouseWheel input is send to the process even if its not focused))
+                // Seek 5 Seconds Back / Forward in the current song [MouseWheel]
+                // ((On Win10 mouseWheel input is send to the process even if its not focused))
                 if (Control.ScrollWheelWentDown())
                 {
-                    SongManager.GetPreviousSong();
-                    ScrollWheelCooldown = 60;
+                    SongManager.SeekBySeconds(-5);
+                    ScrollWheelCooldown = WheelSeekCooldownFrames;
                 }
                 if (Control.ScrollWheelWentUp())
                 {
-                    SongManager.GetNextSong(false, true);
-                    ScrollWheelCooldown = 60;
+                    SongManager.SeekBySeconds(5);
+                    ScrollWheelCooldown = WheelSeekCooldownFrames;
                 }
             }
 
