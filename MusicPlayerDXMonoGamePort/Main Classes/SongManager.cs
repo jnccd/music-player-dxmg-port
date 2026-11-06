@@ -608,6 +608,51 @@ namespace MusicPlayerDXMonoGamePort
             }
         }
 
+        /// <summary>
+        /// Seeks within the song that is playing right now by the given amount of seconds - negative seeks
+        /// backwards, positive forwards (see the Left/Right hotkeys).
+        /// <para>
+        /// The target position stays inside the song: it is clamped to [0, Length], so seeking back at the
+        /// very start just stays at the start (it never steps into the previous song) and seeking past the
+        /// end stays at the end. Does nothing while nothing is playing yet.
+        /// </para>
+        /// </summary>
+        /// <param name="seconds">Amount to seek, positive = forward, negative = backward.</param>
+        public static void SeekBySeconds(double seconds)
+        {
+            // Snapshot the channel: a song switch disposes it (possibly from a background thread, e.g. the
+            // console), and every access below has to be about the same channel.
+            WaveChannel32 channel = Channel32;
+            if (channel == null)
+                return;
+
+            try
+            {
+                long length = channel.Length;
+                int bytesPerSecond = channel.WaveFormat?.AverageBytesPerSecond ?? 0;
+                if (length <= 0 || bytesPerSecond <= 0)
+                    return;
+
+                long oldPosition = channel.Position;
+                long newPosition = (long)Math.Clamp(oldPosition + seconds * bytesPerSecond, 0, length);
+                if (newPosition == oldPosition)
+                    return;
+
+                channel.Position = newPosition;
+
+                // Same accounting as a duration bar drag: the vote scoring subtracts how much of the song was
+                // seeked from the played position, so a skipped part is not counted as listened.
+                XnaGuiManager.SongTimeSkipped += newPosition - oldPosition;
+                Program.game.UpdateDiscordRPC();
+            }
+            catch (Exception e)
+            {
+                // A seek must never take the player down. The channel can be gone already (song switch), and
+                // the decoder may not accept a position for one frame while the stream is being re-read.
+                Debug.WriteLine("Couldn't seek in the current song: " + e);
+            }
+        }
+
         // Queue next Songs
         public static void QueueNewSong(string Song, bool ConsoleOutput)
         {

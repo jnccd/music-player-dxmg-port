@@ -347,11 +347,11 @@ namespace MusicPlayerDXMonoGamePort
             if (Values.TargetVolume < 0)
                 Values.TargetVolume = 0;
 
-            // Next / Previous Song [Left/Right]
+            // Seek 5 Seconds Back / Forward in the current song [Left/Right]
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.Left))
-                SongManager.GetPreviousSong();
+                SongManager.SeekBySeconds(-5);
             if (Control.WasKeyJustPressed(Microsoft.Xna.Framework.Input.Keys.Right))
-                SongManager.GetNextSong(false, true);
+                SongManager.SeekBySeconds(5);
 
             // Close [Esc]
             if (Control.CurKS.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Escape))
